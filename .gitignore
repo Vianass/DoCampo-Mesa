@@ -1,0 +1,16 @@
+# Dependências, artefactos de compilação e resultados de testes
+node_modules/
+dist/
+build/
+coverage/
+
+# Configuração privada; exemplos sem segredos podem ser versionados
+.env
+.env.*
+!.env.example
+
+# Logs e ficheiros locais do sistema/editor
+*.log
+.DS_Store
+.vscode/
+.idea/
