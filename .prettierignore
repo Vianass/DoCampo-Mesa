@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+coverage
+package-lock.json
+playwright-report
+test-results
+apps/web/public/images
+docs/requirements
+docs/architecture
+docs/database
+docs/planning

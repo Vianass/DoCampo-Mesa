@@ -1,0 +1,36 @@
+{
+  "name": "do-campo-a-mesa",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @docampo/web",
+    "build": "npm run build --workspace @docampo/web",
+    "preview": "npm run preview --workspace @docampo/web",
+    "typecheck": "npm run typecheck --workspace @docampo/web",
+    "lint": "eslint .",
+    "format": "prettier --write README.md package.json tsconfig.base.json eslint.config.js playwright.config.ts apps packages docs/design",
+    "format:check": "prettier --check README.md package.json tsconfig.base.json eslint.config.js playwright.config.ts apps packages docs/design",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.58.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.2"
+  }
+}

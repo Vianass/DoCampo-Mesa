@@ -1,0 +1,150 @@
+@use 'tokens' as t;
+@use 'mixins' as m;
+
+:root {
+  --color-forest: #{t.$forest};
+  --color-sage: #{t.$sage};
+  --color-cream: #{t.$cream};
+  --color-terracotta: #{t.$terracotta};
+  --color-harvest: #{t.$harvest};
+  --color-graphite: #{t.$graphite};
+  --color-white: #{t.$white};
+}
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 24px;
+}
+body {
+  margin: 0;
+  background: t.$cream;
+  color: t.$graphite;
+  font-family: t.$font-body;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+* {
+  box-sizing: border-box;
+}
+::selection {
+  background: t.$harvest;
+  color: t.$forest;
+}
+img,
+svg {
+  max-width: 100%;
+}
+svg {
+  flex-shrink: 0;
+}
+button,
+input {
+  font: inherit;
+}
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+a {
+  color: t.$forest;
+  text-decoration: none;
+}
+a:hover {
+  color: t.$forest;
+}
+:focus-visible {
+  @include m.focus-ring;
+}
+main:focus {
+  outline: none;
+}
+h1,
+h2 {
+  font-family: t.$font-heading;
+  font-weight: 400;
+  color: t.$forest;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+h1 {
+  font-size: clamp(2.8rem, 5.8vw, 5.4rem);
+}
+h2 {
+  font-size: clamp(2.1rem, 3.3vw, 3.3rem);
+}
+h3 {
+  color: t.$forest;
+  line-height: 1.25;
+}
+p {
+  margin-bottom: 1rem;
+}
+em {
+  font-family: t.$font-heading;
+}
+[hidden] {
+  display: none !important;
+}
+.market-container {
+  width: 100%;
+  max-width: 1320px;
+  padding-inline: 20px;
+  margin-inline: auto;
+  @include m.from(md) {
+    padding-inline: 32px;
+  }
+  @include m.from(xl) {
+    padding-inline: 56px;
+  }
+}
+.eyebrow {
+  color: t.$forest;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.eyebrow-line {
+  width: 32px;
+  height: 1px;
+  background: t.$terracotta;
+  display: inline-block;
+  margin-right: 12px;
+  vertical-align: middle;
+}
+.skip-link {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  transform: translateY(-160%);
+  padding: 12px 20px;
+  color: t.$white;
+  background: t.$forest;
+  border-radius: t.$radius-small;
+  z-index: 100;
+  &:focus {
+    transform: translateY(0);
+    color: t.$white;
+    outline-color: t.$harvest;
+  }
+}
+.demo-note {
+  font-size: 0.85rem;
+  color: t.$muted;
+  padding-block: 16px;
+  border-top: 1px solid t.$line;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

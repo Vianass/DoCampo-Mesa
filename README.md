@@ -2,7 +2,9 @@
 
 Mercado digital de produtores agrícolas locais, com encomendas e leilões em tempo real.
 
-**Estado atual: Fase 0 — Requisitos e Arquitetura.** O repositório contém a documentação inicial de análise, arquitetura, modelo de dados e planeamento. A aplicação, a API, as ligações à base de dados e os recursos Cloud ainda não foram implementados ou configurados. O início da Fase 1 depende de aprovação explícita.
+**Estado atual: Fase 1 — Configuração do Projeto e Sistema Visual.** O frontend demonstrativo está implementado com uma homepage responsiva, componentes reutilizáveis e navegação React Router. O monorepo usa npm workspaces. Os nove documentos da Fase 0 estão preservados integralmente.
+
+Os dados são fictícios e existem apenas no frontend. Não estão implementados autenticação, endpoints, MongoDB, compras, leilões em tempo real ou recursos Cloud. A Fase 2 depende de aprovação explícita.
 
 ## Contexto académico
 
@@ -24,22 +26,24 @@ Os principais objetivos planeados são:
 - Construir uma interface responsiva segundo a abordagem Mobile First.
 - Documentar a API e publicar frontend, backend, dados e imagens em serviços Cloud.
 
-Estes objetivos descrevem o âmbito a desenvolver; não representam funcionalidades já disponíveis. As regras de negócio em aberto estão registadas no [documento de decisões](docs/architecture/decisions.md).
+Estes objetivos descrevem o âmbito completo a desenvolver. Nesta fase existem apenas os componentes, os layouts e os percursos demonstrativos descritos abaixo. As regras de negócio em aberto estão registadas no [documento de decisões](docs/architecture/decisions.md).
 
-## Tecnologias planeadas
+## Tecnologias e estado
 
-| Área | Tecnologias selecionadas |
-| --- | --- |
-| Frontend | React, TypeScript, Vite, React Router, Bootstrap 5 e SASS/SCSS |
-| Backend | Node.js, Express, TypeScript e Mongoose |
-| Base de dados | MongoDB Atlas |
-| Autenticação | JWT e bcrypt |
-| Tempo real | Socket.IO |
-| Documentação da API | OpenAPI 3 e Swagger UI |
-| Cloud | Microsoft Azure: App Service, Static Web Apps e Blob Storage |
-| Testes | Vitest, Supertest e Playwright |
+| Área                      | Tecnologias selecionadas                                                  | Estado                                                 |
+| ------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Frontend                  | React 19, TypeScript 5.9, Vite 8, React Router 7, Bootstrap 5 e SASS/SCSS | Implementado com dados fictícios                       |
+| Tipografia                | DM Serif Display e DM Sans, via Fontsource                                | Fontes alojadas pelo build, licença OFL                |
+| Qualidade                 | ESLint, Prettier e TypeScript strict                                      | Configurados                                           |
+| Testes                    | Playwright                                                                | Percursos e responsividade do protótipo; Chrome        |
+| Backend                   | Node.js, Express, TypeScript e Mongoose                                   | Workspace vazio; bibliotecas de backend não instaladas |
+| Base de dados             | MongoDB Atlas                                                             | Planeada; sem ligação                                  |
+| Autenticação e tempo real | JWT, bcrypt e Socket.IO                                                   | Planeados; não implementados                           |
+| Documentação da API       | OpenAPI 3 e Swagger UI                                                    | Planeados                                              |
+| Cloud                     | App Service, Static Web Apps e Blob Storage                               | Planeados; não configurados                            |
+| Testes futuros            | Vitest e Supertest                                                        | Planeados; não instalados nesta fase                   |
 
-As versões concretas e o runtime suportado serão definidos na fase de implementação. Não existem dependências instaladas ou aplicações geradas nesta fase.
+As versões exatas estão fixadas em `package-lock.json`; consultar `npm ls --depth=0`. O React Router 7 mantém compatibilidade com o Node.js instalado, sem exigir atualização do sistema. O desenvolvimento foi configurado para Node.js 22.13+ na série 22, ou 24+, e npm 10 ou superior.
 
 ## Arquitetura prevista
 
@@ -55,6 +59,30 @@ Consultar a [visão global](docs/architecture/system-overview.md), os [diagramas
 .
 ├── .gitignore
 ├── README.md
+├── package.json
+├── package-lock.json
+├── tsconfig.base.json
+├── eslint.config.js
+├── .prettierrc.json
+├── .prettierignore
+├── playwright.config.ts
+├── apps/
+│   ├── web/
+│   │   ├── public/          # Favicon, fotografias WebP e créditos
+│   │   ├── src/
+│   │   │   ├── components/ # Componentes tipados e marca
+│   │   │   ├── layouts/    # Layout público e navegação
+│   │   │   ├── pages/      # Homepage e páginas demonstrativas
+│   │   │   ├── data/       # Produtos, produtores e leilão fictícios
+│   │   │   └── styles/     # Tokens, mixins e parciais SCSS
+│   │   ├── tests/          # Testes de browser Playwright
+│   │   ├── index.html
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── vite.config.ts
+│   └── api/                # Apenas package.json, README e src reservado
+├── packages/
+│   └── shared/             # Estrutura inicial; sem exports ou dependências
 └── docs/
     ├── requirements/
     │   ├── functional-requirements.md
@@ -67,55 +95,114 @@ Consultar a [visão global](docs/architecture/system-overview.md), os [diagramas
     │   └── decisions.md
     ├── database/
     │   └── data-model.md
+    ├── design/
+    │   └── design-system.md
     └── planning/
         └── implementation-plan.md
 ```
 
-A futura estrutura de aplicações e contratos partilhados encontra-se descrita na documentação de arquitetura. Essas pastas ainda não foram criadas.
+`apps/api` não contém servidor ou endpoints. `packages/shared` reserva espaço para contratos realmente necessários; não define contratos finais a partir dos mocks. O nome deste workspace segue o pedido da Fase 1, sem alterar a proposta histórica da Fase 0.
 
 ## Documentação da Fase 0
 
-| Documento | Conteúdo |
-| --- | --- |
-| [Requisitos funcionais](docs/requirements/functional-requirements.md) | Requisitos por módulo, intervenientes, prioridades, critérios de aceitação e referências ao enunciado |
-| [Requisitos não funcionais](docs/requirements/non-functional-requirements.md) | Segurança, responsividade, qualidade, consistência, Cloud e obrigações académicas |
-| [Casos de utilização](docs/requirements/use-cases.md) | Atores, pré-condições, fluxos, alternativas, pós-condições e autorização |
-| [Visão global do sistema](docs/architecture/system-overview.md) | Componentes, responsabilidades, dados, comunicação e serviços Cloud |
-| [Diagramas de arquitetura](docs/architecture/architecture-diagram.md) | Contexto, contentores e componentes em Mermaid |
-| [Consistência dos leilões](docs/architecture/auction-consistency.md) | Concorrência, atomicidade, histórico, expiração, salas e reconexão |
-| [Decisões e questões em aberto](docs/architecture/decisions.md) | Fundamentação das escolhas, alternativas, recomendações e riscos |
-| [Modelo de dados](docs/database/data-model.md) | Coleções, validação, referências, documentos embebidos, índices e relações |
-| [Plano de implementação](docs/planning/implementation-plan.md) | Sete semanas, dependências, entregáveis, testes e marcos Git |
+| Documento                                                                     | Conteúdo                                                                                              |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| [Requisitos funcionais](docs/requirements/functional-requirements.md)         | Requisitos por módulo, intervenientes, prioridades, critérios de aceitação e referências ao enunciado |
+| [Requisitos não funcionais](docs/requirements/non-functional-requirements.md) | Segurança, responsividade, qualidade, consistência, Cloud e obrigações académicas                     |
+| [Casos de utilização](docs/requirements/use-cases.md)                         | Atores, pré-condições, fluxos, alternativas, pós-condições e autorização                              |
+| [Visão global do sistema](docs/architecture/system-overview.md)               | Componentes, responsabilidades, dados, comunicação e serviços Cloud                                   |
+| [Diagramas de arquitetura](docs/architecture/architecture-diagram.md)         | Contexto, contentores e componentes em Mermaid                                                        |
+| [Consistência dos leilões](docs/architecture/auction-consistency.md)          | Concorrência, atomicidade, histórico, expiração, salas e reconexão                                    |
+| [Decisões e questões em aberto](docs/architecture/decisions.md)               | Fundamentação das escolhas, alternativas, recomendações e riscos                                      |
+| [Modelo de dados](docs/database/data-model.md)                                | Coleções, validação, referências, documentos embebidos, índices e relações                            |
+| [Plano de implementação](docs/planning/implementation-plan.md)                | Sete semanas, dependências, entregáveis, testes e marcos Git                                          |
+
+O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, componentes, comportamento responsivo e decisões de acessibilidade da Fase 1. Os [créditos das fotografias](apps/web/public/images/credits.md) registam autores, fontes e licença. As fotografias são ilustrativas e não comprovam a origem dos produtores fictícios.
+
+## Implementação disponível
+
+- Homepage editorial com seleção sazonal, destaque ilustrativo de leilão, produtores, explicação do mercado, prévia do catálogo e chamada para produtores.
+- Componentes `Button`, `Container`, `SectionHeading`, `ProductCard`, `ProducerCard`, `AuctionCard`, `CategoryPill`, `StatusBadge`, `PriceDisplay`, `EmptyState`, `LoadingSkeleton` e `FormField`.
+- Header, navegação desktop e móvel, layout público e footer; foco visível, ligação de salto e suporte a movimento reduzido.
+- Pesquisa e seleção de categoria sobre quatro produtos fictícios, incluindo estado vazio; navegação para detalhes demonstrativos.
+- Tokens SCSS e Bootstrap personalizado, com breakpoints de 768, 1024 e 1280 px.
+
+| Rota                    | Conteúdo                                                     |
+| ----------------------- | ------------------------------------------------------------ |
+| `/`                     | Homepage                                                     |
+| `/produtos`             | Catálogo demonstrativo com pesquisa e categorias             |
+| `/produtos/:id`         | Detalhe de um produto fictício                               |
+| `/produtores`           | Produtores fictícios em destaque                             |
+| `/produtores/:id`       | Perfil demonstrativo e respetivos produtos                   |
+| `/leiloes`              | Proposta visual dos leilões                                  |
+| `/leiloes/cabaz-outono` | Detalhe do lote fictício; licitação indisponível             |
+| `/como-funciona`        | Conceito do mercado e âmbito demonstrativo                   |
+| `/entrar` e `/registo`  | Páginas informativas; sem formulário de autenticação/registo |
+| `/sistema-visual`       | Galeria dos componentes e da paleta                          |
+
+Rotas e IDs inexistentes apresentam uma página de recuperação. Preços e tempos de leilão são estáticos. O catálogo não implementa ainda os filtros de negócio completos, carrinho ou encomendas.
 
 ## Fases de desenvolvimento
 
-**Fase 0, atual:** requisitos, arquitetura, modelo de dados, consistência dos leilões, planeamento e configuração inicial do repositório.
+**Fase 0, concluída:** documentação e configuração inicial de Git.
 
-Após aprovação, o desenvolvimento seguirá o calendário do enunciado:
+**Fase 1, atual:** npm workspaces, configuração do frontend, sistema visual e homepage/páginas demonstrativas. A implementação ocorre na branch `feat/project-setup-design-system`; não há merge automático para `main`. Este trabalho não constitui conclusão dos marcos M1–M3 do projeto completo.
 
-| Semana | Trabalho previsto | Marco |
-| --- | --- | --- |
-| 1 | Protótipos e frontend responsivo | Início da Fase 1 |
-| 2 | SPA com componentes, estado, routing e dados simulados; esboço OpenAPI | M1 |
-| 3 | API REST e modelo MongoDB | — |
-| 4 | OpenAPI/Swagger, autenticação, segurança e integração com a SPA | M2 |
-| 5 | Leilões e notificações em tempo real | — |
-| 6 | Publicação na Cloud e armazenamento de imagens | — |
-| 7 | Testes finais, relatório e vídeo | M3 |
+O desenvolvimento restante, sujeito a aprovação da fase seguinte, mantém o calendário do enunciado:
+
+| Semana | Trabalho previsto                                                      | Marco            |
+| ------ | ---------------------------------------------------------------------- | ---------------- |
+| 1      | Protótipos e frontend responsivo                                       | Início da Fase 1 |
+| 2      | SPA com componentes, estado, routing e dados simulados; esboço OpenAPI | M1               |
+| 3      | API REST e modelo MongoDB                                              | —                |
+| 4      | OpenAPI/Swagger, autenticação, segurança e integração com a SPA        | M2               |
+| 5      | Leilões e notificações em tempo real                                   | —                |
+| 6      | Publicação na Cloud e armazenamento de imagens                         | —                |
+| 7      | Testes finais, relatório e vídeo                                       | M3               |
 
 O backoffice Laravel e a análise de elasticidade/custos são componentes opcionais de valorização. Só serão considerados depois de todos os requisitos obrigatórios estarem completos e funcionais. Não há datas de submissão ou defesa definidas neste README.
 
 ## Instalação e execução
 
-**A completar quando existir uma implementação executável.** Nesta fase não há comandos de instalação ou de arranque da aplicação.
+Pré-requisitos: Node.js 22.13+ na série 22, ou 24+, e npm ≥10. A instalação é feita na raiz do monorepo. O protótipo não precisa de ficheiros `.env`, conta Azure ou MongoDB. O ambiente verificado usa Node.js 22.21.1 e npm 10.9.4.
 
-As instruções futuras deverão identificar os pré-requisitos e versões, a instalação de dependências, a configuração através de exemplos sem segredos, a execução local de frontend/backend, os testes e a publicação. Credenciais, tokens e ficheiros `.env` privados não devem ser versionados; um eventual `.env.example` deverá conter apenas valores ilustrativos sem segredos.
+```bash
+git clone https://github.com/Vianass/DoCampo-Mesa.git
+cd DoCampo-Mesa
+git switch feat/project-setup-design-system
+npm ci
+npm run dev
+```
 
-Para consultar a Fase 0, basta abrir os documentos Markdown ou navegar pelas ligações acima no GitHub.
+Abrir `http://127.0.0.1:5173/`. O servidor usa apenas loopback; não é publicado na Cloud. Parar com `Ctrl+C`.
+
+```bash
+npm run typecheck    # Validação TypeScript strict
+npm run lint         # ESLint
+npm run format:check # Formatação, excluindo documentos históricos da Fase 0
+npm run build        # Produção em apps/web/dist
+npm run preview      # Prévia do build em http://127.0.0.1:4173/
+npm run test:e2e     # Browser e layouts demonstrativos
+```
+
+Os testes Playwright usam Google Chrome instalado e podem arrancar o Vite automaticamente. Em ambientes sem Chrome, pode instalar-se o Chromium de Playwright e selecionar esse canal:
+
+```bash
+npx playwright install chromium
+PLAYWRIGHT_CHANNEL=chromium npm run test:e2e
+```
+
+`npm run format` formata apenas a implementação, o README e a documentação de design; não modifica os nove documentos originais. Credenciais, tokens e `.env` privados não devem ser versionados. Um futuro `.env.example` deverá conter apenas valores ilustrativos sem segredos.
+
+## Validação e limitações
+
+TypeScript, ESLint, build de produção e testes de browser são executáveis pelos comandos acima. A cobertura Playwright inclui 320/430/768/1024/1280/1440 px, fotografias lazy ao percorrer a página, navegação por teclado/Escape, pesquisa, estado vazio e destinos dos cartões. A inspeção visual utiliza capturas efetivas do Chrome; não se declara certificação de acessibilidade ou cobertura de Safari/Firefox.
+
+Não há persistência, contas, pagamentos, checkout, mapa integrado, API ou tempo real. Os workspaces API/shared permanecem estruturas iniciais. As questões de negócio da Fase 0 continuam pendentes de validação antes dos módulos correspondentes.
 
 ## Assistência de inteligência artificial
 
-Foi utilizado o assistente **Codex, da OpenAI**, como apoio à análise do enunciado, à elaboração da documentação da Fase 0 e à configuração inicial deste repositório. As propostas produzidas com apoio de IA devem ser revistas e validadas pelo estudante, que mantém a responsabilidade pelas decisões, pelo trabalho individual e pela explicação das soluções na defesa.
+Foi utilizado o assistente **Codex, da OpenAI**, como apoio à análise do enunciado, à documentação da Fase 0, à configuração Git e à implementação/verificação do frontend da Fase 1. A skill Sites apoiou o fluxo de desenvolvimento local e a preparação de assets; não foi criada uma publicação em Sites. As propostas e o código produzidos com apoio de IA devem ser revistos e validados pelo estudante, que mantém a responsabilidade pelas decisões, pelo trabalho individual e pela explicação das soluções na defesa.
 
 A declaração de uso de IA e bibliotecas deverá também constar do relatório final, conforme o enunciado. O apoio recebido não substitui a compreensão e validação do projeto pelo autor.
 

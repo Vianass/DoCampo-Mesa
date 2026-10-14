@@ -14,3 +14,8 @@ coverage/
 .DS_Store
 .vscode/
 .idea/
+
+# Resultados locais da verificação no browser
+playwright-report/
+test-results/
+*.tsbuildinfo
