@@ -1,0 +1,297 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.admin-workspace {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  h2 {
+    font-family: $font-heading;
+    font-size: clamp(1.45rem, 2.2vw, 1.9rem);
+    font-weight: 400;
+  }
+  h3 {
+    font-size: 1.15rem;
+  }
+  p {
+    line-height: 1.7;
+  }
+  .market-button {
+    min-height: 44px;
+    white-space: normal;
+  }
+  select,
+  input {
+    min-height: 44px;
+  }
+}
+.admin-intro {
+  margin-bottom: 28px;
+  h1 {
+    font-family: $font-heading;
+    font-size: clamp(2.1rem, 4.2vw, 3.8rem);
+    line-height: 1.12;
+    margin: 12px 0 20px;
+    font-weight: 400;
+    em {
+      color: $forest;
+    }
+  }
+  > p:last-child {
+    max-width: 66ch;
+    color: $muted;
+  }
+}
+.admin-demo-note {
+  margin-bottom: 30px;
+}
+.admin-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 16px;
+  margin-bottom: 44px;
+  > div {
+    border-bottom: 1px solid $line;
+    padding-bottom: 16px;
+  }
+  dt {
+    font-size: 0.85rem;
+    font-weight: 500;
+    a {
+      color: $forest;
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+    }
+  }
+  dd {
+    margin: 4px 0 0;
+    font: 2.8rem $font-heading;
+    color: $forest;
+  }
+  @include from(md) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.admin-dashboard-grid,
+.admin-detail-grid {
+  display: grid;
+  gap: 32px;
+  margin-bottom: 32px;
+  > * {
+    min-width: 0;
+  }
+  @include from(xl) {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  }
+}
+.admin-aside {
+  background: $cream;
+  border-radius: $radius-large;
+  padding: 24px;
+  align-self: start;
+  h2 {
+    margin-top: 10px;
+  }
+  hr {
+    margin: 28px 0;
+  }
+}
+.admin-section-heading,
+.admin-profile-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  margin: 24px 0;
+}
+.admin-profile-heading img {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: $radius-card;
+}
+.admin-filters {
+  display: grid;
+  gap: 16px;
+  align-items: end;
+  margin: 24px 0;
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  @include from(md) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    > .market-button {
+      justify-self: start;
+    }
+  }
+  @include from(xl) {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  }
+}
+.admin-result-count,
+.admin-help {
+  font-size: 0.88rem;
+  color: $muted;
+  margin: 24px 0;
+}
+.admin-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 36px;
+  > li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    padding: 24px 0;
+    border-bottom: 1px solid $line;
+    > div {
+      flex: 1 1 200px;
+      min-width: 0;
+    }
+    > .market-button {
+      margin-left: auto;
+    }
+    h2,
+    h3 {
+      margin: 0 0 6px;
+    }
+    p {
+      margin: 4px 0 8px;
+    }
+    img {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: $radius-small;
+    }
+    > div:last-child:not(:first-child) {
+      flex: 0 1 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+  }
+}
+.admin-facts {
+  display: grid;
+  gap: 20px;
+  margin: 28px 0;
+  @include from(md) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  dt {
+    color: $muted;
+    font-weight: 500;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+  dd {
+    margin: 0;
+  }
+}
+.admin-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 24px 0;
+  border-bottom: 1px solid $line;
+  margin-bottom: 32px;
+}
+.admin-history {
+  padding-left: 22px;
+  margin-bottom: 32px;
+  li {
+    padding: 8px 0 8px 10px;
+  }
+  time {
+    display: block;
+    color: $muted;
+    font-size: 0.85rem;
+  }
+}
+.admin-decision-form,
+.admin-decision-record {
+  margin: 32px 0;
+  padding: 24px;
+  background: $cream;
+  border-radius: $radius-card;
+  label {
+    display: block;
+    margin: 18px 0 8px;
+    font-weight: 600;
+  }
+  > .market-button {
+    margin-top: 24px;
+  }
+}
+.admin-feedback,
+.admin-form-error {
+  border-left: 3px solid $forest;
+  padding: 18px;
+  margin: 24px 0;
+  background: $cream;
+  p {
+    margin: 0;
+  }
+}
+.admin-feedback--error,
+.admin-form-error {
+  border-color: $terracotta;
+}
+.admin-service-disclosure {
+  border-left: 3px solid $sage;
+  padding: 20px;
+  margin-bottom: 30px;
+  background: $cream;
+}
+.admin-services {
+  display: grid;
+  gap: 24px;
+  list-style: none;
+  padding: 0;
+  @include from(md) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  li {
+    border: 1px solid $line;
+    border-radius: $radius-card;
+    padding: 24px;
+    min-width: 0;
+  }
+  h2 {
+    margin: 8px 0;
+  }
+  small {
+    color: $muted;
+  }
+}
+.admin-service-real {
+  padding: 16px 0;
+  border-block: 1px solid $line;
+  margin: 20px 0;
+  p {
+    margin: 4px 0 0;
+  }
+}
+.admin-scenario {
+  margin-top: 48px;
+  border-top: 1px solid $line;
+  padding-top: 24px;
+  color: $muted;
+  summary {
+    cursor: pointer;
+    min-height: 44px;
+  }
+  label {
+    display: block;
+    margin: 16px 0 8px;
+  }
+  select {
+    max-width: 440px;
+  }
+}

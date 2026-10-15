@@ -108,7 +108,7 @@ export function PrivateLayout() {
                 ? 'Atividade fictícia para explorar. Sem compras, pagamentos ou ofertas reais.'
                 : role === 'produtor'
                   ? 'Gestão local demonstrativa. Sem publicação, aprovação ou vendas reais.'
-                  : 'Estrutura em preparação. As operações desta área ainda não estão disponíveis.'}
+                  : 'Supervisão demonstrativa. Decisões apenas nesta sessão; sem efeitos administrativos reais.'}
             </p>
           </nav>
           <main id="area-conteudo" ref={main} tabIndex={-1}>

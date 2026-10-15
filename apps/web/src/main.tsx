@@ -9,6 +9,7 @@ import { App } from './App';
 import { CartProvider } from './features/cart/CartProvider';
 import { AuthProvider } from './features/auth/AuthProvider';
 import { BuyerProvider } from './features/buyer/BuyerProvider';
+import { AdminProvider } from './features/admin/AdminProvider';
 import { ProducerProvider } from './features/producer/ProducerProvider';
 
 const root = document.getElementById('root');
@@ -20,7 +21,9 @@ createRoot(root).render(
         <CartProvider>
           <BuyerProvider>
             <ProducerProvider>
-              <App />
+              <AdminProvider>
+                <App />
+              </AdminProvider>
             </ProducerProvider>
           </BuyerProvider>
         </CartProvider>

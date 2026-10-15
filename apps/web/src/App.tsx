@@ -7,14 +7,10 @@ import { LoadingSkeleton } from './components/LoadingSkeleton';
 import { PublicLayout } from './layouts/PublicLayout';
 import { PrivateLayout } from './layouts/PrivateLayout';
 import { DemoRoute, PrivateIndex } from './features/private-area/DemoRoute';
-import { roles } from './features/auth/types';
 import { BuyerArea, BuyerLoading } from './features/buyer/BuyerPageFrame';
 import { ProducerArea, ProducerLoading } from './features/producer/ProducerPageFrame';
-import {
-  RoleLandingPage,
-  PrivateSectionPage,
-  PrivateNotFoundPage,
-} from './pages/private/PrivatePages';
+import { PrivateNotFoundPage } from './pages/private/PrivatePages';
+import { AdminArea, AdminLoading } from './features/admin/AdminPageFrame';
 import { HomePage } from './pages/HomePage';
 import {
   AuctionDetailPage,
@@ -54,6 +50,17 @@ const ProducerAuctionDetailPage = lazy(
   () => import('./pages/private/producer/ProducerAuctionDetailPage'),
 );
 const ProducerStockPage = lazy(() => import('./pages/private/producer/ProducerStockPage'));
+const AdminDashboardPage = lazy(() => import('./pages/private/admin/AdminDashboardPage'));
+const AdminProducersPage = lazy(() => import('./pages/private/admin/AdminProducersPage'));
+const AdminUsersPage = lazy(() => import('./pages/private/admin/AdminUsersPage'));
+const AdminOrdersPage = lazy(() => import('./pages/private/admin/AdminOrdersPage'));
+const AdminModerationPage = lazy(() => import('./pages/private/admin/AdminModerationPage'));
+const AdminAuctionsPage = lazy(() => import('./pages/private/admin/AdminAuctionsPage'));
+const AdminServicesPage = lazy(() => import('./pages/private/admin/AdminServicesPage'));
+function adminPage(page: ReactNode) {
+  return <Suspense fallback={<AdminLoading />}>{page}</Suspense>;
+}
+
 function producerPage(page: ReactNode) {
   return <Suspense fallback={<ProducerLoading />}>{page}</Suspense>;
 }
@@ -189,15 +196,28 @@ export function App() {
               <Route path="*" element={<PrivateNotFoundPage home="/area/produtor" />} />
             </Route>
           </Route>
-          {roles
-            .filter((role) => role === 'administrador')
-            .map((role) => (
-              <Route key={role} path={role} element={<DemoRoute role={role} />}>
-                <Route index element={<RoleLandingPage role={role} />} />
-                <Route path=":section" element={<PrivateSectionPage role={role} />} />
-                <Route path="*" element={<PrivateNotFoundPage home={`/area/${role}`} />} />
-              </Route>
-            ))}
+          <Route path="administrador" element={<DemoRoute role="administrador" />}>
+            <Route element={<AdminArea />}>
+              <Route index element={adminPage(<AdminDashboardPage />)} />
+              <Route path="candidaturas" element={adminPage(<AdminProducersPage applications />)} />
+              <Route
+                path="candidaturas/:id"
+                element={adminPage(<AdminProducersPage applications detail />)}
+              />
+              <Route path="produtores" element={adminPage(<AdminProducersPage />)} />
+              <Route path="produtores/:id" element={adminPage(<AdminProducersPage detail />)} />
+              <Route path="utilizadores" element={adminPage(<AdminUsersPage />)} />
+              <Route path="utilizadores/:id" element={adminPage(<AdminUsersPage detail />)} />
+              <Route path="encomendas" element={adminPage(<AdminOrdersPage />)} />
+              <Route path="encomendas/:id" element={adminPage(<AdminOrdersPage detail />)} />
+              <Route path="moderacao" element={adminPage(<AdminModerationPage />)} />
+              <Route path="moderacao/:id" element={adminPage(<AdminModerationPage detail />)} />
+              <Route path="leiloes" element={adminPage(<AdminAuctionsPage />)} />
+              <Route path="leiloes/:id" element={adminPage(<AdminAuctionsPage detail />)} />
+              <Route path="servicos" element={adminPage(<AdminServicesPage />)} />
+              <Route path="*" element={<PrivateNotFoundPage home="/area/administrador" />} />
+            </Route>
+          </Route>
           <Route path="*" element={<PrivateNotFoundPage />} />
         </Route>
       </Route>

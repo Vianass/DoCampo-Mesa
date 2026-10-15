@@ -73,6 +73,12 @@ export const privateSections: Record<Role, readonly PrivateSection[]> = {
       requirement: 'RF-AUT-04',
     },
     {
+      slug: 'produtores',
+      label: 'Produtores',
+      description: 'Consultar produtores e os seus estados demonstrativos.',
+      requirement: 'RF-AUT-04; RF-ADM-01',
+    },
+    {
       slug: 'utilizadores',
       label: 'Utilizadores',
       description: 'Consultar a visão global dos utilizadores do mercado.',
@@ -99,7 +105,8 @@ export const privateSections: Record<Role, readonly PrivateSection[]> = {
     {
       slug: 'servicos',
       label: 'Estado dos serviços',
-      description: 'Consultar observações futuras dos serviços, sem métricas simuladas.',
+      description:
+        'Consultar estados simulados, distinguidos da monitorização real não implementada.',
       requirement: 'RF-ADM-02',
     },
   ],
@@ -122,6 +129,14 @@ export function demoDestination(raw: string | null, role: Role) {
     (/^\/area\/produtor\/(encomendas|leiloes)\/[a-z0-9-]+$/.test(raw) ||
       /^\/area\/produtor\/produtos\/[a-z0-9-]+(?:\/editar)?$/.test(raw) ||
       raw === '/area/produtor/perfil/pre-visualizacao')
+  )
+    return raw;
+  if (
+    role === 'administrador' &&
+    raw &&
+    /^\/area\/administrador\/(candidaturas|produtores|utilizadores|encomendas|moderacao|leiloes)\/[a-z0-9-]+$/.test(
+      raw,
+    )
   )
     return raw;
   return raw && allowed.includes(raw) ? raw : home;
