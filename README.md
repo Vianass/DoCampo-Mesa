@@ -2,9 +2,9 @@
 
 Mercado digital de produtores agrícolas locais, com encomendas e leilões em tempo real.
 
-**Estado atual: Fase 2.3 — Carrinho de Compras.** O frontend inclui a homepage editorial, o catálogo interativo de 36 produtos, detalhes com galeria, sete perfis fictícios e um carrinho com várias origens e persistência local. O monorepo usa npm workspaces. Os nove documentos da Fase 0 estão preservados integralmente.
+**Estado atual: Fase 2.4.1 — Interface de Autenticação e Estrutura da Área Privada.** O frontend inclui o mercado público, o carrinho com persistência local, formulários de acesso/registo/recuperação e percursos demonstrativos de comprador, produtor e administrador. O monorepo usa npm workspaces. Os nove documentos da Fase 0 estão preservados integralmente.
 
-Os dados são fictícios e existem apenas no frontend. Não estão implementados autenticação, endpoints, MongoDB, compras, leilões em tempo real ou recursos Cloud. As Fases 2.1 e 2.2 foram publicadas na feature branch com autorização explícita. As alterações da Fase 2.3 permanecem locais; operações Git de escrita e a fase seguinte dependem de autorização explícita do utilizador.
+Os dados são fictícios e existem apenas no frontend. Não estão implementados autenticação real, endpoints, MongoDB, compras, leilões em tempo real ou recursos Cloud. As Fases 2.1, 2.2 e 2.3 foram publicadas na feature branch com autorização explícita. As alterações da Fase 2.4.1 permanecem locais; operações Git de escrita e a fase seguinte dependem de autorização explícita do utilizador.
 
 ## Contexto académico
 
@@ -71,10 +71,10 @@ Consultar a [visão global](docs/architecture/system-overview.md), os [diagramas
 │   │   ├── public/          # Favicon, fotografias WebP e créditos
 │   │   ├── src/
 │   │   │   ├── components/ # Componentes tipados e marca
-│   │   │   ├── layouts/    # Layout público e navegação
-│   │   │   ├── pages/      # Homepage e páginas demonstrativas
+│   │   │   ├── layouts/    # Layout público, layout privado e navegação
+│   │   │   ├── pages/      # Mercado, auth/ e private/ demonstrativos
 │   │   │   ├── data/       # Produtos, produtores e leilão fictícios
-│   │   │   ├── features/   # Seleção, filtros e paginação do catálogo
+│   │   │   ├── features/   # Catálogo, mercado, cart/, auth/ e private-area/
 │   │   │   ├── types/      # Modelo tipado de produto e dados de apresentação
 │   │   │   └── styles/     # Tokens, mixins e parciais SCSS
 │   │   ├── tests/          # Testes de browser Playwright
@@ -119,7 +119,7 @@ Consultar a [visão global](docs/architecture/system-overview.md), os [diagramas
 | [Modelo de dados](docs/database/data-model.md)                                | Coleções, validação, referências, documentos embebidos, índices e relações                            |
 | [Plano de implementação](docs/planning/implementation-plan.md)                | Sete semanas, dependências, entregáveis, testes e marcos Git                                          |
 
-O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, componentes, comportamento responsivo e decisões de acessibilidade das Fases 1, 2.1, 2.2 e 2.3. Os [créditos das fotografias](apps/web/public/images/credits.md) registam autores, fontes e licença. As fotografias são ilustrativas e não comprovam a origem dos produtores fictícios.
+O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, componentes, comportamento responsivo e decisões de acessibilidade até à Fase 2.4.1, incluindo a rastreabilidade dos percursos demonstrativos aos requisitos da Fase 0. Os [créditos das fotografias](apps/web/public/images/credits.md) registam autores, fontes e licença. As fotografias são ilustrativas e não comprovam a origem dos produtores fictícios.
 
 ## Implementação disponível
 
@@ -136,21 +136,29 @@ O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, c
 - Componentes `Breadcrumbs`, `ProductGallery`, `MarketImage`, `ProducerMap` e `ReviewCard`; loading real dos módulos e recuperação específica de IDs inválidos.
 - Carrinho em React Context com adição desde cartões e detalhe, quantidades inteiras, remoção, agrupamento por produtor, subtotais/total em cêntimos e badge no header.
 - Persistência local versionada, recuperação de dados inválidos/antigos, reconciliação de preço/stock e funcionamento em memória quando o armazenamento falha.
+- Formulários demonstrativos de entrada, registo comprador/produtor e recuperação, com validação reutilizável, visibilidade da palavra-passe, feedback e indicação de indisponibilidade real.
+- Sessão de demonstração apenas em memória, escolha explícita de papel, navegação tipada, layout privado editorial e placeholders específicos sem operações de negócio.
 - Tokens SCSS e Bootstrap personalizado, com breakpoints de 768, 1024 e 1280 px.
 
-| Rota                    | Conteúdo                                                         |
-| ----------------------- | ---------------------------------------------------------------- |
-| `/`                     | Homepage                                                         |
-| `/produtos`             | Catálogo interativo com pesquisa, filtros, ordenação e paginação |
-| `/produtos/:id`         | Detalhe editorial com galeria e produtos relacionados            |
-| `/produtores`           | Diretório editorial dos sete produtores fictícios                |
-| `/produtores/:id`       | História, produção, produtos, localização e avaliações           |
-| `/carrinho`             | Cesta com quantidades, várias origens e totais demonstrativos    |
-| `/leiloes`              | Proposta visual dos leilões                                      |
-| `/leiloes/cabaz-outono` | Detalhe do lote fictício; licitação indisponível                 |
-| `/como-funciona`        | Conceito do mercado e âmbito demonstrativo                       |
-| `/entrar` e `/registo`  | Páginas informativas; sem formulário de autenticação/registo     |
-| `/sistema-visual`       | Galeria dos componentes e da paleta                              |
+| Rota                       | Conteúdo                                                                           |
+| -------------------------- | ---------------------------------------------------------------------------------- |
+| `/`                        | Homepage                                                                           |
+| `/produtos`                | Catálogo interativo com pesquisa, filtros, ordenação e paginação                   |
+| `/produtos/:id`            | Detalhe editorial com galeria e produtos relacionados                              |
+| `/produtores`              | Diretório editorial dos sete produtores fictícios                                  |
+| `/produtores/:id`          | História, produção, produtos, localização e avaliações                             |
+| `/carrinho`                | Cesta com quantidades, várias origens e totais demonstrativos                      |
+| `/leiloes`                 | Proposta visual dos leilões                                                        |
+| `/leiloes/cabaz-outono`    | Detalhe do lote fictício; licitação indisponível                                   |
+| `/como-funciona`           | Conceito do mercado e âmbito demonstrativo                                         |
+| `/entrar`                  | Formulário de acesso indisponível e escolha separada de papel demonstrativo        |
+| `/registo`                 | Prévia do registo comprador; `?perfil=produtor` apresenta candidatura              |
+| `/recuperar-palavra-passe` | Interface informativa, sem email ou reposição real                                 |
+| `/area`                    | Encaminhamento para o papel demonstrativo atual                                    |
+| `/area/comprador`          | Estrutura de encomendas, avaliações e licitações; ligação à cesta                  |
+| `/area/produtor`           | Estrutura de candidatura, produtos, perfil, encomendas, leilões e indicadores      |
+| `/area/administrador`      | Estrutura de candidaturas, utilizadores, encomendas, leilões, moderação e serviços |
+| `/sistema-visual`          | Galeria dos componentes e da paleta                                                |
 
 Rotas e IDs inexistentes apresentam uma página de recuperação. Preços, disponibilidade e tempos de leilão são fictícios. O carrinho é local e demonstrativo. Não existem encomendas ou ligação a API. As regras comerciais definitivas continuam pendentes de validação.
 
@@ -168,7 +176,9 @@ As opções são derivadas dos mocks e não fixam taxonomias finais da API. As f
 
 **Fase 2.2, concluída:** detalhes de produtos e perfis de produtores, validados e publicados em cinco commits autorizados na feature branch.
 
-**Fase 2.3, atual:** carrinho demonstrativo com várias origens, Context e persistência local, sem checkout. O trabalho permanece local na branch já existente `feat/project-setup-design-system`, sem staging, commit, push, criação de branches ou merge automáticos. O utilizador tem controlo exclusivo dessas operações. Este trabalho não constitui conclusão dos marcos M1–M3 do projeto completo.
+**Fase 2.3, concluída:** carrinho demonstrativo com várias origens, Context e persistência local, sem checkout; validado e publicado em cinco commits autorizados na feature branch.
+
+**Fase 2.4.1, atual:** formulários e sessão de demonstração, navegação e estrutura privada por papel. Não inclui as funcionalidades das Fases 2.4.2–2.4.4. O trabalho permanece local na branch já existente `feat/project-setup-design-system`, sem staging, commit, push, criação de branches ou merge automáticos. O utilizador tem controlo exclusivo dessas operações. Este trabalho não constitui conclusão dos marcos M1–M3 do projeto completo.
 
 O desenvolvimento restante, sujeito a aprovação da fase seguinte, mantém o calendário do enunciado:
 
@@ -198,7 +208,7 @@ npm run dev
 
 Abrir `http://127.0.0.1:5173/`. O servidor usa apenas loopback; não é publicado na Cloud. Parar com `Ctrl+C`.
 
-Enquanto a Fase 2.3 não for publicada com autorização do utilizador, clonar a feature branch remota recupera a versão validada da Fase 2.2. Para testar o trabalho local atual, adicionar produtos desde `/produtos` ou `/produtos/tomate-coracao` e abrir `/carrinho`.
+Enquanto a Fase 2.4.1 não for publicada com autorização do utilizador, clonar a feature branch remota recupera a versão validada da Fase 2.3. Para testar o trabalho local atual, abrir `/entrar` e escolher um dos três papéis em «Explorar sem conta». Não é necessário preencher credenciais. Experimentar também `/registo?perfil=produtor`, o menu privado móvel e a saída da demonstração. A cesta mantém-se ao entrar/sair; recarregar termina apenas a sessão demonstrativa.
 
 ```bash
 npm run typecheck    # Validação TypeScript strict
@@ -228,7 +238,23 @@ Quantidades representam unidades comerciais inteiras. No campo de edição, Ente
 
 Esta demonstração aceita vários produtores por pedido da Fase 2.3; a futura divisão de encomendas continua dependente de Q02. Quantidades fracionárias (Q03), checkout, confirmação de preços (Q06) e stock autoritativo (D08) serão resolvidos na integração com a API. A persistência não sincroniza separadores ou dispositivos. Consultar [pressupostos e arquitetura do carrinho](docs/design/design-system.md#fase-23--pressupostos-do-carrinho-antes-da-implementação).
 
+## Entrada e área privada demonstrativas
+
+Os papéis seguem `users.papel` da Fase 0: **comprador, produtor e administrador**; visitante é ausência de sessão. O registo só apresenta comprador/produtor. Nome e email seguem `users`; a candidatura acrescenta nome público e localidade de `producers`, com informação sobre decisão administrativa. Não existe registo administrativo, aprovação automática, candidatura efetivamente submetida ou mecanismo legal de aceitação inventado.
+
+`AuthProvider`, `AuthContext` e `useAuth` isolam a sessão `{ kind: 'visitor' } | { kind: 'demonstration', role }`. Só os botões de demonstração iniciam esta sessão; os formulários nunca autenticam nem criam contas. Não há JWT, hash, API, identidade pessoal no Context ou persistência de sessão/credenciais. Sair ou recarregar repõe o visitante. O `CartProvider` continua montado e independente.
+
+A validação partilhada verifica presença, formato de email e confirmação; no registo usa provisoriamente oito caracteres sem regras de composição. O login exige apenas uma palavra-passe não vazia. O estado «A verificar» corresponde à verificação local, sem rede ou atraso artificial. Após submissão válida, campos de palavra-passe ficam vazios e surge a indisponibilidade da operação. Usa apenas dados fictícios. A recuperação é uma interface solicitada nesta fase, não uma obrigação adicional do enunciado; nunca envia email.
+
+`DemoRoute` orienta a navegação: sem sessão, `/entrar?destino=...`; com papel incompatível, mensagem e recuperação sem trocar o papel; percursos desconhecidos, estado de página não encontrada. Só destinos internos conhecidos do papel podem ser retomados. `PrivateLayout` oferece identidade, papel visível, navegação desktop/móvel, saída e ligação ao mercado. As secções configuradas em `features/private-area/navigation.ts` são placeholders sem métricas ou operações.
+
+Esta guarda do frontend **não é uma fronteira de segurança**. Na integração futura, a API REST validará credenciais, hashes e expiração e imporá papel/propriedade/aprovação atuais no servidor. Q01 (papéis), Q04 (produtores pendentes) e Q13 (sessão) continuam por validar para contas reais; esta demonstração não fecha essas decisões. A [análise e rastreabilidade da Fase 2.4.1](docs/design/design-system.md#fase-241--análise-e-pressupostos-antes-da-implementação) distingue interfaces presentes e operações futuras.
+
 ## Validação e limitações
+
+Os testes da Fase 2.4.1 verificam formulários, papéis, destinos, sessão em memória, saída, menu privado e preservação do carrinho, incluindo submissões que nunca autenticam nem enviam dados. Um cenário histórico de indisponibilidade do registo foi adaptado aos novos campos, mantendo as restantes verificações.
+
+Execução final em 15 de outubro de 2026: **141 testes aprovados**, sem retries (32 novos e 109 cenários anteriores). TypeScript, ESLint, Prettier e build passaram. Os nove documentos da Fase 0 mantêm os hashes iniciais.
 
 TypeScript, ESLint, Prettier, build de produção e testes de browser são executáveis pelos comandos acima. Os testes do carrinho incluem operações, agrupamento, cálculos, persistência, stock reduzido, JSON inválido, IDs antigos, falhas de localStorage e interação móvel. A suite usa Playwright tanto para testes de funções puras do catálogo como para percursos em Chrome. Abrange pesquisa, todos os filtros, ordenações, paginação, URL/back/forward, loading, painel móvel, detalhes, galeria por teclado/fallback, perfis, reviews, navegação, imagens e regressões da homepage. Larguras verificadas: 320/430/768/1024/1280/1440 px. A inspeção visual utiliza capturas efetivas do Chrome; não se declara certificação de acessibilidade ou cobertura de Safari/Firefox.
 
@@ -236,7 +262,7 @@ O carrinho persiste apenas neste browser via localStorage. Não há persistênci
 
 ## Assistência de inteligência artificial
 
-Foi utilizado o assistente **Codex, da OpenAI**, como apoio à análise do enunciado, à documentação da Fase 0, à configuração Git e à implementação/verificação do frontend das Fases 1, 2.1, 2.2 e 2.3. A skill Sites apoiou o fluxo de desenvolvimento local e a preparação de assets; não foi criada uma publicação em Sites. As propostas e o código produzidos com apoio de IA devem ser revistos e validados pelo estudante, que mantém a responsabilidade pelas decisões, pelo trabalho individual e pela explicação das soluções na defesa.
+Foi utilizado o assistente **Codex, da OpenAI**, como apoio à análise do enunciado, à documentação da Fase 0, à configuração Git e à implementação/verificação do frontend até à Fase 2.4.1. A skill Sites apoiou o fluxo de desenvolvimento local e a preparação de assets; não foi criada uma publicação em Sites. As propostas e o código produzidos com apoio de IA devem ser revistos e validados pelo estudante, que mantém a responsabilidade pelas decisões, pelo trabalho individual e pela explicação das soluções na defesa.
 
 A declaração de uso de IA e bibliotecas deverá também constar do relatório final, conforme o enunciado. O apoio recebido não substitui a compreensão e validação do projeto pelo autor.
 
