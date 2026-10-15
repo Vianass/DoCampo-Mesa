@@ -15,6 +15,7 @@ export function MobileNavigation({ open, onNavigate }: { open: boolean; onNaviga
         {[
           { to: '/produtos', label: 'Produtos', caption: 'Descobre os sabores da época' },
           { to: '/produtores', label: 'Produtores', caption: 'Conhece quem está na origem' },
+          { to: '/carrinho', label: 'Carrinho', caption: 'Reúne os teus próximos sabores' },
           { to: '/leiloes', label: 'Leilões', caption: 'Colheitas com uma nova oportunidade' },
           {
             to: '/como-funciona',

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { CartNotices } from '../features/cart/CartNotices';
 
 export function PublicLayout() {
   const location = useLocation();
@@ -18,6 +19,7 @@ export function PublicLayout() {
         Saltar para o conteúdo
       </a>
       <Header />
+      <CartNotices />
       <main id="conteudo" tabIndex={-1}>
         <Outlet />
       </main>

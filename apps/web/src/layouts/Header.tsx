@@ -6,8 +6,10 @@ import { Container } from '../components/Container';
 import { Icon } from '../components/Icon';
 import { DesktopNavigation } from './DesktopNavigation';
 import { MobileNavigation } from './MobileNavigation';
+import { useCart } from '../features/cart/useCart';
 
 export function Header() {
+  const { itemCount } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -37,8 +39,22 @@ export function Header() {
           <Brand />
           <DesktopNavigation />
           <div className="header-actions">
-            <Link to="/produtos?pesquisa=" className="icon-button" aria-label="Pesquisar produtos">
+            <Link
+              to="/produtos?pesquisa="
+              className="icon-button header-search"
+              aria-label="Pesquisar produtos"
+            >
               <Icon name="search" />
+            </Link>
+            <Link
+              to="/carrinho"
+              className="icon-button header-cart"
+              aria-label={`Carrinho, ${itemCount} ${itemCount === 1 ? 'unidade' : 'unidades'}`}
+            >
+              <Icon name="basket" />
+              <span className="header-cart__count" aria-hidden="true">
+                {itemCount}
+              </span>
             </Link>
             <Link to="/entrar" className="header-actions__login">
               Entrar

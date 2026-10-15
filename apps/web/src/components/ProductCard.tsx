@@ -4,6 +4,7 @@ import { Icon } from './Icon';
 import { MarketImage } from './MarketImage';
 import { PriceDisplay } from './PriceDisplay';
 import { StatusBadge } from './StatusBadge';
+import { AddToCart } from '../features/cart/AddToCart';
 
 export function ProductCard({ product }: { product: Product }) {
   return (
@@ -56,6 +57,7 @@ export function ProductCard({ product }: { product: Product }) {
             ? `Disponível · ${product.availableStock} em stock`
             : 'Esgotado'}
         </p>
+        <AddToCart product={product} />
       </div>
     </article>
   );

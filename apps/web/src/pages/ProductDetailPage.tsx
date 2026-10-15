@@ -11,6 +11,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { products, producers } from '../data/market';
 import { EntityNotFound } from '../features/market/EntityNotFound';
 import { relatedProducts } from '../features/market/selectors';
+import { AddToCart } from '../features/cart/AddToCart';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -92,6 +93,7 @@ export default function ProductDetailPage() {
                 </div>
               </div>
             )}
+            <AddToCart product={product} detailed />
             <p className="product-detail-demo">
               Produto e produtor fictícios. Preços, stock e indicação biológica são exemplos; não
               representam uma certificação verificada. As compras ainda não estão disponíveis.
