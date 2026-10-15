@@ -4,6 +4,8 @@ Fotografias ilustrativas para o protótipo «Do Campo à Mesa». As imagens não
 
 As fotografias acrescentadas na Fase 2.1 têm um registo separado em [créditos do catálogo](catalog/credits.md). O placeholder `product-placeholder.svg` foi criado em código para o projeto e identifica fotografias ainda indisponíveis.
 
+As duas fotografias distintas acrescentadas às galerias da Fase 2.2 têm [créditos próprios](details/credits.md).
+
 As páginas de origem e a [licença oficial Unsplash](https://unsplash.com/license) foram verificadas em 15 de outubro de 2026. Cada página identifica a fotografia como gratuita ao abrigo da Unsplash License, sem subscrição Unsplash+. Esta licença permite descarregar, copiar, modificar e distribuir as imagens, incluindo para fins comerciais. Não permite vender as imagens sem alterações significativas nem compilar uma biblioteca que concorra com o Unsplash. A atribuição é facultativa pela licença; este registo preserva a autoria.
 
 ## Ficheiros e fontes
