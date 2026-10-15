@@ -79,7 +79,10 @@ test('destinos dos cartões e limites de contas/leilões', async ({ page }) => {
   await expect(
     page.getByRole('heading', { level: 1, name: 'Tomate coração-de-boi' }),
   ).toBeVisible();
-  await page.getByRole('link', { name: 'Horta da Ribeira', exact: true }).click();
+  await page
+    .locator('.product-origin-card')
+    .getByRole('link', { name: 'Horta da Ribeira', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/produtores\/horta-ribeira$/);
   await page.goto('/leiloes/cabaz-outono');
   await expect(page.getByRole('button', { name: 'Licitações ainda indisponíveis' })).toBeDisabled();

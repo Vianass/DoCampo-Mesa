@@ -1,13 +1,21 @@
 import { Link } from 'react-router';
 import type { Producer } from '../data/market';
 import { Icon } from './Icon';
+import { MarketImage } from './MarketImage';
+import type { ProductCategory } from '../types/market';
 
-export function ProducerCard({ producer }: { producer: Producer }) {
+export function ProducerCard({
+  producer,
+  categories,
+}: {
+  producer: Producer;
+  categories?: readonly ProductCategory[];
+}) {
   return (
     <article className="producer-card">
       <Link to={`/produtores/${producer.id}`} className="producer-card__link">
         <div className="producer-card__image">
-          <img
+          <MarketImage
             src={producer.image}
             alt={producer.imageAlt}
             width="800"
@@ -29,6 +37,19 @@ export function ProducerCard({ producer }: { producer: Producer }) {
             <Icon name="diagonal" />
           </span>
         </div>
+        {categories && (
+          <div className="producer-card__editorial">
+            <p>{producer.description}</p>
+            <ul aria-label={`Categorias de ${producer.name}`}>
+              {categories.map((category) => (
+                <li key={category}>{category}</li>
+              ))}
+            </ul>
+            <span>
+              Conhecer esta história <Icon name="arrow" />
+            </span>
+          </div>
+        )}
       </Link>
     </article>
   );

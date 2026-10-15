@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import { AuctionCard } from '../components/AuctionCard';
 import { Button } from '../components/Button';
 import { CategoryPill } from '../components/CategoryPill';
@@ -11,9 +11,9 @@ import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { PriceDisplay } from '../components/PriceDisplay';
 import { ProductCard } from '../components/ProductCard';
 import { ProducerCard } from '../components/ProducerCard';
-import { SectionHeading } from '../components/SectionHeading';
 import { StatusBadge } from '../components/StatusBadge';
 import { auction, producers, products } from '../data/market';
+import { producerCategories } from '../features/market/selectors';
 
 function PageIntro({
   eyebrow,
@@ -41,106 +41,17 @@ export function ProducersPage() {
         title="Boas coisas começam com pessoas."
         description="Conhece histórias imaginadas para o nosso mercado demonstrativo. Fotografias ilustrativas, perfis fictícios."
       />
-      <section className="catalog-results" aria-labelledby="producer-list-title">
+      <section className="catalog-results producer-directory" aria-labelledby="producer-list-title">
         <h2 className="visually-hidden" id="producer-list-title">
-          Produtores em destaque
+          Histórias dos produtores
         </h2>
         <div className="producer-grid">
           {producers.map((producer) => (
-            <ProducerCard key={producer.id} producer={producer} />
-          ))}
-        </div>
-      </section>
-    </Container>
-  );
-}
-
-export function ProductDetailPage() {
-  const { id } = useParams();
-  const product = products.find((item) => item.id === id);
-  if (!product) return <NotFoundPage />;
-  return (
-    <Container>
-      <Link className="back-link" to="/produtos">
-        ← Voltar ao mercado
-      </Link>
-      <article className="detail-grid">
-        <img
-          className="detail-image"
-          src={product.images[0].src}
-          alt={product.images[0].alt}
-          width="800"
-          height="800"
-        />
-        <div className="detail-copy">
-          <p className="eyebrow">
-            {product.category} · {product.producerLocation}
-          </p>
-          <h1>{product.name}</h1>
-          {product.organic && <StatusBadge tone="organic">Biológico</StatusBadge>}
-          <p>{product.description}</p>
-          <PriceDisplay amountCents={product.priceCents} unit={product.unit} large />
-          <div className="detail-origin">
-            <Icon name="leaf" />
-            <div>
-              <span>Na origem</span>
-              <Link to={`/produtores/${product.producerId}`}>
-                {product.producerName}
-                <Icon name="diagonal" />
-              </Link>
-            </div>
-          </div>
-          <p className="demo-note">
-            Produto demonstrativo. As compras ainda não estão disponíveis.
-          </p>
-          <Button to="/produtos" variant="secondary">
-            Continuar a explorar
-            <Icon name="arrow" />
-          </Button>
-        </div>
-      </article>
-    </Container>
-  );
-}
-
-export function ProducerDetailPage() {
-  const { id } = useParams();
-  const producer = producers.find((item) => item.id === id);
-  if (!producer) return <NotFoundPage />;
-  const selection = products.filter((product) => product.producerId === producer.id);
-  return (
-    <Container>
-      <Link className="back-link" to="/produtores">
-        ← Conhecer outros produtores
-      </Link>
-      <article className="detail-grid producer-detail">
-        <img
-          className="detail-image"
-          src={producer.image}
-          alt={producer.imageAlt}
-          width="800"
-          height="800"
-        />
-        <div className="detail-copy">
-          <p className="eyebrow">{producer.specialty}</p>
-          <h1>{producer.name}</h1>
-          <p className="location-label">
-            <Icon name="location" />
-            {producer.locality}
-          </p>
-          <p>{producer.description}</p>
-          <p className="demo-note">Perfil fictício. A fotografia não representa esta exploração.</p>
-        </div>
-      </article>
-      <section className="market-section" aria-labelledby="producer-products-title">
-        <SectionHeading
-          id="producer-products-title"
-          eyebrow="Destaque da casa"
-          title="Daqui para a tua cozinha."
-        />
-        <div className="product-grid">
-          {selection.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProducerCard
+              key={producer.id}
+              producer={producer}
+              categories={producerCategories(products, producer.id)}
+            />
           ))}
         </div>
       </section>

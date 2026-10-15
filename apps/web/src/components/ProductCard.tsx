@@ -1,15 +1,20 @@
 import { Link } from 'react-router';
 import type { Product } from '../data/market';
 import { Icon } from './Icon';
+import { MarketImage } from './MarketImage';
 import { PriceDisplay } from './PriceDisplay';
 import { StatusBadge } from './StatusBadge';
 
 export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="product-card">
-      <Link to={`/produtos/${product.id}`} className="product-card__link">
+      <Link
+        to={`/produtos/${product.id}`}
+        className="product-card__link"
+        aria-label={`Ver ${product.name}`}
+      >
         <div className="product-card__image">
-          <img
+          <MarketImage
             src={product.images[0].src}
             alt={product.images[0].alt}
             width="800"
@@ -30,26 +35,28 @@ export function ProductCard({ product }: { product: Product }) {
             <Icon name="diagonal" />
           </span>
         </div>
-        <div className="product-card__body">
-          <p className="product-card__origin">
-            {product.producerName}
-            <span className="product-card__locality">
-              <Icon name="location" width="12" height="12" />
-              {product.producerLocation}
-            </span>
-          </p>
-          <h3>{product.name}</h3>
-          <PriceDisplay amountCents={product.priceCents} unit={product.unit} />
-          <p
-            className={`product-card__stock ${product.availableStock === 0 ? 'product-card__stock--empty' : ''}`}
-          >
-            <span aria-hidden="true" />
-            {product.availableStock > 0
-              ? `Disponível · ${product.availableStock} em stock`
-              : 'Esgotado'}
-          </p>
-        </div>
       </Link>
+      <div className="product-card__body">
+        <p className="product-card__origin">
+          <Link to={`/produtores/${product.producerId}`}>{product.producerName}</Link>
+          <span className="product-card__locality">
+            <Icon name="location" width="12" height="12" />
+            {product.producerLocation}
+          </span>
+        </p>
+        <h3>
+          <Link to={`/produtos/${product.id}`}>{product.name}</Link>
+        </h3>
+        <PriceDisplay amountCents={product.priceCents} unit={product.unit} />
+        <p
+          className={`product-card__stock ${product.availableStock === 0 ? 'product-card__stock--empty' : ''}`}
+        >
+          <span aria-hidden="true" />
+          {product.availableStock > 0
+            ? `Disponível · ${product.availableStock} em stock`
+            : 'Esgotado'}
+        </p>
+      </div>
     </article>
   );
 }

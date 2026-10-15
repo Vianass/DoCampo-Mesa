@@ -313,63 +313,10 @@
     margin: 0 0 20px;
   }
 }
-.back-link {
-  display: inline-flex;
-  padding-block: 20px;
-  min-height: 44px;
-  font-size: 0.8rem;
-  margin-top: 20px;
-}
-.detail-grid {
-  display: grid;
-  gap: 30px;
-  padding-block: 10px 70px;
-}
-.detail-image {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: t.$radius-large;
-}
-.detail-copy {
-  h1 {
-    font-size: clamp(2.7rem, 4.5vw, 4.5rem);
-    margin-bottom: 20px;
-  }
-  & > p:not(.eyebrow) {
-    color: t.$muted;
-    margin-top: 24px;
-  }
-  & > .price-display {
-    margin-block: 10px 26px;
-  }
-}
-.detail-origin {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding-block: 22px;
-  border-top: 1px solid t.$line;
-  span {
-    display: block;
-    font-size: 0.7rem;
-    color: t.$muted;
-  }
-  a {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-family: t.$font-heading;
-    font-size: 1.5rem;
-  }
-}
 .location-label {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-.producer-detail {
-  padding-bottom: 0;
 }
 .auction-detail {
   display: grid;
@@ -547,7 +494,6 @@
     flex-direction: column;
     align-items: center;
   }
-  .detail-grid,
   .auction-detail,
   .story-grid {
     grid-template-columns: 1fr 1fr;
@@ -645,9 +591,6 @@
   }
   .final-cta {
     padding-block: 64px;
-  }
-  .detail-grid {
-    gap: 64px;
   }
 }
 @include m.from(xl) {

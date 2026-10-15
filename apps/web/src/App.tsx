@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router';
 import { CatalogLoadingPage } from './features/catalog/CatalogLoadingPage';
+import { DetailLoadingPage } from './features/market/DetailLoadingPage';
 import { PublicLayout } from './layouts/PublicLayout';
 import { HomePage } from './pages/HomePage';
 import {
@@ -10,12 +11,12 @@ import {
   DesignSystemPage,
   HowItWorksPage,
   NotFoundPage,
-  ProducerDetailPage,
   ProducersPage,
-  ProductDetailPage,
 } from './pages/MarketPages';
 
 const ProductsPage = lazy(() => import('./pages/ProductsPage'));
+const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'));
+const ProducerDetailPage = lazy(() => import('./pages/ProducerDetailPage'));
 
 export function App() {
   return (
@@ -30,9 +31,23 @@ export function App() {
             </Suspense>
           }
         />
-        <Route path="produtos/:id" element={<ProductDetailPage />} />
+        <Route
+          path="produtos/:id"
+          element={
+            <Suspense fallback={<DetailLoadingPage kind="product" />}>
+              <ProductDetailPage />
+            </Suspense>
+          }
+        />
         <Route path="produtores" element={<ProducersPage />} />
-        <Route path="produtores/:id" element={<ProducerDetailPage />} />
+        <Route
+          path="produtores/:id"
+          element={
+            <Suspense fallback={<DetailLoadingPage kind="producer" />}>
+              <ProducerDetailPage />
+            </Suspense>
+          }
+        />
         <Route path="leiloes" element={<AuctionsPage />} />
         <Route path="leiloes/:id" element={<AuctionDetailPage />} />
         <Route path="como-funciona" element={<HowItWorksPage />} />
