@@ -2,9 +2,9 @@
 
 Mercado digital de produtores agrícolas locais, com encomendas e leilões em tempo real.
 
-**Estado atual: Fase 2.1 — Catálogo de Produtos.** O frontend inclui a homepage editorial, o sistema visual e um catálogo interativo com 36 produtos fictícios. O monorepo usa npm workspaces. Os nove documentos da Fase 0 estão preservados integralmente.
+**Estado atual: Fase 2.2 — Detalhes de Produtos e Perfis de Produtores.** O frontend inclui a homepage editorial, o sistema visual, um catálogo interativo de 36 produtos, detalhes com galeria e sete perfis públicos fictícios. O monorepo usa npm workspaces. Os nove documentos da Fase 0 estão preservados integralmente.
 
-Os dados são fictícios e existem apenas no frontend. Não estão implementados autenticação, endpoints, MongoDB, compras, leilões em tempo real ou recursos Cloud. As alterações da Fase 2.1 permanecem locais; operações Git de escrita e a fase seguinte dependem de autorização explícita do utilizador.
+Os dados são fictícios e existem apenas no frontend. Não estão implementados autenticação, endpoints, MongoDB, compras, leilões em tempo real ou recursos Cloud. A Fase 2.1 foi publicada na feature branch com autorização explícita. As alterações da Fase 2.2 permanecem locais; operações Git de escrita e a fase seguinte dependem de autorização explícita do utilizador.
 
 ## Contexto académico
 
@@ -119,7 +119,7 @@ Consultar a [visão global](docs/architecture/system-overview.md), os [diagramas
 | [Modelo de dados](docs/database/data-model.md)                                | Coleções, validação, referências, documentos embebidos, índices e relações                            |
 | [Plano de implementação](docs/planning/implementation-plan.md)                | Sete semanas, dependências, entregáveis, testes e marcos Git                                          |
 
-O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, componentes, comportamento responsivo e decisões de acessibilidade da Fase 1. Os [créditos das fotografias](apps/web/public/images/credits.md) registam autores, fontes e licença. As fotografias são ilustrativas e não comprovam a origem dos produtores fictícios.
+O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, componentes, comportamento responsivo e decisões de acessibilidade das Fases 1, 2.1 e 2.2. Os [créditos das fotografias](apps/web/public/images/credits.md) registam autores, fontes e licença. As fotografias são ilustrativas e não comprovam a origem dos produtores fictícios.
 
 ## Implementação disponível
 
@@ -130,15 +130,19 @@ O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, c
 - Filtros combináveis por categoria, produtor, localidade, época, biológico e preço máximo; indicadores ativos e remoção individual/global.
 - Ordenação por relevância, preço, nome e data; paginação de 12/24/36 produtos e recuperação da seleção ao voltar/avançar ou recarregar o browser.
 - Filtros desktop e painel modal móvel acessível; cartões com localização, preço/unidade, stock e etiqueta biológica; estado vazio e skeleton durante o carregamento real do módulo da página.
+- Detalhes editoriais com breadcrumbs, galeria acessível, disponibilidade, época, descrição, ligação ao produtor e recomendações determinísticas.
+- Perfis públicos com história, métodos de produção, categorias, produtos, avaliações fictícias e média derivada; diretório com sete produtores.
+- Localização ilustrativa sem coordenadas inventadas, alternativa textual e ligação externa à localidade no OpenStreetMap; ausência de contactos públicos explícita.
+- Componentes `Breadcrumbs`, `ProductGallery`, `MarketImage`, `ProducerMap` e `ReviewCard`; loading real dos módulos e recuperação específica de IDs inválidos.
 - Tokens SCSS e Bootstrap personalizado, com breakpoints de 768, 1024 e 1280 px.
 
 | Rota                    | Conteúdo                                                         |
 | ----------------------- | ---------------------------------------------------------------- |
 | `/`                     | Homepage                                                         |
 | `/produtos`             | Catálogo interativo com pesquisa, filtros, ordenação e paginação |
-| `/produtos/:id`         | Detalhe de um produto fictício                                   |
-| `/produtores`           | Produtores fictícios em destaque                                 |
-| `/produtores/:id`       | Perfil demonstrativo e respetivos produtos                       |
+| `/produtos/:id`         | Detalhe editorial com galeria e produtos relacionados            |
+| `/produtores`           | Diretório editorial dos sete produtores fictícios                |
+| `/produtores/:id`       | História, produção, produtos, localização e avaliações           |
 | `/leiloes`              | Proposta visual dos leilões                                      |
 | `/leiloes/cabaz-outono` | Detalhe do lote fictício; licitação indisponível                 |
 | `/como-funciona`        | Conceito do mercado e âmbito demonstrativo                       |
@@ -149,7 +153,7 @@ Rotas e IDs inexistentes apresentam uma página de recuperação. Preços, dispo
 
 Os filtros do catálogo usam `pesquisa`, `categoria`, `produtor`, `localidade`, `epoca`, `bio`, `precoMax`, `ordem`, `pagina` e `porPagina` no URL. `precoMax` é expresso em euros; o modelo usa inteiros `priceCents`, conforme a decisão monetária proposta na Fase 0. A pesquisa e o slider atualizam o URL com substituição da entrada atual para não criar uma entrada de histórico por tecla/movimento; seleções e paginação criam entradas navegáveis.
 
-As opções são derivadas dos mocks e não fixam taxonomias finais da API. As fotografias novas têm [créditos próprios](apps/web/public/images/catalog/credits.md); alguns alimentos usam um placeholder identificado, sem fotografia de outro alimento atribuída indevidamente.
+As opções são derivadas dos mocks e não fixam taxonomias finais da API. As fotografias de catálogo têm [créditos próprios](apps/web/public/images/catalog/credits.md) e as duas fotografias distintas de galeria têm [créditos de detalhe](apps/web/public/images/details/credits.md); alguns alimentos usam um placeholder identificado, sem fotografia de outro alimento atribuída indevidamente.
 
 ## Fases de desenvolvimento
 
@@ -157,7 +161,9 @@ As opções são derivadas dos mocks e não fixam taxonomias finais da API. As f
 
 **Fase 1, concluída:** npm workspaces, configuração do frontend, sistema visual e homepage/páginas demonstrativas.
 
-**Fase 2.1, atual:** catálogo interativo com dados fictícios, sem backend. O trabalho permanece local na branch já existente `feat/project-setup-design-system`, sem staging, commit, push, criação de branches ou merge automáticos. O utilizador tem controlo exclusivo dessas operações. Este trabalho não constitui conclusão dos marcos M1–M3 do projeto completo.
+**Fase 2.1, concluída:** catálogo interativo com dados fictícios, validado e publicado na feature branch através de cinco commits autorizados. Não foi efetuado merge para `main`.
+
+**Fase 2.2, atual:** detalhes de produtos e perfis de produtores, sem backend. O trabalho permanece local na branch já existente `feat/project-setup-design-system`, sem staging, commit, push, criação de branches ou merge automáticos. O utilizador tem controlo exclusivo dessas operações. Este trabalho não constitui conclusão dos marcos M1–M3 do projeto completo.
 
 O desenvolvimento restante, sujeito a aprovação da fase seguinte, mantém o calendário do enunciado:
 
@@ -187,7 +193,7 @@ npm run dev
 
 Abrir `http://127.0.0.1:5173/`. O servidor usa apenas loopback; não é publicado na Cloud. Parar com `Ctrl+C`.
 
-Enquanto as alterações locais da Fase 2.1 não forem publicadas pelo utilizador, clonar a branch remota recupera apenas a versão anteriormente publicada da Fase 1.
+Enquanto a Fase 2.2 não for publicada com autorização do utilizador, clonar a feature branch remota recupera a versão validada da Fase 2.1. Para testar o trabalho local atual, abrir `/produtos/tomate-coracao`, `/produtores/horta-ribeira` e `/produtores`.
 
 ```bash
 npm run typecheck    # Validação TypeScript strict
@@ -209,13 +215,13 @@ PLAYWRIGHT_CHANNEL=chromium npm run test:e2e
 
 ## Validação e limitações
 
-TypeScript, ESLint, Prettier, build de produção e testes de browser são executáveis pelos comandos acima. A suite usa Playwright tanto para testes de funções puras do catálogo como para percursos em Chrome. Abrange pesquisa, todos os filtros, ordenações, paginação, URL/back/forward, loading, painel móvel, imagens e regressões da homepage. Larguras verificadas: 320/430/768/1024/1280/1440 px. A inspeção visual utiliza capturas efetivas do Chrome; não se declara certificação de acessibilidade ou cobertura de Safari/Firefox.
+TypeScript, ESLint, Prettier, build de produção e testes de browser são executáveis pelos comandos acima. A suite usa Playwright tanto para testes de funções puras do catálogo como para percursos em Chrome. Abrange pesquisa, todos os filtros, ordenações, paginação, URL/back/forward, loading, painel móvel, detalhes, galeria por teclado/fallback, perfis, reviews, navegação, imagens e regressões da homepage. Larguras verificadas: 320/430/768/1024/1280/1440 px. A inspeção visual utiliza capturas efetivas do Chrome; não se declara certificação de acessibilidade ou cobertura de Safari/Firefox.
 
-Não há persistência, contas, pagamentos, checkout, mapa integrado, API ou tempo real. Os workspaces API/shared permanecem estruturas iniciais. As questões de negócio da Fase 0 continuam pendentes de validação antes dos módulos correspondentes.
+Não há persistência, contas, pagamentos, checkout, mapa com coordenadas verificadas, API ou tempo real. O mapa do perfil é uma representação ilustrativa com ligação pública à localidade; não inclui serviços pagos, chaves ou iframes externos. As médias são calculadas apenas sobre avaliações fictícias, sem compras verificadas. Não há formulário de submissão de avaliações. Os workspaces API/shared permanecem estruturas iniciais. As questões de negócio da Fase 0 continuam pendentes de validação antes dos módulos correspondentes.
 
 ## Assistência de inteligência artificial
 
-Foi utilizado o assistente **Codex, da OpenAI**, como apoio à análise do enunciado, à documentação da Fase 0, à configuração Git e à implementação/verificação do frontend das Fases 1 e 2.1. A skill Sites apoiou o fluxo de desenvolvimento local e a preparação de assets; não foi criada uma publicação em Sites. As propostas e o código produzidos com apoio de IA devem ser revistos e validados pelo estudante, que mantém a responsabilidade pelas decisões, pelo trabalho individual e pela explicação das soluções na defesa.
+Foi utilizado o assistente **Codex, da OpenAI**, como apoio à análise do enunciado, à documentação da Fase 0, à configuração Git e à implementação/verificação do frontend das Fases 1, 2.1 e 2.2. A skill Sites apoiou o fluxo de desenvolvimento local e a preparação de assets; não foi criada uma publicação em Sites. As propostas e o código produzidos com apoio de IA devem ser revistos e validados pelo estudante, que mantém a responsabilidade pelas decisões, pelo trabalho individual e pela explicação das soluções na defesa.
 
 A declaração de uso de IA e bibliotecas deverá também constar do relatório final, conforme o enunciado. O apoio recebido não substitui a compreensão e validação do projeto pelo autor.
 

@@ -165,7 +165,7 @@ Testes em [catalog.spec.ts](../../apps/web/tests/catalog.spec.ts) e [catalog-mod
 
 Execução final em 15 de outubro de 2026: 39 testes aprovados, sem retries. TypeScript, ESLint, Prettier e build de produção concluíram sem erros. Os nove documentos da Fase 0 mantêm os hashes SHA-256 iniciais e as 54 ligações Markdown locais verificadas resolvem corretamente.
 
-Inspeção efetiva em Chrome: desktop, telemóvel e modal de filtros. Verificações de overflow e navegação a 320, 430, 768, 1024, 1280 e 1440 px. Não há validação formal em Safari/Firefox ou leitores de ecrã. Todos os ficheiros desta fase permanecem locais, sem qualquer operação Git de escrita.
+Inspeção efetiva em Chrome: desktop, telemóvel e modal de filtros. Verificações de overflow e navegação a 320, 430, 768, 1024, 1280 e 1440 px. Não há validação formal em Safari/Firefox ou leitores de ecrã. Durante a implementação, os ficheiros permaneceram locais. Posteriormente, a Fase 2.1 foi publicada em cinco commits na feature branch, com autorização explícita; `main` não foi alterada.
 
 ## Referências técnicas adicionais da Fase 1
 
@@ -175,3 +175,41 @@ Inspeção efetiva em Chrome: desktop, telemóvel e modal de filtros. Verificaç
 - [ESLint — configuração flat](https://eslint.org/docs/latest/use/configure/configuration-files).
 
 Versões efetivamente instaladas constam do lockfile; consultar `npm ls --depth=0`. Referências consultadas durante a Fase 1, em 15 de outubro de 2026.
+
+## Extensão na Fase 2.2 — detalhes e perfis públicos
+
+### Experiências e organização
+
+As rotas existentes mantêm-se. [ProductDetailPage](../../apps/web/src/pages/ProductDetailPage.tsx) apresenta breadcrumbs, fotografia à esquerda e informação à direita desde 1024 px, preço por unidade, stock, indicação biológica demonstrativa, épocas, descrição em dois parágrafos, origem e produtos relacionados. Em telemóvel a fotografia precede a informação. [ProducerDetailPage](../../apps/web/src/pages/ProducerDetailPage.tsx) apresenta capa, imagem representativa, identidade/localidade, história editorial, métodos de produção, categorias, produtos, localização e avaliações. O diretório `/produtores` reutiliza `ProducerCard` e acrescenta descrição e categorias derivadas, sem alterar o conjunto de três destaques da homepage.
+
+`Breadcrumbs`, `ProductGallery`, `MarketImage`, `ProducerMap` e `ReviewCard` são componentes reutilizáveis. `ProductCard` mantém a apresentação e oferece ligações independentes pela fotografia/nome do produto e pelo nome do produtor; não existem anchors aninhados. `SectionHeading`, `PriceDisplay`, `StatusBadge`, `EmptyState`, `LoadingSkeleton` e `Container` são reutilizados.
+
+### Dados e recomendações
+
+[Product e Producer](../../apps/web/src/types/market.ts) conservam os IDs e relações existentes. Os [produtores](../../apps/web/src/data/producers.ts) são a fonte única de nome/localidade, imagem de capa, região, história, métodos e indicador biológico opcional estritamente demonstrativo. `publicContact` é opcional; nenhum perfil atual tem contactos reais ou públicos inventados. Os produtos continuam definidos em `data/market.ts`, com descrição detalhada derivada da descrição existente e de contexto por categoria. Não se altera o preço em cêntimos ou as funções do catálogo.
+
+Seis [avaliações tipadas](../../apps/web/src/data/reviews.ts) pertencem a quatro produtores; os restantes mostram ausência de avaliações, sem média zero fictícia. Nomes, comentários e classificações estão identificados como demonstração, sem compras verificadas. `ReviewCard` apresenta nome público, texto, escala de 1–5, estrelas com alternativa textual e `time`; datas são formatadas em pt-PT e Europe/Lisbon. Não existe submissão, moderação ou persistência. Este modelo de apresentação não implementa os contratos finais de avaliação da Fase 0.
+
+[Funções puras de seleção](../../apps/web/src/features/market/selectors.ts) derivam categorias dos produtos e calculam médias das avaliações associadas. As recomendações excluem o produto atual e priorizam, por esta ordem, categoria comum, produtor comum e número de épocas em comum; empates usam nome pt-PT e ID. A seleção não é aleatória e não altera os arrays originais.
+
+### Galeria, navegação e acessibilidade
+
+`ProductGallery` usa fotografias distintas, um botão nativo por miniatura, `aria-pressed`, `aria-controls`, estado textual da fotografia e setas/Home/End para mudar imagem e foco. Enter/espaço mantêm o comportamento nativo dos botões. Uma única imagem não gera navegação artificial. O estado da galeria reinicia quando muda o produto. `MarketImage` recupera falhas com o placeholder local, alt explícito e reset quando muda a fonte.
+
+Os breadcrumbs usam `nav`, lista ordenada e `aria-current`. Rotas de detalhe usam `React.lazy`/`Suspense` com `DetailLoadingPage`; o skeleton corresponde ao carregamento real do módulo, sem temporizador ou API fictícia. IDs inválidos apresentam `EntityNotFound` específico e uma ligação de recuperação. Produtos ligam ao produtor e perfis aos respetivos produtos; categorias do perfil abrem o catálogo com produtor/categoria combinados. Browser Back/Forward preserva a seleção do catálogo em query parameters.
+
+Foco visível, controlos principais de pelo menos 44 px, headings com uma única h1, imagens com dimensões/proporções reservadas, descrição textual de stock/épocas e movimento reduzido reutilizam o sistema existente. O parcial [SCSS de detalhes](../../apps/web/src/styles/_details.scss) mantém os tokens e os breakpoints 768/1024/1280 px; os estilos das antigas páginas de detalhe foram removidos por já não serem usados.
+
+### Localização, fotografia e limites
+
+`ProducerMap` é um desenho vetorial original, explicitamente ilustrativo, com localidade/região em texto e alternativa acessível. Não é um mapa geográfico nem um marcador de uma exploração real; não se inventam coordenadas, moradas, distâncias ou geolocalização do visitante. A ligação externa pesquisa apenas a localidade pública no OpenStreetMap, com indicação de novo separador; nenhum serviço externo carrega automaticamente. A falta de localidade tem recuperação textual. Não há serviços pagos, chaves ou biblioteca de mapas. O mapa verificado previsto na Fase 0 permanece para a integração futura.
+
+A capa e a imagem representativa dos produtores reutilizam fotografias existentes; não são retratos de pessoas reais associadas aos perfis. Foram acrescentadas duas fotografias genuinamente distintas às galerias de tomate e pera, cerca de 77 KiB no total, com [créditos, fontes e licença](../../apps/web/public/images/details/credits.md). São ilustrativas e não comprovam variedade, origem ou produção biológica. Os restantes produtos mantêm uma imagem; os placeholders continuam identificados. Sem novas dependências, backend, autenticação, carrinho, compras, pagamento, sockets, Cloud ou início da Fase 2.3.
+
+### Verificação da Fase 2.2
+
+Os [testes de detalhe](../../apps/web/tests/details.spec.ts) cobrem os quinze cenários pedidos, mais imagem falhada, imagem única, stock esgotado, diretório, filtragem desde o perfil, avaliações ausentes, mapa ilustrativo, carregamento real e regressões de navegação. Os [testes do modelo](../../apps/web/tests/details-model.spec.ts) validam integridade das relações, imagens distintas, prioridade determinística, imutabilidade e médias derivadas. As suites existentes do catálogo e homepage continuam a ser executadas.
+
+Validação responsiva nas larguras 320/430/768/1024/1280/1440 px. A verificação usa Chrome, sem declaração de certificação formal de acessibilidade ou cobertura de Safari/Firefox. Todas as alterações da Fase 2.2 permanecem locais; não há operações Git de escrita nesta fase.
+
+Execução final em 15 de outubro de 2026: 75 testes aprovados, incluindo as regressões das Fases 1 e 2.1; TypeScript, ESLint, Prettier e build de produção sem erros. Inspeção visual efetiva de produto, perfil e diretório em desktop e telemóvel, incluindo história, localização e avaliações. A galeria usa proporção 4:3 em ecrãs pequenos e uma fotografia maior em desktop; o preço mantém o tamanho de `PriceDisplay` grande. Os nove documentos da Fase 0 conservam os SHA-256 iniciais. As 56 ligações Markdown locais verificadas resolvem corretamente.
