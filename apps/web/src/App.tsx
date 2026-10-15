@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Route, Routes } from 'react-router';
 import { CatalogLoadingPage } from './features/catalog/CatalogLoadingPage';
 import { DetailLoadingPage } from './features/market/DetailLoadingPage';
@@ -8,6 +8,7 @@ import { PublicLayout } from './layouts/PublicLayout';
 import { PrivateLayout } from './layouts/PrivateLayout';
 import { DemoRoute, PrivateIndex } from './features/private-area/DemoRoute';
 import { roles } from './features/auth/types';
+import { BuyerArea, BuyerLoading } from './features/buyer/BuyerPageFrame';
 import {
   RoleLandingPage,
   PrivateSectionPage,
@@ -30,6 +31,16 @@ const CartPage = lazy(() => import('./pages/CartPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegistrationPage = lazy(() => import('./pages/auth/RegistrationPage'));
 const RecoveryPage = lazy(() => import('./pages/auth/RecoveryPage'));
+const BuyerDashboardPage = lazy(() => import('./pages/private/buyer/BuyerDashboardPage'));
+const BuyerOrdersPage = lazy(() => import('./pages/private/buyer/BuyerOrdersPage'));
+const BuyerOrderDetailPage = lazy(() => import('./pages/private/buyer/BuyerOrderDetailPage'));
+const BuyerReviewsPage = lazy(() => import('./pages/private/buyer/BuyerReviewsPage'));
+const BuyerBidsPage = lazy(() => import('./pages/private/buyer/BuyerBidsPage'));
+const BuyerAuctionPage = lazy(() => import('./pages/private/buyer/BuyerAuctionPage'));
+
+function buyerPage(page: ReactNode) {
+  return <Suspense fallback={<BuyerLoading />}>{page}</Suspense>;
+}
 
 function AuthLoading() {
   return (
@@ -120,13 +131,26 @@ export function App() {
       <Route path="area" element={<DemoRoute />}>
         <Route element={<PrivateLayout />}>
           <Route index element={<PrivateIndex />} />
-          {roles.map((role) => (
-            <Route key={role} path={role} element={<DemoRoute role={role} />}>
-              <Route index element={<RoleLandingPage role={role} />} />
-              <Route path=":section" element={<PrivateSectionPage role={role} />} />
-              <Route path="*" element={<PrivateNotFoundPage home={`/area/${role}`} />} />
+          <Route path="comprador" element={<DemoRoute role="comprador" />}>
+            <Route element={<BuyerArea />}>
+              <Route index element={buyerPage(<BuyerDashboardPage />)} />
+              <Route path="encomendas" element={buyerPage(<BuyerOrdersPage />)} />
+              <Route path="encomendas/:id" element={buyerPage(<BuyerOrderDetailPage />)} />
+              <Route path="avaliacoes" element={buyerPage(<BuyerReviewsPage />)} />
+              <Route path="licitacoes" element={buyerPage(<BuyerBidsPage />)} />
+              <Route path="licitacoes/:id" element={buyerPage(<BuyerAuctionPage />)} />
+              <Route path="*" element={<PrivateNotFoundPage home="/area/comprador" />} />
             </Route>
-          ))}
+          </Route>
+          {roles
+            .filter((role) => role !== 'comprador')
+            .map((role) => (
+              <Route key={role} path={role} element={<DemoRoute role={role} />}>
+                <Route index element={<RoleLandingPage role={role} />} />
+                <Route path=":section" element={<PrivateSectionPage role={role} />} />
+                <Route path="*" element={<PrivateNotFoundPage home={`/area/${role}`} />} />
+              </Route>
+            ))}
           <Route path="*" element={<PrivateNotFoundPage />} />
         </Route>
       </Route>

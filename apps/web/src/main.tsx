@@ -8,6 +8,7 @@ import './styles/main.scss';
 import { App } from './App';
 import { CartProvider } from './features/cart/CartProvider';
 import { AuthProvider } from './features/auth/AuthProvider';
+import { BuyerProvider } from './features/buyer/BuyerProvider';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Elemento raiz da aplicação não encontrado.');
@@ -16,7 +17,9 @@ createRoot(root).render(
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
-          <App />
+          <BuyerProvider>
+            <App />
+          </BuyerProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

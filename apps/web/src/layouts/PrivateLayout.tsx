@@ -104,7 +104,9 @@ export function PrivateLayout() {
               </Link>
             )}
             <p className="private-navigation__note">
-              Estrutura em preparação. As operações desta área ainda não estão disponíveis.
+              {role === 'comprador'
+                ? 'Atividade fictícia para explorar. Sem compras, pagamentos ou ofertas reais.'
+                : 'Estrutura em preparação. As operações desta área ainda não estão disponíveis.'}
             </p>
           </nav>
           <main id="area-conteudo" ref={main} tabIndex={-1}>

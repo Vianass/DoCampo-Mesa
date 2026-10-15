@@ -110,5 +110,11 @@ export function roleHome(role: Role) {
 export function demoDestination(raw: string | null, role: Role) {
   const home = roleHome(role);
   const allowed = [home, ...privateSections[role].map((section) => `${home}/${section.slug}`)];
+  if (
+    role === 'comprador' &&
+    raw &&
+    /^\/area\/comprador\/(encomendas|licitacoes)\/[a-z0-9-]+$/.test(raw)
+  )
+    return raw;
   return raw && allowed.includes(raw) ? raw : home;
 }
