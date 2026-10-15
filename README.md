@@ -2,9 +2,9 @@
 
 Mercado digital de produtores agrícolas locais, com encomendas e leilões em tempo real.
 
-**Estado atual: Fase 2.4.2 — Área Privada do Comprador.** O frontend inclui o mercado público, carrinho, autenticação demonstrativa e uma área do comprador com atividade derivada, encomendas/detalhes, avaliações e participações em leilões. Todos os dados são fictícios. O monorepo usa npm workspaces. Os nove documentos da Fase 0 estão preservados integralmente.
+**Estado atual: Fase 2.4.3 — Área Privada do Produtor.** O frontend inclui o mercado público, carrinho, autenticação demonstrativa e áreas de comprador e produtor com atividade fictícia. A gestão privada de produtos e perfil do produtor funciona apenas em memória. O monorepo usa npm workspaces. Os nove documentos da Fase 0 estão preservados integralmente.
 
-Os dados existem apenas no frontend. Não estão implementados autenticação real, endpoints, MongoDB, compras, licitações reais ou recursos Cloud. As fases anteriores, incluindo a Fase 2.4.1, foram publicadas na feature branch com autorização explícita. A branch local `feat/buyer-dashboard` foi criada a partir desse estado limpo, por autorização específica desta fase. As alterações da Fase 2.4.2 permanecem locais, sem commits/push; operações Git adicionais e a fase seguinte dependem de nova autorização explícita.
+Os dados existem apenas no frontend. Não estão implementados autenticação real, endpoints, MongoDB, compras, licitações reais ou recursos Cloud. A Fase 2.4.2 foi publicada em quatro commits autorizados em `feat/buyer-dashboard`. A branch local `feat/producer-dashboard` parte desse estado limpo e publicado. A Fase 2.4.3 permanece local, sem staging, commits ou push; a publicação e as fases seguintes dependem de nova autorização explícita.
 
 ## Contexto académico
 
@@ -74,7 +74,7 @@ Consultar a [visão global](docs/architecture/system-overview.md), os [diagramas
 │   │   │   ├── layouts/    # Layout público, layout privado e navegação
 │   │   │   ├── pages/      # Mercado, auth/ e private/ demonstrativos
 │   │   │   ├── data/       # Produtos, produtores e leilão fictícios
-│   │   │   ├── features/   # Catálogo, mercado, cart/, auth/, private-area/ e buyer/
+│   │   │   ├── features/   # Catálogo, mercado, cart/, auth/, private-area/, buyer/ e producer/
 │   │   │   ├── types/      # Modelo tipado de produto e dados de apresentação
 │   │   │   └── styles/     # Tokens, mixins e parciais SCSS
 │   │   ├── tests/          # Testes de browser Playwright
@@ -119,7 +119,7 @@ Consultar a [visão global](docs/architecture/system-overview.md), os [diagramas
 | [Modelo de dados](docs/database/data-model.md)                                | Coleções, validação, referências, documentos embebidos, índices e relações                            |
 | [Plano de implementação](docs/planning/implementation-plan.md)                | Sete semanas, dependências, entregáveis, testes e marcos Git                                          |
 
-O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, componentes, comportamento responsivo e decisões de acessibilidade até à Fase 2.4.1, incluindo a rastreabilidade dos percursos demonstrativos aos requisitos da Fase 0. Os [créditos das fotografias](apps/web/public/images/credits.md) registam autores, fontes e licença. As fotografias são ilustrativas e não comprovam a origem dos produtores fictícios.
+O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, componentes, comportamento responsivo e decisões de acessibilidade até à Fase 2.4.3, incluindo a rastreabilidade dos percursos demonstrativos aos requisitos da Fase 0. Os [créditos das fotografias](apps/web/public/images/credits.md) registam autores, fontes e licença. As fotografias são ilustrativas e não comprovam a origem dos produtores fictícios.
 
 ## Implementação disponível
 
@@ -142,6 +142,8 @@ O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, c
 - Encomendas filtráveis pelos quatro estados e ordenáveis por data, detalhe com preços históricos, grupos por produtor, totais em cêntimos e histórico ilustrativo.
 - Avaliações a produtores e formulário local apenas para entregas elegíveis; participações com situações derivadas e detalhe de lote só de leitura, sem tempo real.
 - Fonte local assíncrona, carregamento real dos módulos, recuperação de erros/IDs inválidos e cenários de apresentação exploráveis em «Sobre estes dados».
+- Área do produtor com indicadores derivados, candidatura pendente fictícia, catálogo próprio pesquisável/filtrável, criação/edição local de produtos, preços, quantidades e limiares de stock.
+- Edição privada do nome público, localidade e descrição, com pré-visualização separada do perfil público; encomendas recebidas e leilões apenas de consulta, com detalhes e históricos.
 - Tokens SCSS e Bootstrap personalizado, com breakpoints de 768, 1024 e 1280 px.
 
 | Rota                             | Conteúdo                                                                           |
@@ -165,7 +167,15 @@ O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, c
 | `/area/comprador/avaliacoes`     | Avaliações a produtores e criação exclusivamente local                             |
 | `/area/comprador/licitacoes`     | Participações demonstrativas, sem envio de ofertas                                 |
 | `/area/comprador/licitacoes/:id` | Detalhe privado do lote ilustrativo, apenas leitura                                |
-| `/area/produtor`                 | Estrutura de candidatura, produtos, perfil, encomendas, leilões e indicadores      |
+| `/area/produtor`                 | Dashboard demonstrativo com produção, encomendas e alertas de stock                |
+| `/area/produtor/candidatura`     | Dados necessários, etapas e exemplo de candidatura pendente                        |
+| `/area/produtor/produtos`        | Catálogo privado, pesquisa e filtros                                               |
+| `/area/produtor/produtos/novo`   | Criação de produto apenas em memória                                               |
+| `/area/produtor/produtos/:id`    | Consulta privada do produto; `/:id/editar` permite edição local                    |
+| `/area/produtor/perfil`          | Edição privada; `/pre-visualizacao` apresenta o perfil local                       |
+| `/area/produtor/encomendas`      | Encomendas próprias filtráveis; `/:id` mostra detalhe e histórico                  |
+| `/area/produtor/leiloes`         | Leilões próprios estáticos; `/:id` mostra o lote e o resultado                     |
+| `/area/produtor/indicadores`     | Stock disponível, alertas e agregados de encomendas                                |
 | `/area/administrador`            | Estrutura de candidaturas, utilizadores, encomendas, leilões, moderação e serviços |
 | `/sistema-visual`                | Galeria dos componentes e da paleta                                                |
 
@@ -189,7 +199,9 @@ As opções são derivadas dos mocks e não fixam taxonomias finais da API. As f
 
 **Fase 2.4.1, concluída:** formulários, sessão demonstrativa, navegação e estrutura privada por papel; publicada em quatro commits autorizados em `feat/project-setup-design-system`.
 
-**Fase 2.4.2, atual:** área do comprador com dados fictícios e integração da cesta. Branch local `feat/buyer-dashboard`, criada a partir do estado limpo da Fase 2.4.1, por autorização explícita. Sem staging, commits, push, merge ou PR; não se iniciou a Fase 2.4.3. Este trabalho não constitui conclusão dos marcos M1–M3 do projeto completo.
+**Fase 2.4.2, concluída:** área do comprador com dados fictícios e integração da cesta, publicada em quatro commits autorizados em `feat/buyer-dashboard`, sem merge para `main`.
+
+**Fase 2.4.3, atual:** área do produtor, implementada localmente em `feat/producer-dashboard`. Apenas a criação da branch foi autorizada; sem staging, commits, push, merge ou PR. Não se iniciou a fase seguinte. O protótipo não constitui conclusão dos marcos M1–M3 do projeto completo.
 
 O desenvolvimento restante, sujeito a aprovação da fase seguinte, mantém o calendário do enunciado:
 
@@ -212,14 +224,14 @@ Pré-requisitos: Node.js 22.13+ na série 22, ou 24+, e npm ≥10. A instalaçã
 ```bash
 git clone https://github.com/Vianass/DoCampo-Mesa.git
 cd DoCampo-Mesa
-git switch feat/project-setup-design-system
+git switch feat/buyer-dashboard
 npm ci
 npm run dev
 ```
 
 Abrir `http://127.0.0.1:5173/`. O servidor usa apenas loopback; não é publicado na Cloud. Parar com `Ctrl+C`.
 
-Os comandos de instalação acima recuperam a base publicada da Fase 2.4.1. A Fase 2.4.2 está apenas no diretório local, em `feat/buyer-dashboard`, enquanto não existir autorização para a publicar. Para testar este trabalho local, abrir `/entrar`, escolher «Explorar como comprador» e navegar pelas encomendas, avaliações e licitações. Não é necessário preencher credenciais. Em «Sobre estes dados», selecionar os cenários vazio/erro para observar a recuperação. Adicionar produtos no mercado para verificar o resumo da cesta; entrar/sair mantém-os, enquanto recarregar termina a sessão demonstrativa.
+Os comandos de instalação acima recuperam a base publicada da Fase 2.4.2. A Fase 2.4.3 está apenas no diretório local em `feat/producer-dashboard`, enquanto não existir autorização para a publicar. Para testar o produtor local, abrir `/entrar` e escolher «Explorar como produtor», sem credenciais. Consultar candidatura, produtos, perfil, encomendas, leilões e stock. Criar/editar um produto, abrir a pré-visualização do perfil e confirmar que o mercado público conserva os dados originais. Em «Sobre esta demonstração», experimentar os cenários vazio/erro. Recarregar termina a sessão e repõe as edições privadas; a cesta conserva a persistência existente. O comprador continua acessível através da respetiva opção de demonstração.
 
 ```bash
 npm run typecheck    # Validação TypeScript strict
@@ -257,7 +269,7 @@ Os papéis seguem `users.papel` da Fase 0: **comprador, produtor e administrador
 
 A validação partilhada verifica presença, formato de email e confirmação; no registo usa provisoriamente oito caracteres sem regras de composição. O login exige apenas uma palavra-passe não vazia. O estado «A verificar» corresponde à verificação local, sem rede ou atraso artificial. Após submissão válida, campos de palavra-passe ficam vazios e surge a indisponibilidade da operação. Usa apenas dados fictícios. A recuperação é uma interface solicitada nesta fase, não uma obrigação adicional do enunciado; nunca envia email.
 
-`DemoRoute` orienta a navegação: sem sessão, `/entrar?destino=...`; com papel incompatível, mensagem e recuperação sem trocar o papel; percursos desconhecidos, estado de página não encontrada. Só destinos internos conhecidos do papel podem ser retomados. `PrivateLayout` oferece identidade, papel visível, navegação desktop/móvel, saída e ligação ao mercado. As secções do produtor e administrador continuam como placeholders; o comprador tem a atividade fictícia da Fase 2.4.2.
+`DemoRoute` orienta a navegação: sem sessão, `/entrar?destino=...`; com papel incompatível, mensagem e recuperação sem trocar o papel; percursos desconhecidos, estado de página não encontrada. Só destinos internos conhecidos do papel podem ser retomados. `PrivateLayout` oferece identidade, papel visível, navegação desktop/móvel, saída e ligação ao mercado. A administração mantém placeholders; comprador e produtor têm experiências demonstrativas próprias.
 
 Esta guarda do frontend **não é uma fronteira de segurança**. Na integração futura, a API REST validará credenciais, hashes e expiração e imporá papel/propriedade/aprovação atuais no servidor. Q01 (papéis), Q04 (produtores pendentes) e Q13 (sessão) continuam por validar para contas reais; esta demonstração não fecha essas decisões. A [análise e rastreabilidade da Fase 2.4.1](docs/design/design-system.md#fase-241--análise-e-pressupostos-antes-da-implementação) distingue interfaces presentes e operações futuras.
 
@@ -273,7 +285,21 @@ As licitações representam um snapshot de **15 de outubro de 2026, 09:00 UTC**:
 
 Os [modelos](apps/web/src/features/buyer/types.ts), [dados fictícios](apps/web/src/data/buyer.ts) e [seletores puros](apps/web/src/features/buyer/selectors.ts) estão separados da apresentação. `BuyerProvider` consome uma fonte local assíncrona substituível e gere avaliações transitórias. Em «Sobre estes dados» pode selecionar-se atividade ilustrativa, ausência de atividade ou indisponibilidade demonstrativa, sem atrasos artificiais. Todas as páginas têm carregamento, vazio e erro recuperável; detalhes com IDs inválidos têm recuperação específica. Consultar a [arquitetura e integração futura](docs/design/design-system.md#arquitetura-implementada-da-fase-242).
 
+## Área do produtor demonstrativa
+
+A Horta da Ribeira é o produtor de exemplo. Treze produtos privados, quatro encomendas e quatro leilões alimentam os indicadores, sem contadores paralelos. O stock inicial soma 295 unidades comerciais de produtos diferentes, não kg; existe um produto com stock reduzido e um indisponível. O limiar inicial de três unidades por produto é provisório (Q15) e editável. A abóbora tem duas unidades apenas nesta cópia privada, para explorar o alerta.
+
+Produtos permitem pesquisa sem acentos/maiúsculas, filtros de categoria/disponibilidade, detalhe e criação/edição em memória. Nome, descrição, categoria, unidade, preço em EUR, stock e limiar são os campos aceites; preço tem até duas casas decimais e quantidades são inteiros seguros não negativos. Preço zero é provisoriamente permitido (Q06). Disponibilidade deriva do stock: zero indisponível, positivo até ao limiar reduzido, restantes disponíveis. Novos produtos usam placeholder identificado. Sem publicação, remoção, upload ou edição de certificação nesta subfase.
+
+O perfil permite editar nome público, localidade e descrição e pré-visualizar os dados locais, reutilizando o mapa ilustrativo e os componentes existentes. A candidatura mostra requisitos, dados necessários, etapas e um exemplo pendente, sem submissão, decisão ou aprovação. Nenhuma edição concede direitos comerciais ou altera o perfil público original. Q04, Q11, Q12 e Q14 continuam por validar.
+
+Encomendas recebidas têm filtros, linhas, preços históricos, totais e histórico dos quatro estados; não podem ser alteradas. O agregado entregue inicial é 6,45 €, referente a todo o conjunto ilustrativo, sem afirmar pagamentos, lucro ou vendas num período. Os leilões apresentam agendado, ativo e terminado, incluindo término sem ofertas e sem vencedor, num snapshot fixo de 15 de outubro de 2026, 09:00 UTC. Não existem licitações, timers, reservas ou conversão automática em encomendas; Q05/Q07/Q08/Q09 continuam pendentes.
+
+[Tipos](apps/web/src/features/producer/types.ts), [dados](apps/web/src/data/producer.ts), [seletores e comandos puros](apps/web/src/features/producer/selectors.ts) e [fonte assíncrona](apps/web/src/features/producer/source.ts) estão separados de componentes/páginas. `ProducerProvider`/`ProducerContext`/`useProducer` mantêm as edições na navegação pública, sem copiar nem alterar o estado do carrinho ou do comprador. Sair, mudar de papel, recarregar ou mudar de cenário repõe os dados. Loading, vazio, erro e IDs inválidos têm recuperação; não há temporizadores artificiais nem chamadas HTTP. Consultar a [arquitetura do produtor](docs/design/design-system.md#arquitetura-implementada-da-fase-243).
+
 ## Validação e limitações
+
+Verificação da Fase 2.4.3 em 15 de outubro de 2026: **224 testes aprovados**, sem retries — 176 cenários anteriores e 48 novos (12 de modelo, 36 de browser). TypeScript, ESLint, Prettier e build de produção passaram. As 13 rotas do produtor foram verificadas a 320/430/768/1024/1280/1440 px; a inspeção visual utilizou capturas reais de Chrome em desktop, tablet e telemóvel. Os nove documentos originais conservam os hashes iniciais e as 135 ligações Markdown locais verificadas resolvem corretamente.
 
 Os testes da Fase 2.4.1 verificam formulários, papéis, destinos, sessão em memória, saída, menu privado e preservação do carrinho, incluindo submissões que nunca autenticam nem enviam dados. Um cenário histórico de indisponibilidade do registo foi adaptado aos novos campos, mantendo as restantes verificações.
 
@@ -287,7 +313,7 @@ O carrinho persiste apenas neste browser via localStorage. Não há persistênci
 
 ## Assistência de inteligência artificial
 
-Foi utilizado o assistente **Codex, da OpenAI**, como apoio à análise do enunciado, à documentação da Fase 0, à configuração Git e à implementação/verificação do frontend até à Fase 2.4.2. A skill Sites apoiou o fluxo de desenvolvimento local e a preparação de assets; não foi criada uma publicação em Sites. As propostas e o código produzidos com apoio de IA devem ser revistos e validados pelo estudante, que mantém a responsabilidade pelas decisões, pelo trabalho individual e pela explicação das soluções na defesa.
+Foi utilizado o assistente **Codex, da OpenAI**, como apoio à análise do enunciado, à documentação da Fase 0, à configuração Git e à implementação/verificação do frontend até à Fase 2.4.3. A skill Sites apoiou o fluxo de desenvolvimento local e a preparação de assets; não foi criada uma publicação em Sites. As propostas e o código produzidos com apoio de IA devem ser revistos e validados pelo estudante, que mantém a responsabilidade pelas decisões, pelo trabalho individual e pela explicação das soluções na defesa.
 
 A declaração de uso de IA e bibliotecas deverá também constar do relatório final, conforme o enunciado. O apoio recebido não substitui a compreensão e validação do projeto pelo autor.
 
