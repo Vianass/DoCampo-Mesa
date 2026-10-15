@@ -18,6 +18,7 @@ export interface Product {
   readonly id: string;
   readonly name: string;
   readonly description: string;
+  readonly detailParagraphs?: readonly string[];
   readonly category: ProductCategory;
   readonly priceCents: number;
   readonly unit: string;
@@ -39,6 +40,21 @@ export interface Producer {
   description: string;
   image: string;
   imageAlt: string;
+  region: string;
+  coverImage: ProductImage;
+  story: { title: string; paragraphs: readonly string[] };
+  methods: readonly { title: string; description: string }[];
+  organicCertification?: { kind: 'demonstration'; label: string; note: string };
+  publicContact?: { email?: string; website?: string };
+}
+export interface ProducerReview {
+  readonly id: string;
+  readonly producerId: string;
+  readonly displayName: string;
+  readonly rating: 1 | 2 | 3 | 4 | 5;
+  readonly text: string;
+  readonly createdAt: string;
+  readonly demonstration: true;
 }
 export interface Auction {
   id: string;

@@ -1,79 +1,8 @@
-import type { Product, Producer, Auction, ProductImage, Season, Category } from '../types/market';
+import type { Product, Auction, ProductImage, Season, Category } from '../types/market';
 export type { Product, Producer, Auction, Category, Season } from '../types/market';
 
-// Todos os produtores e produtos são fictícios. As fotografias são ilustrativas.
-export const producers: Producer[] = [
-  {
-    id: 'horta-ribeira',
-    name: 'Horta da Ribeira',
-    locality: 'Ponte de Lima',
-    specialty: 'Hortícolas da época',
-    description:
-      'Uma pequena horta, muitas estações. Neste perfil fictício, os hortícolas são escolhidos pelo sabor e pelo ritmo da terra.',
-    image: '/images/hero.webp',
-    imageAlt: 'Imagem ilustrativa de mãos a escolher legumes num cesto de mercado',
-  },
-  {
-    id: 'pomar-vale',
-    name: 'Pomar do Vale',
-    locality: 'Arcos de Valdevez',
-    specialty: 'Fruta com origem',
-    description:
-      'Um pomar imaginado para o nosso mercado demonstrativo. Fruta que convida a conhecer o caminho entre a árvore e a mesa.',
-    image: '/images/vineyard.webp',
-    imageAlt: 'Paisagem agrícola ilustrativa, sem representar a exploração fictícia',
-  },
-  {
-    id: 'mel-encosta',
-    name: 'Mel da Encosta',
-    locality: 'Viana do Castelo',
-    specialty: 'Mel e saber artesanal',
-    description:
-      'Um perfil fictício dedicado ao mel e ao cuidado com a origem. Pequenos frascos, grandes momentos à mesa.',
-    image: '/images/honey.webp',
-    imageAlt: 'Fotografia ilustrativa de mel num frasco',
-  },
-  {
-    id: 'quinta-serra',
-    name: 'Quinta da Serra',
-    locality: 'Seia',
-    specialty: 'Queijos e frutos secos',
-    description:
-      'Uma quinta fictícia onde imaginamos queijo artesanal e frutos secos para uma mesa de partilha. Sem denominações de origem ou certificações reais.',
-    image: '/images/catalog/cheese.webp',
-    imageAlt: 'Fotografia ilustrativa de pequenos queijos de cabra',
-  },
-  {
-    id: 'olival-monte',
-    name: 'Olival do Monte',
-    locality: 'Moura',
-    specialty: 'Azeite e azeitonas',
-    description:
-      'Um olival fictício, criado para mostrar os sabores que queremos aproximar. A fotografia é apenas ilustrativa.',
-    image: '/images/catalog/olive-oil.webp',
-    imageAlt: 'Fotografia ilustrativa de azeite',
-  },
-  {
-    id: 'forno-aldeia',
-    name: 'Forno da Aldeia',
-    locality: 'Barcelos',
-    specialty: 'Pão e cereais',
-    description:
-      'Um forno imaginado para este mercado. Pães e cereais que evocam o tempo de fazer as coisas com cuidado.',
-    image: '/images/catalog/bread.webp',
-    imageAlt: 'Fotografia ilustrativa de pão artesanal',
-  },
-  {
-    id: 'pomar-sul',
-    name: 'Pomar do Sul',
-    locality: 'Faro',
-    specialty: 'Citrinos e fruta',
-    description:
-      'Um pomar fictício inspirado nos sabores do sul. Os dados e a fotografia não representam uma exploração real.',
-    image: '/images/catalog/oranges.webp',
-    imageAlt: 'Fotografia ilustrativa de laranjas',
-  },
-];
+import { producers } from './producers';
+export { producers } from './producers';
 
 export const auction: Auction = {
   id: 'cabaz-outono',
@@ -122,7 +51,7 @@ const allSeasons: readonly Season[] = ['Primavera', 'Verão', 'Outono', 'Inverno
 type ProductSeed = Omit<
   Product,
   'producerName' | 'producerLocation' | 'images' | 'createdAt' | 'featured'
-> & { image: keyof typeof images; featured?: boolean };
+> & { image: keyof typeof images; featured?: boolean; additionalImages?: readonly ProductImage[] };
 const seeds: ProductSeed[] = [
   {
     id: 'tomate-coracao',
@@ -138,6 +67,12 @@ const seeds: ProductSeed[] = [
     season: ['Verão', 'Outono'],
     featured: true,
     image: 'tomato',
+    additionalImages: [
+      {
+        src: '/images/details/tomatoes.webp',
+        alt: 'Tomate vermelho maduro na planta, entre folhas verdes. Fotografia ilustrativa.',
+      },
+    ],
   },
   {
     id: 'pera-rocha',
@@ -153,6 +88,12 @@ const seeds: ProductSeed[] = [
     season: ['Outono'],
     featured: true,
     image: 'pear',
+    additionalImages: [
+      {
+        src: '/images/details/pears.webp',
+        alt: 'Peras verdes e amarelas num cesto forrado com tecido. Fotografia ilustrativa.',
+      },
+    ],
   },
   {
     id: 'mel-multifloral',
@@ -633,8 +574,27 @@ const seeds: ProductSeed[] = [
   },
 ];
 
+const categoryDescriptions: Record<Exclude<Category, 'Todos'>, string> = {
+  Hortícolas:
+    'Na cozinha, os hortícolas abrem espaço a refeições simples e a receitas que acompanham as estações. A época indicada é uma referência demonstrativa; a disponibilidade de cada colheita pode variar.',
+  Fruta:
+    'Fruta para saborear ao natural ou levar a uma receita caseira. As fotografias são ilustrativas e não permitem confirmar a variedade, o calibre ou a origem deste exemplo.',
+  'Mel e compotas':
+    'Um sabor para acompanhar pão, queijo e pequenos-almoços feitos com tempo. Uma pequena colher pode dar outra vida a uma torrada, a uma sobremesa ou a uma mesa de partilha.',
+  'Queijos e laticínios':
+    'Uma proposta para partilhar à mesa, acompanhar com pão ou integrar uma receita. Mel, compota ou fruta podem inspirar outras combinações, num lanche ou no fim da refeição.',
+  'Azeite e azeitonas':
+    'Sabores que fazem parte da cozinha portuguesa, de uma entrada a um prato de forno. O catálogo é demonstrativo e não atribui resultados de análise, variedades ou denominações protegidas.',
+  'Pão e cereais':
+    'Da fatia de pão à farinha para uma receita, os cereais aproximam-nos dos gestos da cozinha. Um ingrediente simples pode tornar-se o centro de uma refeição, de uma açorda a uma broa feita com tempo.',
+  'Frutos secos':
+    'Para saborear, partilhar ou juntar a uma receita. Frutos secos dão textura a uma salada, acompanham fruta e queijo e abrem espaço a pequenos gestos na cozinha.',
+  'Ervas e aromáticas':
+    'Um pequeno molho pode dar outra vida à cozinha, num assado ou no fim de uma receita. Épocas e quantidades são exemplos para explorar o mercado, sem colheita real associada.',
+};
+
 export const products: readonly Product[] = seeds.map(
-  ({ image, featured = false, ...seed }, index) => {
+  ({ image, featured = false, additionalImages = [], ...seed }, index) => {
     const producer = producers.find((item) => item.id === seed.producerId);
     if (!producer) throw new Error(`Produtor fictício não encontrado: ${seed.producerId}`);
     const photo = images[image];
@@ -643,11 +603,16 @@ export const products: readonly Product[] = seeds.map(
       featured,
       producerName: producer.name,
       producerLocation: producer.locality,
+      detailParagraphs: seed.detailParagraphs ?? [
+        seed.description,
+        categoryDescriptions[seed.category],
+      ],
       images: [
         {
           ...photo,
           alt: image === 'placeholder' ? `Fotografia de ${seed.name} a preparar` : photo.alt,
         },
+        ...additionalImages,
       ],
       createdAt: new Date(Date.UTC(2026, 8, 9 + index, 9)).toISOString(),
     };
