@@ -115,7 +115,59 @@ Inspeção efetiva em Chrome de capturas de desktop (1440 px), tablet (768 px) e
 
 Os nove documentos da Fase 0 foram comparados por SHA-256 com o estado inicial e permaneceram idênticos. As ligações locais do README e da documentação foram verificadas, incluindo créditos e licenças das fontes. Capturas e resultados temporários de browser não são incluídos no Git.
 
-## Referências técnicas
+## Extensão na Fase 2.1 — catálogo
+
+O catálogo `/produtos` reutiliza o sistema visual, `ProductCard`, `Container`, `FormField`, `PriceDisplay`, `StatusBadge`, `EmptyState` e `LoadingSkeleton`. O hero, as fontes, os tokens e a estrutura pública da Fase 1 são preservados. A homepage continua a apresentar apenas quatro produtos e três produtores em destaque, mesmo com o dataset completo ampliado.
+
+### Dados e organização
+
+[O modelo de apresentação](../../apps/web/src/types/market.ts) define um único `Product`, com campos readonly: ID, nome, descrição, categoria, `priceCents`, unidade, stock, array não vazio de imagens com alt, ID/nome/localidade do produtor, biológico, épocas, destaque e data ISO. O preço mantém os inteiros em cêntimos da proposta de arquitetura; não se duplica um campo de preço em euros. Nomes e localidades dos produtos são derivados dos perfis fictícios, em vez de repetidos manualmente nos seeds.
+
+A amostra contém 36 produtos portugueses, oito categorias e sete produtores inteiramente fictícios. Preços, stock, épocas, certificações e datas servem para demonstração; não são dados comerciais nem validação final das questões Q da Fase 0. Categorias e épocas da interface não impõem um schema à futura API.
+
+A [página do catálogo](../../apps/web/src/pages/ProductsPage.tsx) coordena a apresentação; [funções puras](../../apps/web/src/features/catalog/catalog.ts) tratam seleção, ordenação, paginação e leitura/escrita do URL; [useCatalog](../../apps/web/src/features/catalog/useCatalog.ts) reúne hooks e memoização. Tipos não são copiados para o workspace shared, que continua reservado.
+
+### Pesquisa, filtros e ordenação
+
+Pesquisa imediata por nome, descrição, produtor e localidade, com normalização de acentos e capitalização. Uma pesquisa com várias palavras exige que todas ocorram no texto relevante. Não é criada uma dependência de pesquisa ou um pedido a API.
+
+Categoria, produtor, localidade e época são opções derivadas da amostra completa; produção biológica e preço máximo podem combinar-se com todas as restantes condições. O slider vai de zero ao teto de preço derivado do dataset, com passos de cinco cêntimos. O filtro é inclusivo (`preço ≤ máximo`) e explica que os preços se referem à unidade indicada; não compara artificialmente kg com embalagens por conversão não definida.
+
+Os filtros ativos aparecem em indicadores removíveis, com ação para limpar todos. A ausência de resultados apresenta `EmptyState` e recuperação do catálogo completo. O contador tem nome acessível «Resultados do catálogo», distinguindo-se do `output` do slider.
+
+Ordenações: relevância, preço crescente/decrescente, nome A–Z/Z–A e mais recentes. Relevância prioriza correspondência no nome e produtos em destaque; os empates preservam a ordem da amostra. Nomes usam colação pt-PT. A ordenação cria uma nova lista e não modifica os mocks.
+
+### Paginação e URL
+
+Tamanhos de página configuráveis: 12, 24 e 36. Botões nativos anterior/seguinte e páginas numeradas, `aria-current`, indicador de página e intervalo mostrado. Sem resultados, não se apresenta «página 1 de 0». Página fora dos limites é ajustada ao intervalo disponível; mudar pesquisa, filtro, ordem ou tamanho repõe a página 1. Limpar filtros conserva a preferência de ordenação e tamanho.
+
+Estado partilhável por `pesquisa`, `categoria`, `produtor`, `localidade`, `epoca`, `bio`, `precoMax`, `ordem`, `pagina` e `porPagina`. `precoMax` está em euros no URL e é convertido para cêntimos na leitura. Valores inválidos usam opções seguras; parâmetros externos ao catálogo são preservados. Pesquisa/slider substituem a entrada atual de histórico; seleções e páginas acrescentam entradas. Voltar, avançar e recarregar recuperam controlos e resultados. Não é introduzido estado global. [API useSearchParams](https://reactrouter.com/api/hooks/useSearchParams).
+
+Os controlos atualizam primeiro o estado local, para não perder caracteres durante a transição de navegação do router. Quando a atualização do URL termina, este volta a determinar o estado; o mesmo se aplica ao histórico do browser. O teste de pesquisa inclui escrita sequencial rápida, sem atrasos artificiais.
+
+### Interação responsiva e acessibilidade
+
+Em desktop, filtros numa coluna lateral e resultados em três colunas. Abaixo de 1024 px, um botão abre um painel dedicado implementado com `dialog` nativo e `showModal`: fundo inerte, foco contido no modal, Escape, botão de fechar e ação de aplicar. O diálogo fecha também ao mudar para desktop; fechar devolve foco ao botão, aplicar e mudar página focam a área de resultados. [Elemento dialog](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dialog).
+
+A pesquisa permanece visível; o input tem 16 px para leitura e interação móvel, enquanto o stock tem 12 px. Controlos principais têm pelo menos 44 px. Grelha: duas colunas no telemóvel e três desde 768 px; os breakpoints 768/1024/1280 px são mantidos. Etiquetas biológicas e stock são textuais, além da cor; localização nunca é ocultada nos cartões.
+
+O módulo da página é carregado por `React.lazy`/`Suspense`; `LoadingSkeleton` aparece enquanto esse código é obtido. Não se introduziu temporizador para simular uma API lenta. Produtos e filtros são síncronos em memória depois de o módulo carregar.
+
+### Fotografia e limites
+
+Doze fotografias WebP adicionais, com [créditos próprios](../../apps/web/public/images/catalog/credits.md), cerca de 442 KiB no total. A fotografia de cada alimento é ilustrativa e não comprova variedade, origem, produção biológica ou denominação protegida. Para 17 produtos sem imagem adequada, usa-se um [placeholder vetorial original](../../apps/web/public/images/product-placeholder.svg), identificado por texto e alt. Proporções reservadas e loading lazy mantêm a estabilidade dos cartões.
+
+Sem novas dependências, autenticação, backend, MongoDB, checkout, pagamentos ou tempo real. Os perfis e detalhes existentes recebem apenas a adaptação de campos necessária para continuar a navegar a partir do catálogo.
+
+### Verificação da Fase 2.1
+
+Testes em [catalog.spec.ts](../../apps/web/tests/catalog.spec.ts) e [catalog-model.spec.ts](../../apps/web/tests/catalog-model.spec.ts), com a infraestrutura Playwright existente; regressões da homepage permanecem em [market.spec.ts](../../apps/web/tests/market.spec.ts). Cobrem os catorze cenários pedidos, mais descrição, nome/data, histórico, loading, paginação fora dos limites, imutabilidade e URL inválido.
+
+Execução final em 15 de outubro de 2026: 39 testes aprovados, sem retries. TypeScript, ESLint, Prettier e build de produção concluíram sem erros. Os nove documentos da Fase 0 mantêm os hashes SHA-256 iniciais e as 54 ligações Markdown locais verificadas resolvem corretamente.
+
+Inspeção efetiva em Chrome: desktop, telemóvel e modal de filtros. Verificações de overflow e navegação a 320, 430, 768, 1024, 1280 e 1440 px. Não há validação formal em Safari/Firefox ou leitores de ecrã. Todos os ficheiros desta fase permanecem locais, sem qualquer operação Git de escrita.
+
+## Referências técnicas adicionais da Fase 1
 
 - [Vite — configuração inicial e requisitos de Node.js](https://vite.dev/guide/).
 - [React Router — modo declarativo](https://reactrouter.com/start/declarative/installation).
