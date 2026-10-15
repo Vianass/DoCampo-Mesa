@@ -7,15 +7,18 @@ import '@fontsource/dm-serif-display/latin-400-italic.css';
 import './styles/main.scss';
 import { App } from './App';
 import { CartProvider } from './features/cart/CartProvider';
+import { AuthProvider } from './features/auth/AuthProvider';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Elemento raiz da aplicação não encontrado.');
 createRoot(root).render(
   <StrictMode>
     <BrowserRouter>
-      <CartProvider>
-        <App />
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <App />
+        </CartProvider>
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 );
