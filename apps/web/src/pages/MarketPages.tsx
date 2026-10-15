@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { useParams, useSearchParams } from 'react-router';
+import { useParams } from 'react-router';
 import { AuctionCard } from '../components/AuctionCard';
 import { Button } from '../components/Button';
 import { CategoryPill } from '../components/CategoryPill';
@@ -144,39 +144,6 @@ export function HowItWorksPage() {
           loading="lazy"
         />
       </section>
-    </Container>
-  );
-}
-
-export function AccountPlaceholderPage({ register = false }: { register?: boolean }) {
-  const [params] = useSearchParams();
-  return (
-    <Container>
-      <PageIntro
-        eyebrow="O mercado está a crescer"
-        title={register ? 'Há uma mesa à tua espera.' : 'É bom voltar às origens.'}
-        description={
-          register && params.get('perfil') === 'produtor'
-            ? 'A tua colheita pode fazer parte desta história.'
-            : 'Estamos a preparar um lugar para quem valoriza o que cresce perto.'
-        }
-      />
-      <div className="account-placeholder">
-        <EmptyState
-          title={
-            register
-              ? 'O registo chega numa próxima etapa.'
-              : 'As contas chegam numa próxima etapa.'
-          }
-          description="Por agora, descobre o mercado demonstrativo. Ainda não recolhemos dados pessoais nem criamos contas."
-          action={
-            <Button to="/produtos">
-              Explorar o mercado
-              <Icon name="arrow" />
-            </Button>
-          }
-        />
-      </div>
     </Container>
   );
 }

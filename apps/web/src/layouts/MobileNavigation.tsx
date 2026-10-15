@@ -1,8 +1,12 @@
 import { NavLink } from 'react-router';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
+import { useAuth } from '../features/auth/useAuth';
+import { roleHome } from '../features/private-area/navigation';
+import { roleLabels } from '../features/auth/types';
 
 export function MobileNavigation({ open, onNavigate }: { open: boolean; onNavigate: () => void }) {
+  const { session } = useAuth();
   return (
     <nav
       id="mobile-navigation"
@@ -33,13 +37,21 @@ export function MobileNavigation({ open, onNavigate }: { open: boolean; onNaviga
         ))}
       </div>
       <div className="mobile-navigation__account">
-        <NavLink to="/entrar" onClick={onNavigate}>
-          Entrar
-        </NavLink>
-        <Button to="/registo" size="small" onClick={onNavigate}>
-          Criar conta
-          <Icon name="arrow" />
-        </Button>
+        {session.kind === 'demonstration' ? (
+          <Button to={roleHome(session.role)} size="small" onClick={onNavigate}>
+            Demonstração: {roleLabels[session.role]} <Icon name="arrow" />
+          </Button>
+        ) : (
+          <>
+            <NavLink to="/entrar" onClick={onNavigate}>
+              Entrar
+            </NavLink>
+            <Button to="/registo" size="small" onClick={onNavigate}>
+              Criar conta
+              <Icon name="arrow" />
+            </Button>
+          </>
+        )}
       </div>
     </nav>
   );

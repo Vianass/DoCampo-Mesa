@@ -7,9 +7,12 @@ import { Icon } from '../components/Icon';
 import { DesktopNavigation } from './DesktopNavigation';
 import { MobileNavigation } from './MobileNavigation';
 import { useCart } from '../features/cart/useCart';
+import { useAuth } from '../features/auth/useAuth';
+import { roleHome } from '../features/private-area/navigation';
 
 export function Header() {
   const { itemCount } = useCart();
+  const { session } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -56,13 +59,20 @@ export function Header() {
                 {itemCount}
               </span>
             </Link>
-            <Link to="/entrar" className="header-actions__login">
-              Entrar
-            </Link>
-            <Button to="/registo" size="small" className="header-actions__register">
-              Criar conta
-              <Icon name="arrow" />
-            </Button>
+            {session.kind === 'demonstration' ? (
+              <Button to={roleHome(session.role)} size="small" className="header-actions__register">
+                Área de demonstração <Icon name="arrow" />
+              </Button>
+            ) : (
+              <>
+                <Link to="/entrar" className="header-actions__login">
+                  Entrar
+                </Link>
+                <Button to="/registo" size="small" className="header-actions__register">
+                  Criar conta <Icon name="arrow" />
+                </Button>
+              </>
+            )}
             <button
               ref={menuButton}
               type="button"
