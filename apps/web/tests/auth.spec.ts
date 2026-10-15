@@ -230,13 +230,19 @@ for (const role of roles) {
       await expect(page.getByLabel('Filtrar por estado')).toBeVisible();
       await expect(page.locator('.buyer-order-card')).toHaveCount(6);
       await expect(page.locator('.buyer-demo-note')).toContainText('Dados fictícios');
+    } else if (role === 'produtor') {
+      await expect(page.locator('.producer-application')).toContainText('Pendente');
+      await expect(page.locator('.producer-application')).toContainText(
+        'Não existe candidatura associada',
+      );
+      await expect(page.locator('.producer-demo-note')).toContainText('Dados fictícios');
     } else {
       await expect(page.locator('.private-prototype')).toContainText(
         'Funcionalidade ainda indisponível',
       );
     }
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${first.label}.`);
-    if (role === 'comprador')
+    if (role === 'comprador' || role === 'produtor')
       await nav.getByRole('link', { name: 'Visão geral', exact: true }).click();
     else await page.getByRole('link', { name: 'Voltar à visão geral' }).click();
     await page.getByRole('button', { name: 'Sair da demonstração' }).click();
