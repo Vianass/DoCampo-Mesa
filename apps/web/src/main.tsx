@@ -9,6 +9,7 @@ import { App } from './App';
 import { CartProvider } from './features/cart/CartProvider';
 import { AuthProvider } from './features/auth/AuthProvider';
 import { BuyerProvider } from './features/buyer/BuyerProvider';
+import { ProducerProvider } from './features/producer/ProducerProvider';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Elemento raiz da aplicação não encontrado.');
@@ -18,7 +19,9 @@ createRoot(root).render(
       <AuthProvider>
         <CartProvider>
           <BuyerProvider>
-            <App />
+            <ProducerProvider>
+              <App />
+            </ProducerProvider>
           </BuyerProvider>
         </CartProvider>
       </AuthProvider>

@@ -116,5 +116,13 @@ export function demoDestination(raw: string | null, role: Role) {
     /^\/area\/comprador\/(encomendas|licitacoes)\/[a-z0-9-]+$/.test(raw)
   )
     return raw;
+  if (
+    role === 'produtor' &&
+    raw &&
+    (/^\/area\/produtor\/(encomendas|leiloes)\/[a-z0-9-]+$/.test(raw) ||
+      /^\/area\/produtor\/produtos\/[a-z0-9-]+(?:\/editar)?$/.test(raw) ||
+      raw === '/area/produtor/perfil/pre-visualizacao')
+  )
+    return raw;
   return raw && allowed.includes(raw) ? raw : home;
 }

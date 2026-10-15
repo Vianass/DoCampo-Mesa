@@ -9,6 +9,7 @@ import { PrivateLayout } from './layouts/PrivateLayout';
 import { DemoRoute, PrivateIndex } from './features/private-area/DemoRoute';
 import { roles } from './features/auth/types';
 import { BuyerArea, BuyerLoading } from './features/buyer/BuyerPageFrame';
+import { ProducerArea, ProducerLoading } from './features/producer/ProducerPageFrame';
 import {
   RoleLandingPage,
   PrivateSectionPage,
@@ -37,6 +38,25 @@ const BuyerOrderDetailPage = lazy(() => import('./pages/private/buyer/BuyerOrder
 const BuyerReviewsPage = lazy(() => import('./pages/private/buyer/BuyerReviewsPage'));
 const BuyerBidsPage = lazy(() => import('./pages/private/buyer/BuyerBidsPage'));
 const BuyerAuctionPage = lazy(() => import('./pages/private/buyer/BuyerAuctionPage'));
+const ProducerDashboardPage = lazy(() => import('./pages/private/producer/ProducerDashboardPage'));
+const ProducerApplicationPage = lazy(
+  () => import('./pages/private/producer/ProducerApplicationPage'),
+);
+const ProducerProductsPage = lazy(() => import('./pages/private/producer/ProducerProductsPage'));
+const ProducerProductPage = lazy(() => import('./pages/private/producer/ProducerProductPage'));
+const ProducerProfilePage = lazy(() => import('./pages/private/producer/ProducerProfilePage'));
+const ProducerOrdersPage = lazy(() => import('./pages/private/producer/ProducerOrdersPage'));
+const ProducerOrderDetailPage = lazy(
+  () => import('./pages/private/producer/ProducerOrderDetailPage'),
+);
+const ProducerAuctionsPage = lazy(() => import('./pages/private/producer/ProducerAuctionsPage'));
+const ProducerAuctionDetailPage = lazy(
+  () => import('./pages/private/producer/ProducerAuctionDetailPage'),
+);
+const ProducerStockPage = lazy(() => import('./pages/private/producer/ProducerStockPage'));
+function producerPage(page: ReactNode) {
+  return <Suspense fallback={<ProducerLoading />}>{page}</Suspense>;
+}
 
 function buyerPage(page: ReactNode) {
   return <Suspense fallback={<BuyerLoading />}>{page}</Suspense>;
@@ -142,8 +162,35 @@ export function App() {
               <Route path="*" element={<PrivateNotFoundPage home="/area/comprador" />} />
             </Route>
           </Route>
+          <Route path="produtor" element={<DemoRoute role="produtor" />}>
+            <Route element={<ProducerArea />}>
+              <Route index element={producerPage(<ProducerDashboardPage />)} />
+              <Route path="candidatura" element={producerPage(<ProducerApplicationPage />)} />
+              <Route path="produtos" element={producerPage(<ProducerProductsPage />)} />
+              <Route
+                path="produtos/novo"
+                element={producerPage(<ProducerProductPage mode="new" />)}
+              />
+              <Route path="produtos/:id" element={producerPage(<ProducerProductPage />)} />
+              <Route
+                path="produtos/:id/editar"
+                element={producerPage(<ProducerProductPage mode="edit" />)}
+              />
+              <Route path="perfil" element={producerPage(<ProducerProfilePage />)} />
+              <Route
+                path="perfil/pre-visualizacao"
+                element={producerPage(<ProducerProfilePage preview />)}
+              />
+              <Route path="encomendas" element={producerPage(<ProducerOrdersPage />)} />
+              <Route path="encomendas/:id" element={producerPage(<ProducerOrderDetailPage />)} />
+              <Route path="leiloes" element={producerPage(<ProducerAuctionsPage />)} />
+              <Route path="leiloes/:id" element={producerPage(<ProducerAuctionDetailPage />)} />
+              <Route path="indicadores" element={producerPage(<ProducerStockPage />)} />
+              <Route path="*" element={<PrivateNotFoundPage home="/area/produtor" />} />
+            </Route>
+          </Route>
           {roles
-            .filter((role) => role !== 'comprador')
+            .filter((role) => role === 'administrador')
             .map((role) => (
               <Route key={role} path={role} element={<DemoRoute role={role} />}>
                 <Route index element={<RoleLandingPage role={role} />} />

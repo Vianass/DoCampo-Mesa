@@ -106,7 +106,9 @@ export function PrivateLayout() {
             <p className="private-navigation__note">
               {role === 'comprador'
                 ? 'Atividade fictícia para explorar. Sem compras, pagamentos ou ofertas reais.'
-                : 'Estrutura em preparação. As operações desta área ainda não estão disponíveis.'}
+                : role === 'produtor'
+                  ? 'Gestão local demonstrativa. Sem publicação, aprovação ou vendas reais.'
+                  : 'Estrutura em preparação. As operações desta área ainda não estão disponíveis.'}
             </p>
           </nav>
           <main id="area-conteudo" ref={main} tabIndex={-1}>
