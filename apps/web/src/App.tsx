@@ -1,4 +1,6 @@
+import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router';
+import { CatalogLoadingPage } from './features/catalog/CatalogLoadingPage';
 import { PublicLayout } from './layouts/PublicLayout';
 import { HomePage } from './pages/HomePage';
 import {
@@ -11,15 +13,23 @@ import {
   ProducerDetailPage,
   ProducersPage,
   ProductDetailPage,
-  ProductsPage,
 } from './pages/MarketPages';
+
+const ProductsPage = lazy(() => import('./pages/ProductsPage'));
 
 export function App() {
   return (
     <Routes>
       <Route element={<PublicLayout />}>
         <Route index element={<HomePage />} />
-        <Route path="produtos" element={<ProductsPage />} />
+        <Route
+          path="produtos"
+          element={
+            <Suspense fallback={<CatalogLoadingPage />}>
+              <ProductsPage />
+            </Suspense>
+          }
+        />
         <Route path="produtos/:id" element={<ProductDetailPage />} />
         <Route path="produtores" element={<ProducersPage />} />
         <Route path="produtores/:id" element={<ProducerDetailPage />} />

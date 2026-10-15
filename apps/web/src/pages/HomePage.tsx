@@ -8,7 +8,13 @@ import { Icon } from '../components/Icon';
 import { ProductCard } from '../components/ProductCard';
 import { ProducerCard } from '../components/ProducerCard';
 import { SectionHeading } from '../components/SectionHeading';
-import { auction, categories, producers, products, type Category } from '../data/market';
+import {
+  auction,
+  featuredCategories as categories,
+  featuredProducers as producers,
+  featuredProducts as products,
+  type Category,
+} from '../data/market';
 
 export function HomePage() {
   const [category, setCategory] = useState<Category>('Todos');
@@ -114,7 +120,7 @@ export function HomePage() {
           />
           <div className="season-grid">
             {products
-              .filter((product) => product.tag)
+              .filter((product) => product.season.includes('Outono') && product.season.length < 4)
               .map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

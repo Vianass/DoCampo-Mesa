@@ -10,24 +10,44 @@ export function ProductCard({ product }: { product: Product }) {
       <Link to={`/produtos/${product.id}`} className="product-card__link">
         <div className="product-card__image">
           <img
-            src={product.image}
-            alt={product.imageAlt}
+            src={product.images[0].src}
+            alt={product.images[0].alt}
             width="800"
             height="800"
             loading="lazy"
             decoding="async"
           />
-          {product.tag && <StatusBadge tone="seasonal">{product.tag}</StatusBadge>}
+          <div className="product-card__badges">
+            {product.featured && product.season.length < 4 && (
+              <StatusBadge tone="seasonal">Da época</StatusBadge>
+            )}
+            {product.organic && <StatusBadge tone="organic">Biológico</StatusBadge>}
+          </div>
+          {product.images[0].src.endsWith('product-placeholder.svg') && (
+            <span className="product-card__placeholder-note">Fotografia a preparar</span>
+          )}
           <span className="product-card__arrow">
             <Icon name="diagonal" />
           </span>
         </div>
         <div className="product-card__body">
           <p className="product-card__origin">
-            {product.producer} <span>· {product.locality}</span>
+            {product.producerName}
+            <span className="product-card__locality">
+              <Icon name="location" width="12" height="12" />
+              {product.producerLocation}
+            </span>
           </p>
           <h3>{product.name}</h3>
           <PriceDisplay amountCents={product.priceCents} unit={product.unit} />
+          <p
+            className={`product-card__stock ${product.availableStock === 0 ? 'product-card__stock--empty' : ''}`}
+          >
+            <span aria-hidden="true" />
+            {product.availableStock > 0
+              ? `Disponível · ${product.availableStock} em stock`
+              : 'Esgotado'}
+          </p>
         </div>
       </Link>
     </article>

@@ -180,9 +180,56 @@
       transition: transform t.$transition-image;
     }
     .status-badge {
-      position: absolute;
-      top: 10px;
-      left: 10px;
+      position: static;
+    }
+  }
+  &__badges {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  &__placeholder-note {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    text-align: center;
+    color: t.$forest;
+    background: t.$cream;
+    border-radius: 4px;
+    padding: 6px;
+    font-size: 0.6rem;
+  }
+  &__locality {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 3px;
+  }
+  &__stock {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: t.$muted;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    margin: 10px 0 0;
+    span {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #617955;
+    }
+    &--empty {
+      color: #943d26;
+      span {
+        background: #943d26;
+      }
     }
   }
   &__arrow {
@@ -220,9 +267,6 @@
     font-size: 0.66rem;
     margin-bottom: 6px;
     line-height: 1.5;
-    span {
-      display: none;
-    }
   }
   @include m.from(md) {
     &__body h3 {
@@ -230,11 +274,6 @@
     }
     &__origin {
       font-size: 0.7rem;
-    }
-  }
-  @include m.from(xl) {
-    &__origin span {
-      display: inline;
     }
   }
 }

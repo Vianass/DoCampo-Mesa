@@ -162,9 +162,6 @@
   .product-card__image {
     aspect-ratio: 1.4;
   }
-  .product-card__origin span {
-    display: inline;
-  }
 }
 .season-note {
   display: flex;
@@ -536,9 +533,6 @@
     .product-card__image {
       aspect-ratio: 1.1;
     }
-    .product-card__origin span {
-      display: none;
-    }
   }
   .how-steps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -621,9 +615,6 @@
   }
   .season-grid .product-card__image {
     aspect-ratio: 1.32;
-  }
-  .season-grid .product-card__origin span {
-    display: inline;
   }
   .market-section {
     padding-block: 80px;

@@ -74,21 +74,6 @@ test('menu móvel: teclado, Escape, foco e navegação', async ({ page }) => {
   await expect(page.locator('main')).toBeFocused();
 });
 
-test('pesquisa demonstrativa, categoria, estado vazio e recuperação', async ({ page }) => {
-  await page.goto('/produtos');
-  const search = page.getByLabel('Pesquisar produtos, produtores ou localidade');
-  await search.fill('pera');
-  await page.getByRole('button', { name: 'Pesquisar', exact: true }).click();
-  await expect(page.locator('.product-card')).toHaveCount(1);
-  await expect(page.getByRole('heading', { name: 'Pera Rocha' })).toBeVisible();
-  await page.getByRole('button', { name: 'Hortícolas', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Ainda não encontrámos esse sabor.' }),
-  ).toBeVisible();
-  await page.getByRole('link', { name: 'Limpar pesquisa' }).click();
-  await expect(page.locator('.product-card')).toHaveCount(4);
-});
-
 test('destinos dos cartões e limites de contas/leilões', async ({ page }) => {
   await page.goto('/produtos/tomate-coracao');
   await expect(

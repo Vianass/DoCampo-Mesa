@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { AuctionCard } from '../components/AuctionCard';
 import { Button } from '../components/Button';
@@ -13,7 +13,7 @@ import { ProductCard } from '../components/ProductCard';
 import { ProducerCard } from '../components/ProducerCard';
 import { SectionHeading } from '../components/SectionHeading';
 import { StatusBadge } from '../components/StatusBadge';
-import { auction, categories, producers, products } from '../data/market';
+import { auction, producers, products } from '../data/market';
 
 function PageIntro({
   eyebrow,
@@ -33,104 +33,13 @@ function PageIntro({
   );
 }
 
-function normalized(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLocaleLowerCase('pt-PT');
-}
-
-export function ProductsPage() {
-  const [params, setParams] = useSearchParams();
-  const search = params.get('pesquisa') ?? '';
-  const category = categories.find((item) => item === params.get('categoria')) ?? 'Todos';
-  const selected = products.filter(
-    (product) =>
-      (category === 'Todos' || product.category === category) &&
-      normalized(
-        `${product.name} ${product.producer} ${product.locality} ${product.category}`,
-      ).includes(normalized(search.trim())),
-  );
-  function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const next = new URLSearchParams(params);
-    next.set('pesquisa', String(form.get('pesquisa') ?? '').trim());
-    setParams(next);
-  }
-  return (
-    <Container>
-      <PageIntro
-        eyebrow="O mercado da nossa terra"
-        title="Cada sabor tem uma origem."
-        description="Uma pequena seleção para descobrir, com produtos e produtores fictícios."
-      />
-      <form className="catalog-search" role="search" onSubmit={handleSearch}>
-        <FormField
-          label="Pesquisar produtos, produtores ou localidade"
-          name="pesquisa"
-          type="search"
-          key={search}
-          defaultValue={search}
-          placeholder="O que te apetece descobrir?"
-          maxLength={100}
-        />
-        <Button type="submit">
-          <Icon name="search" />
-          Pesquisar
-        </Button>
-      </form>
-      <div className="category-list" role="group" aria-label="Categorias de produtos">
-        {categories.map((item) => (
-          <CategoryPill
-            key={item}
-            label={item}
-            active={category === item}
-            onClick={() => {
-              const next = new URLSearchParams(params);
-              next.set('categoria', item);
-              setParams(next);
-            }}
-          />
-        ))}
-      </div>
-      <section className="catalog-results" aria-labelledby="results-title">
-        <h2 id="results-title" className="visually-hidden">
-          Produtos encontrados
-        </h2>
-        <p className="catalog-note" role="status">
-          {selected.length} {selected.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
-        </p>
-        {selected.length ? (
-          <div className="product-grid">
-            {selected.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            title="Ainda não encontrámos esse sabor."
-            description="Experimenta outra pesquisa ou volta à seleção completa."
-            action={
-              <Button to="/produtos" variant="secondary">
-                Limpar pesquisa
-                <Icon name="arrow" />
-              </Button>
-            }
-          />
-        )}
-      </section>
-    </Container>
-  );
-}
-
 export function ProducersPage() {
   return (
     <Container>
       <PageIntro
         eyebrow="Quem cuida da origem"
         title="Boas coisas começam com pessoas."
-        description="Conhece três histórias imaginadas para o nosso mercado demonstrativo. Fotografias ilustrativas, perfis fictícios."
+        description="Conhece histórias imaginadas para o nosso mercado demonstrativo. Fotografias ilustrativas, perfis fictícios."
       />
       <section className="catalog-results" aria-labelledby="producer-list-title">
         <h2 className="visually-hidden" id="producer-list-title">
@@ -158,17 +67,17 @@ export function ProductDetailPage() {
       <article className="detail-grid">
         <img
           className="detail-image"
-          src={product.image}
-          alt={product.imageAlt}
+          src={product.images[0].src}
+          alt={product.images[0].alt}
           width="800"
           height="800"
         />
         <div className="detail-copy">
           <p className="eyebrow">
-            {product.category} · {product.locality}
+            {product.category} · {product.producerLocation}
           </p>
           <h1>{product.name}</h1>
-          {product.tag && <StatusBadge tone="seasonal">{product.tag}</StatusBadge>}
+          {product.organic && <StatusBadge tone="organic">Biológico</StatusBadge>}
           <p>{product.description}</p>
           <PriceDisplay amountCents={product.priceCents} unit={product.unit} large />
           <div className="detail-origin">
@@ -176,7 +85,7 @@ export function ProductDetailPage() {
             <div>
               <span>Na origem</span>
               <Link to={`/produtores/${product.producerId}`}>
-                {product.producer}
+                {product.producerName}
                 <Icon name="diagonal" />
               </Link>
             </div>

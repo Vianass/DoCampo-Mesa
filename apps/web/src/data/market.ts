@@ -1,105 +1,7 @@
-export type Category = 'Todos' | 'Hortícolas' | 'Fruta' | 'Mel e compotas';
+import type { Product, Producer, Auction, ProductImage, Season, Category } from '../types/market';
+export type { Product, Producer, Auction, Category, Season } from '../types/market';
 
-export interface Product {
-  id: string;
-  name: string;
-  producer: string;
-  producerId: string;
-  locality: string;
-  category: Exclude<Category, 'Todos'>;
-  priceCents: number;
-  unit: string;
-  image: string;
-  imageAlt: string;
-  description: string;
-  tag?: string;
-}
-
-export interface Producer {
-  id: string;
-  name: string;
-  locality: string;
-  specialty: string;
-  description: string;
-  image: string;
-  imageAlt: string;
-}
-
-export interface Auction {
-  id: string;
-  title: string;
-  producer: string;
-  locality: string;
-  image: string;
-  imageAlt: string;
-  quantity: string;
-  currentPriceCents: number;
-  remainingLabel: string;
-}
-
-// Conteúdo inteiramente fictício para explorar a interface, sem contrato de API.
-export const products: Product[] = [
-  {
-    id: 'tomate-coracao',
-    name: 'Tomate coração-de-boi',
-    producer: 'Horta da Ribeira',
-    producerId: 'horta-ribeira',
-    locality: 'Ponte de Lima',
-    category: 'Hortícolas',
-    priceCents: 280,
-    unit: 'kg',
-    image: '/images/tomatoes.webp',
-    imageAlt: 'Tomates vermelhos maduros com os respetivos pedúnculos',
-    description:
-      'Carnudo, aromático e de pele fina. Um sabor simples que pede azeite, uma pitada de sal e pão à mesa.',
-    tag: 'Da época',
-  },
-  {
-    id: 'pera-rocha',
-    name: 'Pera Rocha',
-    producer: 'Pomar do Vale',
-    producerId: 'pomar-vale',
-    locality: 'Arcos de Valdevez',
-    category: 'Fruta',
-    priceCents: 240,
-    unit: 'kg',
-    image: '/images/pears.webp',
-    imageAlt: 'Peras maduras sobre uma superfície de madeira',
-    description:
-      'Doce e delicada, para comer ao natural ou levar ao forno. A fruta que acompanha os primeiros dias de outono.',
-    tag: 'Da época',
-  },
-  {
-    id: 'mel-multifloral',
-    name: 'Mel multifloral',
-    producer: 'Mel da Encosta',
-    producerId: 'mel-encosta',
-    locality: 'Viana do Castelo',
-    category: 'Mel e compotas',
-    priceCents: 750,
-    unit: 'frasco de 500 g',
-    image: '/images/honey.webp',
-    imageAlt: 'Frasco com mel dourado e colher de madeira',
-    description:
-      'Um frasco de sabor suave e notas florais. Para o pequeno-almoço, uma infusão ou uma receita feita com tempo.',
-  },
-  {
-    id: 'abobora-menina',
-    name: 'Abóbora menina',
-    producer: 'Horta da Ribeira',
-    producerId: 'horta-ribeira',
-    locality: 'Ponte de Lima',
-    category: 'Hortícolas',
-    priceCents: 160,
-    unit: 'kg',
-    image: '/images/pumpkin.webp',
-    imageAlt: 'Abóbora alaranjada rodeada de folhas no campo',
-    description:
-      'Polpa doce, cor de outono e muitas possibilidades. A base de uma sopa reconfortante ou de um assado de domingo.',
-    tag: 'Da época',
-  },
-];
-
+// Todos os produtores e produtos são fictícios. As fotografias são ilustrativas.
 export const producers: Producer[] = [
   {
     id: 'horta-ribeira',
@@ -131,6 +33,46 @@ export const producers: Producer[] = [
     image: '/images/honey.webp',
     imageAlt: 'Fotografia ilustrativa de mel num frasco',
   },
+  {
+    id: 'quinta-serra',
+    name: 'Quinta da Serra',
+    locality: 'Seia',
+    specialty: 'Queijos e frutos secos',
+    description:
+      'Uma quinta fictícia onde imaginamos queijo artesanal e frutos secos para uma mesa de partilha. Sem denominações de origem ou certificações reais.',
+    image: '/images/catalog/cheese.webp',
+    imageAlt: 'Fotografia ilustrativa de pequenos queijos de cabra',
+  },
+  {
+    id: 'olival-monte',
+    name: 'Olival do Monte',
+    locality: 'Moura',
+    specialty: 'Azeite e azeitonas',
+    description:
+      'Um olival fictício, criado para mostrar os sabores que queremos aproximar. A fotografia é apenas ilustrativa.',
+    image: '/images/catalog/olive-oil.webp',
+    imageAlt: 'Fotografia ilustrativa de azeite',
+  },
+  {
+    id: 'forno-aldeia',
+    name: 'Forno da Aldeia',
+    locality: 'Barcelos',
+    specialty: 'Pão e cereais',
+    description:
+      'Um forno imaginado para este mercado. Pães e cereais que evocam o tempo de fazer as coisas com cuidado.',
+    image: '/images/catalog/bread.webp',
+    imageAlt: 'Fotografia ilustrativa de pão artesanal',
+  },
+  {
+    id: 'pomar-sul',
+    name: 'Pomar do Sul',
+    locality: 'Faro',
+    specialty: 'Citrinos e fruta',
+    description:
+      'Um pomar fictício inspirado nos sabores do sul. Os dados e a fotografia não representam uma exploração real.',
+    image: '/images/catalog/oranges.webp',
+    imageAlt: 'Fotografia ilustrativa de laranjas',
+  },
 ];
 
 export const auction: Auction = {
@@ -145,7 +87,578 @@ export const auction: Auction = {
   remainingLabel: '02h 14m',
 };
 
-export const categories: Category[] = ['Todos', 'Hortícolas', 'Fruta', 'Mel e compotas'];
+const images = {
+  tomato: {
+    src: '/images/tomatoes.webp',
+    alt: 'Fotografia ilustrativa de tomates vermelhos maduros',
+  },
+  pear: { src: '/images/pears.webp', alt: 'Fotografia ilustrativa de peras sobre madeira' },
+  honey: { src: '/images/honey.webp', alt: 'Fotografia ilustrativa de mel dourado num frasco' },
+  pumpkin: { src: '/images/pumpkin.webp', alt: 'Fotografia ilustrativa de uma abóbora no campo' },
+  kiwi: { src: '/images/catalog/kiwi.webp', alt: 'Fotografia ilustrativa de kiwis' },
+  apple: { src: '/images/catalog/apples.webp', alt: 'Fotografia ilustrativa de maçãs vermelhas' },
+  potato: { src: '/images/catalog/potatoes.webp', alt: 'Fotografia ilustrativa de batatas' },
+  orange: { src: '/images/catalog/oranges.webp', alt: 'Fotografia ilustrativa de laranjas' },
+  cheese: {
+    src: '/images/catalog/cheese.webp',
+    alt: 'Fotografia ilustrativa de pequenos queijos de cabra',
+  },
+  oil: { src: '/images/catalog/olive-oil.webp', alt: 'Fotografia ilustrativa de azeite' },
+  kale: {
+    src: '/images/catalog/leafy-greens.webp',
+    alt: 'Fotografia ilustrativa de folhas de couve kale',
+  },
+  carrot: { src: '/images/catalog/carrots.webp', alt: 'Fotografia ilustrativa de cenouras' },
+  onion: { src: '/images/catalog/onions.webp', alt: 'Fotografia ilustrativa de cebolas' },
+  strawberry: {
+    src: '/images/catalog/strawberries.webp',
+    alt: 'Fotografia ilustrativa de morangos',
+  },
+  walnut: { src: '/images/catalog/nuts.webp', alt: 'Fotografia ilustrativa de nozes inteiras' },
+  bread: { src: '/images/catalog/bread.webp', alt: 'Fotografia ilustrativa de pão artesanal' },
+  placeholder: { src: '/images/product-placeholder.svg', alt: 'Fotografia a preparar' },
+} satisfies Record<string, ProductImage>;
+const allSeasons: readonly Season[] = ['Primavera', 'Verão', 'Outono', 'Inverno'];
+type ProductSeed = Omit<
+  Product,
+  'producerName' | 'producerLocation' | 'images' | 'createdAt' | 'featured'
+> & { image: keyof typeof images; featured?: boolean };
+const seeds: ProductSeed[] = [
+  {
+    id: 'tomate-coracao',
+    name: 'Tomate coração-de-boi',
+    description:
+      'Carnudo, aromático e de pele fina. Um sabor simples que pede azeite, uma pitada de sal e pão à mesa.',
+    category: 'Hortícolas',
+    priceCents: 280,
+    unit: 'kg',
+    availableStock: 18,
+    producerId: 'horta-ribeira',
+    organic: true,
+    season: ['Verão', 'Outono'],
+    featured: true,
+    image: 'tomato',
+  },
+  {
+    id: 'pera-rocha',
+    name: 'Pera Rocha',
+    description:
+      'Doce e delicada, para comer ao natural ou levar ao forno. A fruta que acompanha os primeiros dias de outono.',
+    category: 'Fruta',
+    priceCents: 240,
+    unit: 'kg',
+    availableStock: 35,
+    producerId: 'pomar-vale',
+    organic: false,
+    season: ['Outono'],
+    featured: true,
+    image: 'pear',
+  },
+  {
+    id: 'mel-multifloral',
+    name: 'Mel multifloral',
+    description:
+      'Mel de sabor suave e notas florais. Para o pequeno-almoço, uma infusão ou uma receita feita com tempo.',
+    category: 'Mel e compotas',
+    priceCents: 750,
+    unit: 'frasco de 500 g',
+    availableStock: 12,
+    producerId: 'mel-encosta',
+    organic: false,
+    season: allSeasons,
+    featured: true,
+    image: 'honey',
+  },
+  {
+    id: 'abobora-menina',
+    name: 'Abóbora-menina',
+    description:
+      'Polpa doce, cor de outono e muitas possibilidades. A base de uma sopa reconfortante ou de um assado de domingo.',
+    category: 'Hortícolas',
+    priceCents: 160,
+    unit: 'kg',
+    availableStock: 8,
+    producerId: 'horta-ribeira',
+    organic: true,
+    season: ['Outono', 'Inverno'],
+    featured: true,
+    image: 'pumpkin',
+  },
+  {
+    id: 'kiwi-hayward',
+    name: 'Kiwi Hayward',
+    description:
+      'Fruta de polpa verde, fresca e ligeiramente ácida. Fica bem ao natural, em saladas de fruta e no pequeno-almoço.',
+    category: 'Fruta',
+    priceCents: 320,
+    unit: 'kg',
+    availableStock: 26,
+    producerId: 'pomar-vale',
+    organic: true,
+    season: ['Outono', 'Inverno'],
+    image: 'kiwi',
+  },
+  {
+    id: 'maca-bravo-esmolfe',
+    name: 'Maçã Bravo de Esmolfe',
+    description:
+      'Uma maçã aromática para saborear devagar. Experimente-a fresca ou assada com canela.',
+    category: 'Fruta',
+    priceCents: 290,
+    unit: 'kg',
+    availableStock: 18,
+    producerId: 'pomar-vale',
+    organic: true,
+    season: ['Outono', 'Inverno'],
+    image: 'apple',
+  },
+  {
+    id: 'batata-vermelha',
+    name: 'Batata vermelha',
+    description:
+      'Versátil na cozinha, de uma assadeira de domingo a um puré caseiro. Vendida ao peso.',
+    category: 'Hortícolas',
+    priceCents: 135,
+    unit: 'kg',
+    availableStock: 64,
+    producerId: 'horta-ribeira',
+    organic: false,
+    season: allSeasons,
+    image: 'potato',
+  },
+  {
+    id: 'queijo-artesanal',
+    name: 'Queijo artesanal de cabra',
+    description:
+      'Um pequeno queijo de cabra para partilhar com pão e uma compota. Sem denominação de origem atribuída neste exemplo.',
+    category: 'Queijos e laticínios',
+    priceCents: 780,
+    unit: 'unidade de 300 g',
+    availableStock: 6,
+    producerId: 'quinta-serra',
+    organic: false,
+    season: allSeasons,
+    image: 'cheese',
+  },
+  {
+    id: 'azeite-virgem-extra',
+    name: 'Azeite virgem extra',
+    description:
+      'O toque final numa salada, nas sopas e nos pratos de forno. Uma garrafa para ter sempre na cozinha.',
+    category: 'Azeite e azeitonas',
+    priceCents: 950,
+    unit: 'garrafa de 500 ml',
+    availableStock: 14,
+    producerId: 'olival-monte',
+    organic: true,
+    season: allSeasons,
+    image: 'oil',
+  },
+  {
+    id: 'laranja-algarve',
+    name: 'Laranja do Algarve',
+    description:
+      'Sumarenta e perfumada, boa para comer ao natural ou espremer para o pequeno-almoço.',
+    category: 'Fruta',
+    priceCents: 190,
+    unit: 'kg',
+    availableStock: 38,
+    producerId: 'pomar-sul',
+    organic: false,
+    season: ['Inverno', 'Primavera'],
+    image: 'orange',
+  },
+  {
+    id: 'couve-galega',
+    name: 'Couve-galega',
+    description:
+      'Um molho de folhas para o caldo verde e para uma mesa que sabe a casa. Escolha simples para os dias frios.',
+    category: 'Hortícolas',
+    priceCents: 110,
+    unit: 'molho',
+    availableStock: 28,
+    producerId: 'horta-ribeira',
+    organic: true,
+    season: ['Outono', 'Inverno'],
+    image: 'placeholder',
+  },
+  {
+    id: 'cenoura',
+    name: 'Cenoura',
+    description:
+      'Doce e crocante, para sopas, saladas ou legumes no forno. Um ingrediente de todos os dias.',
+    category: 'Hortícolas',
+    priceCents: 145,
+    unit: 'kg',
+    availableStock: 35,
+    producerId: 'horta-ribeira',
+    organic: true,
+    season: ['Primavera', 'Outono', 'Inverno'],
+    image: 'carrot',
+  },
+  {
+    id: 'cebola',
+    name: 'Cebola',
+    description:
+      'A base de tantos pratos portugueses. Para refogados, assados e uma sopa feita com vagar.',
+    category: 'Hortícolas',
+    priceCents: 150,
+    unit: 'kg',
+    availableStock: 42,
+    producerId: 'horta-ribeira',
+    organic: false,
+    season: ['Verão', 'Outono'],
+    image: 'onion',
+  },
+  {
+    id: 'alho-frances',
+    name: 'Alho-francês',
+    description:
+      'Sabor suave para quiches, cremes de legumes e pratos de forno. Um molho pronto a levar para a cozinha.',
+    category: 'Hortícolas',
+    priceCents: 195,
+    unit: 'molho',
+    availableStock: 16,
+    producerId: 'horta-ribeira',
+    organic: true,
+    season: ['Outono', 'Inverno'],
+    image: 'placeholder',
+  },
+  {
+    id: 'courgette',
+    name: 'Courgette',
+    description:
+      'Leve e delicada, para grelhar, saltear ou juntar a uma sopa. Acompanha bem as refeições de verão.',
+    category: 'Hortícolas',
+    priceCents: 220,
+    unit: 'kg',
+    availableStock: 22,
+    producerId: 'horta-ribeira',
+    organic: false,
+    season: ['Primavera', 'Verão'],
+    image: 'placeholder',
+  },
+  {
+    id: 'brocolos',
+    name: 'Brócolos',
+    description:
+      'Floretes verdes para vapor, forno ou uma massa simples. Neste lote demonstrativo, o stock está esgotado.',
+    category: 'Hortícolas',
+    priceCents: 270,
+    unit: 'kg',
+    availableStock: 0,
+    producerId: 'horta-ribeira',
+    organic: true,
+    season: ['Outono', 'Inverno'],
+    image: 'placeholder',
+  },
+  {
+    id: 'alface-romana',
+    name: 'Alface romana',
+    description:
+      'Folhas firmes e frescas para saladas com textura. Uma unidade para acompanhar a mesa.',
+    category: 'Hortícolas',
+    priceCents: 90,
+    unit: 'unidade',
+    availableStock: 15,
+    producerId: 'horta-ribeira',
+    organic: true,
+    season: ['Primavera', 'Verão', 'Outono'],
+    image: 'placeholder',
+  },
+  {
+    id: 'couve-kale',
+    name: 'Couve kale',
+    description:
+      'Folhas verdes frisadas para saltear ou juntar a um creme de legumes. Um molho que acrescenta textura à cozinha.',
+    category: 'Hortícolas',
+    priceCents: 185,
+    unit: 'molho',
+    availableStock: 12,
+    producerId: 'horta-ribeira',
+    organic: true,
+    season: ['Outono', 'Inverno', 'Primavera'],
+    image: 'kale',
+  },
+  {
+    id: 'maca-reineta',
+    name: 'Maçã reineta',
+    description:
+      'Uma maçã que convida ao forno e aos doces caseiros. Boa companhia para uma colher de canela.',
+    category: 'Fruta',
+    priceCents: 230,
+    unit: 'kg',
+    availableStock: 27,
+    producerId: 'pomar-vale',
+    organic: false,
+    season: ['Outono', 'Inverno'],
+    image: 'apple',
+  },
+  {
+    id: 'uva-branca',
+    name: 'Uva branca',
+    description: 'Um cacho para partilhar ao fim da refeição. Sabor delicado dos dias de colheita.',
+    category: 'Fruta',
+    priceCents: 380,
+    unit: 'kg',
+    availableStock: 9,
+    producerId: 'pomar-vale',
+    organic: false,
+    season: ['Verão', 'Outono'],
+    image: 'placeholder',
+  },
+  {
+    id: 'limao',
+    name: 'Limão',
+    description:
+      'Frescura para temperar, perfumar bolos ou preparar uma limonada. Um ingrediente pequeno, com muitas possibilidades.',
+    category: 'Fruta',
+    priceCents: 210,
+    unit: 'kg',
+    availableStock: 19,
+    producerId: 'pomar-sul',
+    organic: true,
+    season: allSeasons,
+    image: 'placeholder',
+  },
+  {
+    id: 'morangos',
+    name: 'Morangos',
+    description:
+      'Vermelhos e perfumados, para comer frescos ou preparar uma sobremesa. Este lote demonstrativo está esgotado.',
+    category: 'Fruta',
+    priceCents: 550,
+    unit: 'caixa de 500 g',
+    availableStock: 0,
+    producerId: 'pomar-sul',
+    organic: false,
+    season: ['Primavera', 'Verão'],
+    image: 'strawberry',
+  },
+  {
+    id: 'figos',
+    name: 'Figos',
+    description:
+      'Fruta delicada para saborear no fim do verão. Combine com queijo ou sirva ao natural.',
+    category: 'Fruta',
+    priceCents: 490,
+    unit: 'kg',
+    availableStock: 7,
+    producerId: 'pomar-sul',
+    organic: false,
+    season: ['Verão', 'Outono'],
+    image: 'placeholder',
+  },
+  {
+    id: 'castanha',
+    name: 'Castanha',
+    description:
+      'O sabor dos magustos, para assar ou cozer. Uma colheita que acompanha os dias mais frescos.',
+    category: 'Frutos secos',
+    priceCents: 580,
+    unit: 'kg',
+    availableStock: 11,
+    producerId: 'quinta-serra',
+    organic: true,
+    season: ['Outono', 'Inverno'],
+    image: 'placeholder',
+  },
+  {
+    id: 'noz',
+    name: 'Noz',
+    description:
+      'Nozes inteiras para abrir e juntar ao pão, a saladas ou a uma sobremesa. Embalagem para partilhar.',
+    category: 'Frutos secos',
+    priceCents: 650,
+    unit: 'embalagem de 250 g',
+    availableStock: 18,
+    producerId: 'quinta-serra',
+    organic: false,
+    season: ['Outono', 'Inverno'],
+    image: 'walnut',
+  },
+  {
+    id: 'amendoa',
+    name: 'Amêndoa',
+    description:
+      'Um sabor suave para bolos, granola e pequenos lanches. Embalagem de amêndoa para a despensa.',
+    category: 'Frutos secos',
+    priceCents: 460,
+    unit: 'embalagem de 250 g',
+    availableStock: 20,
+    producerId: 'quinta-serra',
+    organic: false,
+    season: ['Outono', 'Inverno'],
+    image: 'placeholder',
+  },
+  {
+    id: 'mel-urze',
+    name: 'Mel de urze',
+    description:
+      'Mel com carácter para acompanhar torradas e queijo. Um frasco de uma apicultura inteiramente fictícia.',
+    category: 'Mel e compotas',
+    priceCents: 850,
+    unit: 'frasco de 500 g',
+    availableStock: 6,
+    producerId: 'mel-encosta',
+    organic: true,
+    season: allSeasons,
+    image: 'honey',
+  },
+  {
+    id: 'compota-figo',
+    name: 'Compota de figo',
+    description:
+      'Uma compota para juntar ao queijo e ao pão, ou para guardar o sabor de uma estação na despensa.',
+    category: 'Mel e compotas',
+    priceCents: 420,
+    unit: 'frasco de 250 g',
+    availableStock: 16,
+    producerId: 'mel-encosta',
+    organic: false,
+    season: ['Outono', 'Inverno'],
+    image: 'placeholder',
+  },
+  {
+    id: 'requeijao',
+    name: 'Requeijão',
+    description:
+      'Fresco e delicado, para comer com mel ou integrar uma sobremesa. Este exemplo está temporariamente esgotado.',
+    category: 'Queijos e laticínios',
+    priceCents: 270,
+    unit: 'unidade de 200 g',
+    availableStock: 0,
+    producerId: 'quinta-serra',
+    organic: false,
+    season: allSeasons,
+    image: 'placeholder',
+  },
+  {
+    id: 'queijo-fresco',
+    name: 'Queijo fresco',
+    description:
+      'Um pequeno queijo para uma refeição leve, acompanhado de tomate e pão. Preparado para uma mesa simples.',
+    category: 'Queijos e laticínios',
+    priceCents: 185,
+    unit: 'unidade de 150 g',
+    availableStock: 12,
+    producerId: 'quinta-serra',
+    organic: false,
+    season: allSeasons,
+    image: 'placeholder',
+  },
+  {
+    id: 'azeitona-verde',
+    name: 'Azeitona verde',
+    description:
+      'Uma entrada para partilhar, com o sabor que pede uma fatia de pão. Embalagem pequena para a mesa.',
+    category: 'Azeite e azeitonas',
+    priceCents: 290,
+    unit: 'embalagem de 250 g',
+    availableStock: 20,
+    producerId: 'olival-monte',
+    organic: false,
+    season: ['Outono', 'Inverno'],
+    image: 'placeholder',
+  },
+  {
+    id: 'pao-milho',
+    name: 'Pão de milho',
+    description:
+      'Uma broa para acompanhar o caldo verde ou uma refeição de forno. Um pão fictício de inspiração artesanal.',
+    category: 'Pão e cereais',
+    priceCents: 250,
+    unit: 'broa de 500 g',
+    availableStock: 11,
+    producerId: 'forno-aldeia',
+    organic: false,
+    season: allSeasons,
+    image: 'bread',
+  },
+  {
+    id: 'pao-centeio',
+    name: 'Pão de centeio',
+    description:
+      'Miolo firme e sabor profundo para torradas ou sandes. Um pão imaginado para este mercado.',
+    category: 'Pão e cereais',
+    priceCents: 380,
+    unit: 'pão de 750 g',
+    availableStock: 8,
+    producerId: 'forno-aldeia',
+    organic: true,
+    season: allSeasons,
+    image: 'bread',
+  },
+  {
+    id: 'farinha-milho',
+    name: 'Farinha de milho',
+    description:
+      'Para broa, papas e receitas da cozinha tradicional. Uma embalagem para cozinhar com calma.',
+    category: 'Pão e cereais',
+    priceCents: 165,
+    unit: 'embalagem de 1 kg',
+    availableStock: 32,
+    producerId: 'forno-aldeia',
+    organic: false,
+    season: allSeasons,
+    image: 'placeholder',
+  },
+  {
+    id: 'coentros',
+    name: 'Coentros',
+    description:
+      'Um molho aromático para açordas, saladas e pratos de peixe. Um toque fresco no fim da receita.',
+    category: 'Ervas e aromáticas',
+    priceCents: 85,
+    unit: 'molho',
+    availableStock: 24,
+    producerId: 'horta-ribeira',
+    organic: true,
+    season: ['Primavera', 'Outono', 'Inverno'],
+    image: 'placeholder',
+  },
+  {
+    id: 'alecrim',
+    name: 'Alecrim',
+    description:
+      'Perfume de erva aromática para assados e batatas de forno. Um molho para usar aos poucos na cozinha.',
+    category: 'Ervas e aromáticas',
+    priceCents: 120,
+    unit: 'molho',
+    availableStock: 17,
+    producerId: 'horta-ribeira',
+    organic: true,
+    season: allSeasons,
+    image: 'placeholder',
+  },
+];
+
+export const products: readonly Product[] = seeds.map(
+  ({ image, featured = false, ...seed }, index) => {
+    const producer = producers.find((item) => item.id === seed.producerId);
+    if (!producer) throw new Error(`Produtor fictício não encontrado: ${seed.producerId}`);
+    const photo = images[image];
+    return {
+      ...seed,
+      featured,
+      producerName: producer.name,
+      producerLocation: producer.locality,
+      images: [
+        {
+          ...photo,
+          alt: image === 'placeholder' ? `Fotografia de ${seed.name} a preparar` : photo.alt,
+        },
+      ],
+      createdAt: new Date(Date.UTC(2026, 8, 9 + index, 9)).toISOString(),
+    };
+  },
+);
+export const featuredProducts = products.filter((product) => product.featured);
+export const featuredProducers = producers.slice(0, 3);
+export const featuredCategories: Category[] = [
+  'Todos',
+  ...new Set(featuredProducts.map((product) => product.category)),
+];
 
 export function formatPrice(amountCents: number): string {
   return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(
