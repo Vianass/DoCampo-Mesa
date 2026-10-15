@@ -6,13 +6,16 @@ import '@fontsource/dm-serif-display/latin-400.css';
 import '@fontsource/dm-serif-display/latin-400-italic.css';
 import './styles/main.scss';
 import { App } from './App';
+import { CartProvider } from './features/cart/CartProvider';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Elemento raiz da aplicação não encontrado.');
 createRoot(root).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <CartProvider>
+        <App />
+      </CartProvider>
     </BrowserRouter>
   </StrictMode>,
 );
