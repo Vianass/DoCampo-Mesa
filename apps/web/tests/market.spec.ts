@@ -87,10 +87,14 @@ test('destinos dos cartões e limites de contas/leilões', async ({ page }) => {
   await page.goto('/leiloes/cabaz-outono');
   await expect(page.getByRole('button', { name: 'Licitações ainda indisponíveis' })).toBeDisabled();
   await page.goto('/registo');
-  await expect(
-    page.getByRole('heading', { name: 'O registo chega numa próxima etapa.' }),
-  ).toBeVisible();
-  await expect(page.locator('input')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Fazer parte do mercado.' })).toBeVisible();
+  await expect(page.getByLabel('Email', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Palavra-passe', { exact: true })).toHaveAttribute(
+    'type',
+    'password',
+  );
+  await expect(page.locator('.auth-prototype-note')).toContainText('nenhuma conta será criada');
+  await expect(page.getByRole('radio', { name: /administrador/i })).toHaveCount(0);
   await page.goto('/sistema-visual');
   await expect(page.getByLabel('Nome')).toBeVisible();
   await expect(page.getByLabel('Email')).toHaveAttribute('aria-invalid', 'true');
