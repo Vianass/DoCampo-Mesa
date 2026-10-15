@@ -226,11 +226,19 @@ for (const role of roles) {
     const first = privateSections[role][0];
     if (!first) throw new Error('Secção em falta');
     await nav.getByRole('link', { name: new RegExp(first.label) }).click();
-    await expect(page.locator('.private-prototype')).toContainText(
-      'Funcionalidade ainda indisponível',
-    );
+    if (role === 'comprador') {
+      await expect(page.getByLabel('Filtrar por estado')).toBeVisible();
+      await expect(page.locator('.buyer-order-card')).toHaveCount(6);
+      await expect(page.locator('.buyer-demo-note')).toContainText('Dados fictícios');
+    } else {
+      await expect(page.locator('.private-prototype')).toContainText(
+        'Funcionalidade ainda indisponível',
+      );
+    }
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${first.label}.`);
-    await page.getByRole('link', { name: 'Voltar à visão geral' }).click();
+    if (role === 'comprador')
+      await nav.getByRole('link', { name: 'Visão geral', exact: true }).click();
+    else await page.getByRole('link', { name: 'Voltar à visão geral' }).click();
     await page.getByRole('button', { name: 'Sair da demonstração' }).click();
     await expect(page).toHaveURL(/\/entrar$/);
     await spaNavigate(page, `/area/${role}`);
