@@ -1,0 +1,48 @@
+name: docampo-api-foundation
+services:
+  mongo-dev:
+    image: mongo:8.0.34
+    command: [mongod, --replSet, rs-dcm-dev, --bind_ip_all]
+    ports:
+      - '127.0.0.1:27018:27017'
+    volumes:
+      - mongo-dev-data:/data/db
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet --eval '
+          try { rs.status() } catch (error) {
+            if (error.code !== 94) throw error;
+            rs.initiate({_id:"rs-dcm-dev",members:[{_id:0,host:"localhost:27017"}]});
+          }
+          if (!db.hello().isWritablePrimary) quit(1);'
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 5s
+  mongo-test:
+    profiles: [test]
+    image: mongo:8.0.34
+    command: [mongod, --replSet, rs-dcm-test, --bind_ip_all]
+    ports:
+      - '127.0.0.1:27019:27017'
+    tmpfs:
+      - /data/db
+      - /data/configdb
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet --eval '
+          try { rs.status() } catch (error) {
+            if (error.code !== 94) throw error;
+            rs.initiate({_id:"rs-dcm-test",members:[{_id:0,host:"localhost:27017"}]});
+          }
+          if (!db.hello().isWritablePrimary) quit(1);'
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 5s
+volumes:
+  mongo-dev-data:

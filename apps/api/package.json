@@ -3,5 +3,39 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Estrutura reservada ao backend modular; sem endpoints na Fase 1."
+  "description": "Fundação técnica da API REST; sem módulos comerciais ou autenticação real.",
+  "engines": {
+    "node": "^22.21.1 || ^24.0.0",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --import tsx --watch src/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node --env-file-if-exists=.env dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:http": "vitest run tests/http",
+    "test:integration": "vitest run tests/integration",
+    "test:watch": "vitest",
+    "mongo:dev:up": "docker compose up -d --wait mongo-dev",
+    "mongo:test:up": "docker compose --profile test up -d --wait mongo-test"
+  },
+  "dependencies": {
+    "express": "5.3.0",
+    "mongoose": "9.11.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "22.20.5",
+    "@types/supertest": "7.2.1",
+    "supertest": "7.3.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
+  }
 }
