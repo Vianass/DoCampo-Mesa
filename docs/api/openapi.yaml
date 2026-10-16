@@ -1,0 +1,3089 @@
+# Fase 3.0 — rascunho documental, não autorização de implementação.
+openapi: 3.0.3
+info:
+  title: Do Campo à Mesa — contrato inicial da API
+  version: 0.1.0-draft
+  description:
+    'Contrato comercial da Fase 3.0 e fundação local 3.1. Apenas GET /api/health está implementado localmente; nenhum endpoint está publicado. Métodos/códigos
+    académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. x-decision-dependencies identifica Q pendentes:
+    essas operações não podem ser disponibilizadas antes de aprovação e segurança real. Papéis nas extensões
+    são propostas da matriz, não permissões concedidas. Ver README.md, decisions.md e security.md.'
+servers:
+  - url: /api
+    description: Base relativa proposta; não anuncia um servidor ativo.
+security:
+  - bearerAuth: []
+tags:
+  - name: Diagnóstico técnico
+  - name: Autenticação
+  - name: Utilizadores
+  - name: Produtores
+  - name: Candidaturas
+  - name: Produtos
+  - name: Encomendas
+  - name: Avaliações
+  - name: Leilões
+  - name: Licitações
+  - name: Administração
+x-contract-status: aprovacao-parcial-com-fundacao-local
+x-local-implementation: foundation-implementation.md
+x-base-commit: 807aa68
+x-preserved-phase0: true
+x-approved-technical-decisions:
+  - C01
+  - C02
+  - C04
+  - C06
+x-pending-technical-decisions:
+  - C03
+  - C05
+x-approval-scope: decisions.md
+x-private-api-availability: Bloqueada até autenticação/autorização reais da semana 4, conforme C04.
+x-technical-decisions:
+  - C01
+  - C02
+  - C03
+  - C04
+  - C05
+  - C06
+x-socket-command:
+  name: licitar
+  stage: '5'
+  status: proposta-bloqueada
+  decision-dependencies:
+    - Q01
+    - Q07
+    - Q08
+    - Q09
+    - Q13
+  notes:
+    'Transporte não descrito como operação HTTP. Validar mínimo, estado e prazo no servidor; CAS + bid
+    transacional são D06 por aprovar. Protocolo histórico: ../architecture/auction-consistency.md.'
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [Diagnóstico técnico]
+      summary: Verificar resposta do processo HTTP
+      description: >-
+        Implementado apenas localmente na Fase 3.1. Não verifica disponibilidade atual
+        de MongoDB ou serviços Cloud. Sem parâmetros de consulta; autenticação não necessária.
+      security: []
+      x-authorized-roles: [visitante, comprador, produtor, administrador]
+      x-decision-dependencies: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: '3.1'
+      responses:
+        '200':
+          description: O processo HTTP respondeu; não representa prontidão das dependências.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TechnicalHealth'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /auth/registo:
+    post:
+      operationId: register
+      tags:
+        - Autenticação
+      summary: Registar comprador ou produtor
+      description:
+        Público apenas para registo. Nunca aceita administrador, aprovação, hash ou permissões do
+        cliente. Login/aprovação não decorrem automaticamente do registo.
+      security: []
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
+      x-decision-dependencies:
+        - Q01
+        - Q04
+        - Q13
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '4'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Registration'
+      responses:
+        '201':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSelf'
+          headers:
+            Location:
+              description: URI do recurso criado. Para checkout, forma final depende de Q02.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      x-registration-roles:
+        - comprador
+        - produtor
+  /auth/login:
+    post:
+      operationId: login
+      tags:
+        - Autenticação
+      summary: Autenticar e emitir JWT
+      description:
+        Autenticar credenciais com bcrypt; JWT expira. Não define duração de 2 h como obrigação.
+        Sessão/refresh/logout dependem de Q13.
+      security: []
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
+      x-decision-dependencies:
+        - Q01
+        - Q04
+        - Q13
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '4'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessToken'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /me:
+    get:
+      operationId: getMe
+      tags:
+        - Utilizadores
+      summary: Consultar a própria identidade
+      description: Consultar a própria identidade. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: &id007
+        - comprador
+        - produtor
+        - administrador
+      x-decision-dependencies:
+        - Q01
+        - Q13
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '4'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSelf'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /producers:
+    get:
+      operationId: listProducers
+      tags:
+        - Produtores
+      summary: Consultar produtores públicos
+      description: Consultar produtores públicos. Operação proposta; não implementada.
+      security: []
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
+      x-decision-dependencies:
+        - Q04
+        - Q11
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      parameters:
+        - &id002
+          $ref: '#/components/parameters/Q'
+        - &id003
+          $ref: '#/components/parameters/Page'
+        - &id004
+          $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProducerPublic'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /producers/{id}:
+    get:
+      operationId: getProducer
+      tags:
+        - Produtores
+      summary: Consultar perfil público
+      description: Consultar perfil público. Operação proposta; não implementada.
+      security: []
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
+      x-decision-dependencies:
+        - Q04
+        - Q11
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      parameters:
+        - &id005
+          $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProducerPublic'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /me/producer:
+    get:
+      operationId: getOwnProducer
+      tags:
+        - Produtores
+      summary: Consultar perfil e candidatura próprios
+      description: Consultar perfil e candidatura próprios. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: &id001
+        - produtor
+      x-decision-dependencies:
+        - Q01
+        - Q04
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProducerSelf'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+    put:
+      operationId: replaceOwnProfile
+      tags:
+        - Produtores
+      summary: Alterar campos públicos do próprio perfil
+      description:
+        Produtor da sessão; não aceita alteração de aprovação, proprietário ou certificação. Permissões
+        antes da aprovação e publicação aguardam Q04.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id001
+      x-decision-dependencies:
+        - Q04
+        - Q11
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileWrite'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProducerSelf'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /me/producer/application:
+    get:
+      operationId: getOwnApplication
+      tags:
+        - Candidaturas
+      summary: Consultar a própria candidatura
+      description:
+        A versão para o candidato reduz dados administrativos ao estritamente necessário; não devolve
+        email/identidade privada de administradores.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id001
+      x-decision-dependencies:
+        - Q04
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSelf'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /products:
+    get:
+      operationId: listProducts
+      tags:
+        - Produtos
+      summary: Pesquisar e filtrar catálogo público
+      description: Pesquisar e filtrar catálogo público. Operação proposta; não implementada.
+      security: []
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
+      x-decision-dependencies:
+        - Q03
+        - Q04
+        - Q06
+        - Q12
+        - Q14
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+        - name: categoria
+          in: query
+          schema:
+            type: string
+          description: Taxonomia Q14.
+        - name: produtor
+          in: query
+          schema:
+            $ref: '#/components/schemas/Id'
+          description: ID do perfil produtor, resolvido para referência interna.
+        - name: localidade
+          in: query
+          schema:
+            type: string
+          description: Localidade pública normalizada.
+        - name: epoca
+          in: query
+          schema:
+            type: string
+          description: Semântica/taxonomia Q14; não inferir a partir de createdAt.
+        - name: bio
+          in: query
+          schema:
+            type: boolean
+          description: Mapeamento para modo de produção Q14.
+        - name: precoMax
+          in: query
+          schema:
+            type: number
+            minimum: 0
+          description:
+            'Proposta C03: valor em EUR na pesquisa, convertido para cêntimos após Q06; não reutilizar
+            como preço de escrita.'
+        - name: ordem
+          in: query
+          schema:
+            type: string
+          description: Ordenações/valores permitidos a fechar em C03.
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+    post:
+      operationId: createProduct
+      tags:
+        - Produtos
+      summary: Criar produto próprio
+      description: Criar produto próprio. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id001
+      x-decision-dependencies:
+        - Q03
+        - Q04
+        - Q06
+        - Q14
+        - Q15
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductWrite'
+      responses:
+        '201':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          headers:
+            Location:
+              description:
+                'Obrigatório: URI do produto criado, por exemplo /api/products/{id}. Exigência E
+                p. 17.'
+              schema:
+                type: string
+              required: true
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags:
+        - Produtos
+      summary: Consultar produto público
+      description: Consultar produto público. Operação proposta; não implementada.
+      security: []
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
+      x-decision-dependencies:
+        - Q03
+        - Q04
+        - Q06
+        - Q12
+        - Q14
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      parameters:
+        - *id005
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+    put:
+      operationId: replaceProduct
+      tags:
+        - Produtos
+      summary: Alterar produto próprio
+      description:
+        PUT da representação completa dos campos editáveis. Sem transferir propriedade. Preserva
+        snapshots de encomendas e não ignora reservas se Q07 as introduzir.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id001
+      x-decision-dependencies:
+        - Q03
+        - Q04
+        - Q06
+        - Q12
+        - Q14
+        - Q15
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      parameters:
+        - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductReplace'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+    delete:
+      operationId: deleteProduct
+      tags:
+        - Produtos
+      summary: Remover produto próprio do catálogo
+      description:
+        204 sem corpo. Arquivo vs remoção física e proteção de referências dependem de Q12. Nunca
+        apagar implicitamente histórico ou bids.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id001
+      x-decision-dependencies:
+        - Q04
+        - Q07
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      parameters:
+        - *id005
+      responses:
+        '204':
+          description: Sem conteúdo.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /me/products:
+    get:
+      operationId: listOwnProducts
+      tags:
+        - Produtos
+      summary: Consultar produtos próprios e disponibilidade
+      description: Consultar produtos próprios e disponibilidade. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id001
+      x-decision-dependencies:
+        - Q03
+        - Q04
+        - Q12
+        - Q14
+        - Q15
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.3'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /orders:
+    get:
+      operationId: listOwnOrders
+      tags:
+        - Encomendas
+      summary: Consultar encomendas de que é interveniente
+      description:
+        'Comprador: suas compras. Produtor: encomendas da sua produção. Admin usa rota própria;
+        sem IDs de proprietário livres do cliente.'
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - comprador
+        - produtor
+      x-decision-dependencies:
+        - Q01
+        - Q02
+        - Q05
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.4'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+        - $ref: '#/components/parameters/State'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+    post:
+      operationId: createOrders
+      tags:
+        - Encomendas
+      summary: Criar encomenda ou grupo de checkout
+      description:
+        oneOf representa alternativas por decidir em Q02, não liberdade de resposta aleatória. Antes
+        de estabilizar, escolher uma forma. Servidor calcula preços e stock; D08/transação/idempotência requerem
+        adoção expressa. Preço alterado exige política acordada em Q06.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: &id006
+        - comprador
+      x-decision-dependencies:
+        - Q02
+        - Q03
+        - Q04
+        - Q05
+        - Q06
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.4'
+      parameters:
+        - $ref: '#/components/parameters/Idempotency'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrder'
+      responses:
+        '201':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Order'
+                  - $ref: '#/components/schemas/CheckoutGroup'
+          headers:
+            Location:
+              description: URI do recurso criado. Para checkout, forma final depende de Q02.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /orders/{id}:
+    get:
+      operationId: getOwnOrder
+      tags:
+        - Encomendas
+      summary: Consultar encomenda própria
+      description: Consultar encomenda própria. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - comprador
+        - produtor
+      x-decision-dependencies:
+        - Q01
+        - Q02
+        - Q05
+        - Q06
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.4'
+      parameters:
+        - *id005
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /orders/{id}/estado:
+    patch:
+      operationId: changeOrderState
+      tags:
+        - Encomendas
+      summary: Atualizar estado de encomenda própria
+      description:
+        Caminho académico preservado. Apenas produtor proprietário; cadeia/saltos/cancelamento Q05.
+        Atualização e histórico juntos; notificação Socket.IO só na fase 5.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id001
+      x-decision-dependencies:
+        - Q04
+        - Q05
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.4'
+      parameters:
+        - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderStateWrite'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /products/{id}/reviews:
+    get:
+      operationId: listProductReviews
+      tags:
+        - Avaliações
+      summary: Consultar avaliações públicas do produto
+      description: Consultar avaliações públicas do produto. Operação proposta; não implementada.
+      security: []
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
+      x-decision-dependencies:
+        - Q10
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id005
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /producers/{id}/reviews:
+    get:
+      operationId: listProducerReviews
+      tags:
+        - Avaliações
+      summary: Consultar avaliações públicas do produtor
+      description: Consultar avaliações públicas do produtor. Operação proposta; não implementada.
+      security: []
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
+      x-decision-dependencies:
+        - Q10
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id005
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /me/reviews:
+    get:
+      operationId: listOwnReviews
+      tags:
+        - Avaliações
+      summary: Consultar avaliações próprias
+      description: Consultar avaliações próprias. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id006
+      x-decision-dependencies:
+        - Q10
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OwnReview'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /reviews:
+    post:
+      operationId: createReview
+      tags:
+        - Avaliações
+      summary: Avaliar produto ou produtor após entrega
+      description:
+        Validar encomenda entregue do autor e alvo da sua encomenda. Escala, unicidade e edição
+        aguardam Q10. Não confundir entrega fictícia do frontend com evidência persistida.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id006
+      x-decision-dependencies:
+        - Q10
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewWrite'
+      responses:
+        '201':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnReview'
+          headers:
+            Location:
+              description: URI do recurso criado. Para checkout, forma final depende de Q02.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /reviews/{id}/reports:
+    post:
+      operationId: reportReview
+      tags:
+        - Avaliações
+      summary: Denunciar avaliação
+      description:
+        Denúncia autenticada é a recomendação Q10. Papel autorizado final e repetição por autor
+        dependem dessa aprovação; não oculta automaticamente a avaliação.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id007
+      x-decision-dependencies:
+        - Q10
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportWrite'
+      responses:
+        '201':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+          headers:
+            Location:
+              description: URI do recurso criado. Para checkout, forma final depende de Q02.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /auctions:
+    get:
+      operationId: listAuctions
+      tags:
+        - Leilões
+      summary: Consultar resumos de leilões
+      description:
+        'Proposta: resumo público para destaque RF-CAT-04. Não concede entrada anónima em sala/presença/histórico
+        nem direito de licitar; Q09 decidirá detalhe e observação. Sem IDs privados de compradores.'
+      security: []
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
+      x-decision-dependencies:
+        - Q04
+        - Q07
+        - Q08
+        - Q09
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.6'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+        - $ref: '#/components/parameters/State'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Auction'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+    post:
+      operationId: createAuction
+      tags:
+        - Leilões
+      summary: Criar leilão próprio
+      description:
+        Contrato de criação bloqueado por Q07/Q08. Preparação REST/modelo na Fase 3; ciclo de vida/concorrência
+        completos na Fase 5. Preço base não cria bid nem vencedor.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id001
+      x-decision-dependencies:
+        - Q03
+        - Q04
+        - Q06
+        - Q07
+        - Q08
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.6'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuctionWrite'
+      responses:
+        '201':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auction'
+          headers:
+            Location:
+              description: URI do recurso criado. Para checkout, forma final depende de Q02.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /auctions/{id}:
+    get:
+      operationId: getAuction
+      tags:
+        - Leilões
+      summary: Consultar detalhe autorizado de leilão
+      description: Consultar detalhe autorizado de leilão. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id007
+      x-decision-dependencies:
+        - Q07
+        - Q08
+        - Q09
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.6'
+      parameters:
+        - *id005
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auction'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /auctions/{id}/bids:
+    get:
+      operationId: listAuctionBids
+      tags:
+        - Licitações
+      summary: Consultar histórico de ofertas aceites
+      description:
+        Histórico paginado e ordenado por sequência, sem email/identidade privada. Não aceita licitações
+        por REST neste esboço. Comando licitar pertence ao protocolo Socket.IO da Fase 5.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id007
+      x-decision-dependencies:
+        - Q08
+        - Q09
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.6'
+      parameters:
+        - *id005
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bid'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /me/auctions:
+    get:
+      operationId: listOwnAuctions
+      tags:
+        - Leilões
+      summary: Consultar leilões próprios
+      description: Consultar leilões próprios. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id001
+      x-decision-dependencies:
+        - Q04
+        - Q07
+        - Q08
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.6'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+        - $ref: '#/components/parameters/State'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Auction'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /me/bids:
+    get:
+      operationId: listOwnBids
+      tags:
+        - Licitações
+      summary: Consultar participações próprias
+      description: Consultar participações próprias. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id006
+      x-decision-dependencies:
+        - Q08
+        - Q09
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.6'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OwnBid'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /me/producer/indicators:
+    get:
+      operationId: getProducerIndicators
+      tags:
+        - Produtores
+      summary: Consultar indicadores próprios
+      description: Consultar indicadores próprios. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id001
+      x-decision-dependencies:
+        - Q05
+        - Q06
+        - Q15
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - name: inicio
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Período UTC, Q15.
+        - name: fim
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Período UTC, Q15.
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Indicators'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags:
+        - Administração
+      summary: Consultar utilizadores e papéis
+      description: Consultar utilizadores e papéis. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: &id008
+        - administrador
+      x-decision-dependencies:
+        - Q01
+        - Q13
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+        - name: papel
+          in: query
+          schema:
+            $ref: '#/components/schemas/Role'
+          description: Papel a consultar; não concede alteração.
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/users/{id}:
+    get:
+      operationId: getAdminUser
+      tags:
+        - Administração
+      summary: Consultar utilizador na projeção administrativa mínima
+      description: Consultar utilizador na projeção administrativa mínima. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q01
+        - Q13
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id005
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSummary'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/producers:
+    get:
+      operationId: listAdminProducers
+      tags:
+        - Administração
+      summary: Consultar produtores e candidaturas
+      description: Consultar produtores e candidaturas. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q04
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+        - $ref: '#/components/parameters/State'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProducerManaged'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/applications:
+    get:
+      operationId: listApplications
+      tags:
+        - Candidaturas
+      summary: Consultar candidaturas
+      description: Consultar candidaturas. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q04
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+        - $ref: '#/components/parameters/State'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/applications/{id}:
+    get:
+      operationId: getApplication
+      tags:
+        - Candidaturas
+      summary: Consultar candidatura pelo ID do perfil produtor
+      description: Consultar candidatura pelo ID do perfil produtor. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q04
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id005
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProducerManaged'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/applications/{id}/decision:
+    patch:
+      operationId: decideApplication
+      tags:
+        - Candidaturas
+      summary: Aprovar ou rejeitar candidatura
+      description:
+        Só candidatura pendente. Autor/data são atribuídos pelo servidor; decisão concorrente exige
+        conflito e atualização, segundo política C02. Não autoriza alterações de papéis ou aprovação por registo.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q04
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationDecision'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/orders:
+    get:
+      operationId: listAdminOrders
+      tags:
+        - Administração
+      summary: Consultar encomendas globais
+      description: Consultar encomendas globais. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q02
+        - Q05
+        - Q06
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+        - $ref: '#/components/parameters/State'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/orders/{id}:
+    get:
+      operationId: getAdminOrder
+      tags:
+        - Administração
+      summary: Consultar encomenda global
+      description:
+        Projeção administrativa minimizada; endereço/contactos só se necessidade aprovada. Consulta
+        não concede alteração de estado.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q02
+        - Q05
+        - Q06
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id005
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/review-reports:
+    get:
+      operationId: listModerationCases
+      tags:
+        - Administração
+      summary: Consultar avaliações denunciadas
+      description: Consultar avaliações denunciadas. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q10
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+        - $ref: '#/components/parameters/State'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModerationCase'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/review-reports/{id}:
+    get:
+      operationId: getModerationCase
+      tags:
+        - Administração
+      summary: Consultar avaliação e denúncias
+      description:
+        Consultar avaliação e denúncias. Operação proposta; não implementada. ID refere a review
+        projetada e as suas denúncias, proposta C01; não um denunciante ou autorização.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q10
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id005
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModerationCase'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/review-reports/{id}/decision:
+    patch:
+      operationId: decideModeration
+      tags:
+        - Administração
+      summary: Manter ou ocultar avaliação
+      description:
+        Preservar texto, classificação e evidência; após decisão persistida, consultas públicas/agregados
+        refletem ocultação. Conflito/repetição por acordar em Q10/Q12 e C02; não inventar remoção de outros
+        conteúdos. ID refere a review projetada e as suas denúncias, proposta C01; não um denunciante ou autorização.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q10
+        - Q12
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      parameters:
+        - *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModerationDecision'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModerationCase'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/auctions:
+    get:
+      operationId: listAdminAuctions
+      tags:
+        - Administração
+      summary: Consultar leilões globais
+      description: Consultar leilões globais. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q07
+        - Q08
+        - Q09
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.6'
+      parameters:
+        - *id002
+        - *id003
+        - *id004
+        - $ref: '#/components/parameters/State'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Auction'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/indicators:
+    get:
+      operationId: getAdminIndicators
+      tags:
+        - Administração
+      summary: Consultar indicadores globais derivados
+      description: Consultar indicadores globais derivados. Operação proposta; não implementada.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q04
+        - Q05
+        - Q10
+        - Q15
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '3.5'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Indicators'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/services:
+    get:
+      operationId: getServiceObservations
+      tags:
+        - Administração
+      summary: Consultar observações reais ou ausência de monitorização
+      description:
+        'Sem sondas atuais: desconhecido, nao-monitorizado e data null. A operação futura não é
+        prova de que os cinco serviços estejam operacionais. Não transportar exemplos simulados como medições.'
+      security:
+        - bearerAuth: []
+      x-authorized-roles: *id008
+      x-decision-dependencies:
+        - Q16
+      x-contract-status: proposta-bloqueada
+      x-implementation-stage: '6'
+      responses:
+        '200':
+          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceObservation'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description:
+        JWT com expiração exigido pelo enunciado; papéis/propriedade/aprovação são verificados no
+        servidor, não pelo Swagger.
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Id'
+      description: ID do recurso; formato inválido 400, válido sem recurso elegível 404, proposta C02.
+    Q:
+      name: q
+      in: query
+      schema:
+        type: string
+      description: Pesquisa escapada/limitada; semântica de ingrediente, acentos e normalização Q14/C03.
+    Page:
+      name: pagina
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+      description: Paginação proposta C03; valor por omissão por aprovar.
+    PageSize:
+      name: porPagina
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+      description: Dimensão/limite máximo por aprovar em C03; nunca aceitar resultado ilimitado por omissão.
+    State:
+      name: estado
+      in: query
+      schema:
+        type: string
+      description: Valores válidos dependem do enum do recurso; valor desconhecido gera 400, proposta C02.
+    Idempotency:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+      description:
+        Proposta D08, ainda não obrigatória. Após adoção, mesma chave/payload devolve o grupo persistido;
+        payload diferente gera conflito. Não adotar sem aprovação.
+  responses:
+    Error400:
+      description: Dados/parâmetros inválidos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error401:
+      description: Token ausente, inválido ou expirado; no login, credenciais inválidas.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error403:
+      description: Papel, propriedade ou aprovação insuficientes; sem revelar dados privados.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error404:
+      description: Recurso inexistente ou fora do âmbito de consulta conforme política C02.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error409:
+      description: 'Proposta: conflito de versão, decisão já concluída, stock/preço ou chave idempotente.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error413:
+      description: Limite técnico de JSON de 100 KiB excedido, implementado na fundação 3.1.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error500:
+      description: Erro interno sem detalhes sensíveis.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error503:
+      description: Código adicional ainda proposto, fora da aprovação explícita C02; dependência indisponível não representa lista vazia nem prova de rollback.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    TechnicalHealth:
+      type: object
+      additionalProperties: false
+      properties:
+        estado:
+          type: string
+          enum: [operacional]
+        ambito:
+          type: string
+          enum: [processo-http]
+      required: [estado, ambito]
+    Id:
+      type: string
+      minLength: 1
+      description:
+        Identificador opaco de recurso da API; distinto dos slugs demonstrativos e das referências
+        internas. C01 aprova estabilidade e independência dos nomes; formato concreto e geração ainda por detalhar.
+    Timestamp:
+      type: string
+      format: date-time
+      description: Instante UTC emitido pelo servidor; apresentação em Europe/Lisbon no frontend.
+    Money:
+      type: integer
+      minimum: 0
+      maximum: 9007199254740991
+      description:
+        'Proposta D05: unidade monetária mínima em inteiro seguro; moeda e aceitação de zero dependem
+        de Q06.'
+      x-decision-dependencies:
+        - Q06
+      x-proposal: D05
+    Quantity:
+      type: number
+      minimum: 0
+      exclusiveMinimum: true
+      description:
+        Quantidade positiva; Q03 decidirá se apenas inteiros comerciais ou representação escalada.
+        Não autoriza compra fracionária por si.
+      x-decision-dependencies:
+        - Q03
+    Role:
+      type: string
+      enum:
+        - comprador
+        - produtor
+        - administrador
+      description: Papéis académicos. Cardinalidade da conta depende de Q01; visitante não é conta.
+    OrderStatus:
+      type: string
+      enum:
+        - pendente
+        - confirmada
+        - pronta
+        - entregue
+      description: Estados exigidos; transições/cancelamento não decididos (Q05).
+    AuctionStatus:
+      type: string
+      enum:
+        - agendado
+        - ativo
+        - terminado
+    Error:
+      type: object
+      properties:
+        codigo:
+          type: string
+        mensagem:
+          type: string
+        requestId:
+          type: string
+        campos:
+          type: array
+          items:
+            type: object
+            properties:
+              campo:
+                type: string
+              mensagem:
+                type: string
+            required:
+              - campo
+              - mensagem
+      required:
+        - codigo
+        - mensagem
+      description:
+        C02 aprova erros estruturados, códigos estáveis, mensagens claras e campos inválidos. Catálogo de códigos, requestId e limites ainda por confirmar. Nunca contém stack,
+        hash, JWT ou URI privada.
+    Image:
+      type: object
+      properties:
+        url:
+          type: string
+        alt:
+          type: string
+      required:
+        - url
+        - alt
+      description:
+        Metadados públicos. Sem credenciais/SAS de escrita. Upload Blob não é implementado nesta
+        subfase.
+    Location:
+      type: object
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+      required:
+        - latitude
+        - longitude
+      description: Apenas localização autorizada para divulgação, dependente de Q11.
+      additionalProperties: false
+    SaleUnit:
+      type: object
+      properties:
+        codigo:
+          type: string
+        rotulo:
+          type: string
+        tamanhoEmbalagem:
+          type: string
+      required:
+        - codigo
+        - rotulo
+      description: Catálogo e escala dependem de Q03; rótulo não permite inferir fracionamento.
+      additionalProperties: false
+    UserSummary:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+        papel:
+          $ref: '#/components/schemas/Role'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - id
+        - nome
+        - papel
+      description: Projeção administrativa mínima; formato de papel único é a proposta Q01, não decisão final.
+    UserSelf:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        papel:
+          $ref: '#/components/schemas/Role'
+      required:
+        - id
+        - nome
+        - email
+        - papel
+    ProducerPublic:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nomePublico:
+          type: string
+        descricao:
+          type: string
+        localidade:
+          type: string
+        localizacao:
+          $ref: '#/components/schemas/Location'
+        imagens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+      required:
+        - id
+        - nomePublico
+        - localidade
+      description: ID de perfil produtor; não é users._id. Elegibilidade pública Q04/Q12; coordenadas Q11.
+    Decision:
+      type: object
+      properties:
+        autorId:
+          $ref: '#/components/schemas/Id'
+        decididoEm:
+          $ref: '#/components/schemas/Timestamp'
+        motivo:
+          type: string
+      required:
+        - autorId
+        - decididoEm
+      description:
+        Projeção administrativa; a projeção do próprio candidato deve reduzir a identidade administrativa
+        se necessário. Persistência de evidência proposta D09.
+    Application:
+      type: object
+      properties:
+        produtorId:
+          $ref: '#/components/schemas/Id'
+        estado:
+          type: string
+          enum:
+            - pendente
+            - aprovado
+            - rejeitado
+        submetidaEm:
+          $ref: '#/components/schemas/Timestamp'
+        decisao:
+          $ref: '#/components/schemas/Decision'
+      required:
+        - produtorId
+        - estado
+        - submetidaEm
+      description: Decisão ausente enquanto pendente. Permissões intermédias e recandidatura Q04.
+    ProducerManaged:
+      type: object
+      properties:
+        perfil:
+          $ref: '#/components/schemas/ProducerPublic'
+        userId:
+          $ref: '#/components/schemas/Id'
+        candidatura:
+          $ref: '#/components/schemas/Application'
+      required:
+        - perfil
+        - userId
+        - candidatura
+      description: Só o próprio produtor e administração autorizada; não reutilizar em resposta pública.
+    Product:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        produtorId:
+          $ref: '#/components/schemas/Id'
+        nome: &id009
+          type: string
+        descricao: &id010
+          type: string
+        categoria: &id011
+          type: string
+        ingredientes: &id012
+          type: array
+          items:
+            type: string
+        epocaMeses: &id013
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 12
+        modoProducao: &id014
+          type: string
+        precoCent: &id015
+          $ref: '#/components/schemas/Money'
+        moeda:
+          type: string
+        unidadeVenda: &id016
+          $ref: '#/components/schemas/SaleUnit'
+        stockDisponivel: &id017
+          type: number
+          minimum: 0
+        limiarStockBaixo: &id018
+          type: number
+          minimum: 0
+        imagens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        versao:
+          type: integer
+          minimum: 0
+      required:
+        - id
+        - produtorId
+        - nome
+        - precoCent
+        - unidadeVenda
+        - stockDisponivel
+      description:
+        DTO proposto. produtorId refere perfil público, resolvido a partir de products.produtor
+        → users → producers.userId. Q03/Q06/Q14/Q15 condicionam escala/taxonomias.
+    OrderLine:
+      type: object
+      properties:
+        produtoId:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+        precoUnitCent:
+          $ref: '#/components/schemas/Money'
+        quantidade:
+          $ref: '#/components/schemas/Quantity'
+        unidadeSnapshot:
+          $ref: '#/components/schemas/SaleUnit'
+        subtotalCent:
+          $ref: '#/components/schemas/Money'
+        imagemSnapshot:
+          $ref: '#/components/schemas/Image'
+      required:
+        - produtoId
+        - nome
+        - precoUnitCent
+        - quantidade
+        - unidadeSnapshot
+        - subtotalCent
+      description: Snapshot imutável criado pelo servidor; imagem é proposta de adaptação, não obrigação académica.
+    Delivery:
+      type: object
+      properties:
+        tipo:
+          type: string
+          enum:
+            - levantamento
+            - entrega
+        moradaSnapshot:
+          type: string
+        instrucoes:
+          type: string
+      required:
+        - tipo
+      additionalProperties: false
+    OrderHistory:
+      type: object
+      properties:
+        estado:
+          $ref: '#/components/schemas/OrderStatus'
+        ocorridoEm:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - estado
+        - ocorridoEm
+    Order:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        referencia:
+          type: string
+        compradorId:
+          $ref: '#/components/schemas/Id'
+        produtorId:
+          $ref: '#/components/schemas/Id'
+        linhas:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLine'
+        subtotalCent:
+          $ref: '#/components/schemas/Money'
+        totalCent:
+          $ref: '#/components/schemas/Money'
+        moeda:
+          type: string
+        estado:
+          $ref: '#/components/schemas/OrderStatus'
+        entrega:
+          $ref: '#/components/schemas/Delivery'
+        historico:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderHistory'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        versao:
+          type: integer
+          minimum: 0
+      required:
+        - id
+        - compradorId
+        - produtorId
+        - linhas
+        - totalCent
+        - estado
+        - historico
+      description:
+        Proposta de uma encomenda por produtor (Q02). Morada só na projeção privada estritamente
+        necessária; estados/histórico Q05. Não é DTO público.
+    CheckoutGroup:
+      type: object
+      properties:
+        checkoutId:
+          type: string
+        encomendas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+      required:
+        - checkoutId
+        - encomendas
+      description: Alternativa recomendada Q02; não adotada automaticamente.
+    Review:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+        alvoId:
+          $ref: '#/components/schemas/Id'
+        nomePublicoAutor:
+          type: string
+        classificacao:
+          type: integer
+        comentario:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - id
+        - alvoTipo
+        - alvoId
+        - nomePublicoAutor
+        - classificacao
+        - createdAt
+      description:
+        Projeção pública sem email, compradorId, morada ou denúncias. Escala/cardinalidade Q10;
+        ocultas excluídas segundo política Q12.
+    Report:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        motivo:
+          type: string
+        denunciadaEm:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - id
+        - motivo
+        - denunciadaEm
+      description: Projeção administrativa mínima; autor da denúncia existe internamente, não na projeção pública.
+    ModerationCase:
+      type: object
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/Id'
+          description: 'Proposta C01: ID da review que agrupa denúncias, não coleção autónoma de casos.'
+        avaliacao:
+          $ref: '#/components/schemas/Review'
+        denuncias:
+          type: array
+          items:
+            $ref: '#/components/schemas/Report'
+        estado:
+          type: string
+          enum:
+            - pendente
+            - mantida
+            - oculta
+        decisao:
+          $ref: '#/components/schemas/Decision'
+        encomendaId:
+          $ref: '#/components/schemas/Id'
+      required:
+        - id
+        - avaliacao
+        - denuncias
+        - estado
+        - encomendaId
+      description:
+        DTO administrativo. Estado pendente refere análise de denúncia, não implica que todas as
+        avaliações aguardem publicação.
+    Bid:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        leilaoId:
+          $ref: '#/components/schemas/Id'
+        valorCent:
+          $ref: '#/components/schemas/Money'
+        sequencia:
+          type: integer
+          minimum: 1
+        licitantePublico:
+          type: string
+        aceiteEm:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - id
+        - leilaoId
+        - valorCent
+        - sequencia
+        - aceiteEm
+      description:
+        Histórico público autorizado sem identidade privada do licitante. Não contém pedido recusado
+        nem bid artificial do preço base.
+    AuctionResult:
+      type: object
+      properties:
+        tipo:
+          type: string
+          enum:
+            - sem_licitacoes
+            - adjudicado
+        bidId:
+          $ref: '#/components/schemas/Id'
+        valorCent:
+          $ref: '#/components/schemas/Money'
+        vencedorPublico:
+          type: string
+      required:
+        - tipo
+      description:
+        Sem vencedor/bid/valor adjudicado no caso sem_licitacoes. Resultado comercial/conversão
+        depende de Q07.
+    Auction:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        produtorId:
+          $ref: '#/components/schemas/Id'
+        produtoId:
+          $ref: '#/components/schemas/Id'
+        lote:
+          type: string
+        precoBaseCent:
+          $ref: '#/components/schemas/Money'
+        incrementoCent:
+          type: integer
+          minimum: 1
+        valorAtualCent:
+          $ref: '#/components/schemas/Money'
+        licitacaoAtual:
+          $ref: '#/components/schemas/Bid'
+        sequencia:
+          type: integer
+          minimum: 0
+        versao:
+          type: integer
+          minimum: 0
+        iniciaEm:
+          $ref: '#/components/schemas/Timestamp'
+        terminaEm:
+          $ref: '#/components/schemas/Timestamp'
+        estado:
+          $ref: '#/components/schemas/AuctionStatus'
+        resultado:
+          $ref: '#/components/schemas/AuctionResult'
+      required:
+        - id
+        - produtorId
+        - lote
+        - precoBaseCent
+        - incrementoCent
+        - valorAtualCent
+        - sequencia
+        - iniciaEm
+        - terminaEm
+        - estado
+      description:
+        licitaçãoAtual/resultado ausentes sem oferta/resultado. Valor inicial é preço base e primeira
+        oferta mínima é base + incremento. DTO não decide Q07–Q09.
+    Indicators:
+      type: object
+      properties:
+        observadoEm:
+          $ref: '#/components/schemas/Timestamp'
+        periodoInicio:
+          $ref: '#/components/schemas/Timestamp'
+        periodoFim:
+          $ref: '#/components/schemas/Timestamp'
+        utilizadores:
+          type: integer
+          minimum: 0
+        produtores:
+          type: integer
+          minimum: 0
+        candidaturasPendentes:
+          type: integer
+          minimum: 0
+        encomendas:
+          type: integer
+          minimum: 0
+        avaliacoesDenunciadas:
+          type: integer
+          minimum: 0
+        leiloesAtivos:
+          type: integer
+          minimum: 0
+        vendasCent:
+          $ref: '#/components/schemas/Money'
+        stockBaixo:
+          type: integer
+          minimum: 0
+      required:
+        - observadoEm
+      description:
+        Campos aplicáveis ao papel/âmbito; fórmulas e período dependem de Q15. Contadores derivados
+        de dados persistidos; vendas não significam pagamentos.
+    ServiceObservation:
+      type: object
+      properties:
+        servico:
+          type: string
+          enum:
+            - api
+            - socketio
+            - mongodb-atlas
+            - blob-storage
+            - swagger-ui
+        estado:
+          type: string
+          enum:
+            - desconhecido
+            - operacional
+            - degradado
+            - indisponivel
+        observadoEm:
+          type: string
+          format: date-time
+          nullable: true
+        origem:
+          type: string
+          enum:
+            - nao-monitorizado
+            - sonda-real
+        limitacoes:
+          type: string
+      required:
+        - servico
+        - estado
+        - observadoEm
+        - origem
+        - limitacoes
+      description:
+        Q16. Na ausência de sonda real, origem nao-monitorizado, estado desconhecido e data null.
+        Uma ilustração de UI nunca se converte numa observação real.
+    Registration:
+      type: object
+      properties:
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+        papel:
+          type: string
+          enum:
+            - comprador
+            - produtor
+        perfilProdutor:
+          type: object
+          properties:
+            nomePublico:
+              type: string
+            localidade:
+              type: string
+          required:
+            - nomePublico
+            - localidade
+          additionalProperties: false
+      required:
+        - nome
+        - email
+        - password
+        - papel
+      additionalProperties: false
+      description:
+        Papel solicitado no registo; administrador nunca aceite. Perfil produtor necessário nessa
+        opção (regra cruzada no serviço). Cardinalidade final Q01, capacidades Q04; política de password ainda
+        por aprovar, não herda mínimo demonstrativo.
+    Credentials:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+        - email
+        - password
+      additionalProperties: false
+    AccessToken:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          enum:
+            - Bearer
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        utilizador:
+          $ref: '#/components/schemas/UserSelf'
+      required:
+        - accessToken
+        - tokenType
+        - expiresAt
+        - utilizador
+      description:
+        JWT com expiração. Não define duração, persistência, refresh ou revogação (Q13). Nunca usar
+        token real nos exemplos.
+    ProductWrite:
+      type: object
+      properties:
+        nome: *id009
+        descricao: *id010
+        categoria: *id011
+        ingredientes: *id012
+        epocaMeses: *id013
+        modoProducao: *id014
+        precoCent: *id015
+        unidadeVenda: *id016
+        stockDisponivel: *id017
+        limiarStockBaixo: *id018
+      required:
+        - nome
+        - categoria
+        - modoProducao
+        - precoCent
+        - unidadeVenda
+        - stockDisponivel
+      additionalProperties: false
+      description:
+        Campos públicos em português e PUT completo aprovados em C01. PUT envia a representação completa
+        destes campos; ID, proprietário, versão, aprovação e imagens Cloud não são atribuídos pelo cliente.
+        Taxonomias e escala ainda bloqueadas pelas Q indicadas.
+      x-contract-status: proposta-bloqueada
+    ProfileWrite:
+      type: object
+      properties:
+        nomePublico:
+          type: string
+        descricao:
+          type: string
+        localidade:
+          type: string
+        localizacao:
+          $ref: '#/components/schemas/Location'
+      required:
+        - nomePublico
+        - localidade
+      additionalProperties: false
+    CreateOrder:
+      type: object
+      properties:
+        linhas:
+          type: array
+          items:
+            type: object
+            properties:
+              produtoId:
+                $ref: '#/components/schemas/Id'
+              quantidade:
+                $ref: '#/components/schemas/Quantity'
+            required:
+              - produtoId
+              - quantidade
+            additionalProperties: false
+          minItems: 1
+        entrega:
+          $ref: '#/components/schemas/Delivery'
+      required:
+        - linhas
+        - entrega
+      additionalProperties: false
+      description:
+        IDs/quantidades/modalidade apenas. Servidor determina identidade, preços, produtores e totais.
+        Morada exigida só para entrega, em regra cruzada Q06. Confirmação de preço alterado e resultado multi-produtor
+        ainda por decidir; não há aceitação silenciosa de novo total.
+      x-contract-status: proposta-bloqueada
+    OrderStateWrite:
+      type: object
+      properties:
+        estado:
+          $ref: '#/components/schemas/OrderStatus'
+        versaoEsperada:
+          type: integer
+          minimum: 0
+      required:
+        - estado
+      additionalProperties: false
+    ReviewWrite:
+      type: object
+      properties:
+        encomendaId:
+          $ref: '#/components/schemas/Id'
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+        alvoId:
+          $ref: '#/components/schemas/Id'
+        classificacao:
+          type: integer
+        comentario:
+          type: string
+      required:
+        - encomendaId
+        - alvoTipo
+        - alvoId
+        - classificacao
+      additionalProperties: false
+      x-contract-status: proposta-bloqueada
+    ReportWrite:
+      type: object
+      properties:
+        motivo:
+          type: string
+      required:
+        - motivo
+      additionalProperties: false
+    ApplicationDecision:
+      type: object
+      properties:
+        estado:
+          type: string
+          enum:
+            - aprovado
+            - rejeitado
+        motivo:
+          type: string
+        versaoEsperada:
+          type: integer
+          minimum: 0
+      required:
+        - estado
+      additionalProperties: false
+      x-contract-status: proposta-bloqueada
+    ModerationDecision:
+      type: object
+      properties:
+        estado:
+          type: string
+          enum:
+            - mantida
+            - oculta
+        motivo:
+          type: string
+        versaoEsperada:
+          type: integer
+          minimum: 0
+      required:
+        - estado
+      additionalProperties: false
+      x-contract-status: proposta-bloqueada
+    AuctionWrite:
+      type: object
+      properties:
+        produtoId:
+          $ref: '#/components/schemas/Id'
+        lote:
+          type: string
+        quantidade:
+          $ref: '#/components/schemas/Quantity'
+        precoBaseCent:
+          $ref: '#/components/schemas/Money'
+        incrementoCent:
+          type: integer
+          minimum: 1
+        iniciaEm:
+          $ref: '#/components/schemas/Timestamp'
+        terminaEm:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - lote
+        - precoBaseCent
+        - incrementoCent
+        - iniciaEm
+        - terminaEm
+      additionalProperties: false
+      description:
+        'Proposta condicionada por Q07/Q08: origem/composição/reserva do lote e datas precisam de
+        aprovação. quantidade não é convertida em preço por kg; a oferta representa o valor total do lote.'
+      x-contract-status: proposta-bloqueada
+    ApplicationSelf:
+      type: object
+      properties:
+        produtorId:
+          $ref: '#/components/schemas/Id'
+        estado:
+          type: string
+          enum:
+            - pendente
+            - aprovado
+            - rejeitado
+        submetidaEm:
+          $ref: '#/components/schemas/Timestamp'
+        decisao:
+          type: object
+          properties:
+            decididoEm:
+              $ref: '#/components/schemas/Timestamp'
+            motivo:
+              type: string
+            autorPublico:
+              type: string
+          required:
+            - decididoEm
+          description:
+            Sem ID/email privado do administrador; rótulo institucional e motivo visível segundo
+            Q04.
+      required:
+        - produtorId
+        - estado
+        - submetidaEm
+      description: Candidatura do próprio produtor, com decisão minimizada; Q04 define motivo e recandidatura.
+    ProducerSelf:
+      type: object
+      properties:
+        perfil:
+          $ref: '#/components/schemas/ProducerPublic'
+        userId:
+          $ref: '#/components/schemas/Id'
+        candidatura:
+          $ref: '#/components/schemas/ApplicationSelf'
+      required:
+        - perfil
+        - userId
+        - candidatura
+      description: Perfil e userId do próprio produtor; decisão sem identidade privada de administrador.
+    OwnReview:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+        alvoId:
+          $ref: '#/components/schemas/Id'
+        nomePublicoAutor:
+          type: string
+        classificacao:
+          type: integer
+        comentario:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        encomendaId:
+          $ref: '#/components/schemas/Id'
+        estadoModeracao:
+          type: string
+          description: Visibilidade própria segundo Q10/Q12; não cria estado de aprovação prévia de avaliações.
+      required:
+        - id
+        - alvoTipo
+        - alvoId
+        - nomePublicoAutor
+        - classificacao
+        - createdAt
+        - encomendaId
+      description:
+        'Projeção privada do comprador: referência à entrega para elegibilidade/unicidade. Não reutilizar
+        em listas públicas. Identidade do autor deriva da sessão, não de campo enviado.'
+    OwnBid:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        leilaoId:
+          $ref: '#/components/schemas/Id'
+        valorCent:
+          $ref: '#/components/schemas/Money'
+        sequencia:
+          type: integer
+          minimum: 1
+        licitantePublico:
+          type: string
+        aceiteEm:
+          $ref: '#/components/schemas/Timestamp'
+        leilao:
+          $ref: '#/components/schemas/Auction'
+        observadoEm:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - id
+        - leilaoId
+        - valorCent
+        - sequencia
+        - aceiteEm
+        - leilao
+        - observadoEm
+      description:
+        'Projeção própria: oferta aceite com snapshot atual autorizado do leilão e data de observação
+        do servidor. Não confundir aceiteEm com observadoEm; coerência da leitura proposta D07.'
+    ProductReplace:
+      type: object
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+        categoria:
+          type: string
+        ingredientes:
+          type: array
+          items:
+            type: string
+        epocaMeses:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 12
+        modoProducao:
+          type: string
+        precoCent:
+          $ref: '#/components/schemas/Money'
+        unidadeVenda:
+          $ref: '#/components/schemas/SaleUnit'
+        stockDisponivel:
+          type: number
+          minimum: 0
+        limiarStockBaixo:
+          type: number
+          minimum: 0
+        versaoEsperada:
+          type: integer
+          minimum: 0
+          description:
+            Proposta C02 de precondição para detetar edição obsoleta; obrigatoriedade e política
+            a aprovar antes de escrita.
+      required:
+        - nome
+        - categoria
+        - modoProducao
+        - precoCent
+        - unidadeVenda
+        - stockDisponivel
+      additionalProperties: false
+      description:
+        Representação completa dos campos editáveis mais precondição de versão proposta C02. Servidor
+        valida stock e conflitos contra estado persistido, nunca sobrescreve débitos concorrentes por confiar
+        no formulário. Não permite atribuir a versão persistida.
+      x-contract-status: proposta-bloqueada
