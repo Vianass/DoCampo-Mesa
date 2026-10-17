@@ -1,0 +1,84 @@
+import { Schema } from 'mongoose';
+import type { Connection, Model, Types } from 'mongoose';
+import { z } from 'zod';
+import { requireDocumentValidation, textField } from '../shared/model-validation.js';
+
+export const userRoles = ['comprador', 'produtor', 'administrador'] as const;
+export type UserRole = (typeof userRoles)[number];
+
+export interface UserRecord {
+  _id: Types.ObjectId;
+  nome: string;
+  emailNormalizado: string;
+  passwordHash: string;
+  papeis: UserRole[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const emailSchema = z.email().max(254);
+// Apenas reconhece a representação bcrypt; não calcula nem verifica passwords.
+const bcryptRepresentation = /^\$2[aby]\$(?:0[4-9]|[12]\d|3[01])\$[./A-Za-z0-9]{53}$/;
+
+export function createUserModel(connection: Connection): Model<UserRecord> {
+  const existing = connection.models.User as Model<UserRecord> | undefined;
+  if (existing) return existing;
+
+  const schema = new Schema<UserRecord>(
+    {
+      nome: textField('nome', 120),
+      emailNormalizado: {
+        ...textField('emailNormalizado', 254),
+        lowercase: true,
+        validate: {
+          validator: (value: string) => emailSchema.safeParse(value).success,
+          message: 'Email inválido.',
+        },
+      },
+      passwordHash: {
+        type: String,
+        required: true,
+        select: false,
+        cast: false,
+        validate: {
+          validator: (value: string) => bcryptRepresentation.test(value),
+          message: 'É necessária uma representação bcrypt válida, nunca uma password em claro.',
+        },
+      },
+      papeis: {
+        type: [{ type: String, enum: userRoles, cast: false }],
+        required: true,
+        default: undefined,
+        castNonArrays: false,
+        validate: {
+          validator: (values: UserRole[]) =>
+            values.length > 0 && new Set(values).size === values.length,
+          message: 'A lista de papéis deve ser não vazia e não conter repetições.',
+        },
+      },
+    },
+    {
+      collection: 'users',
+      timestamps: true,
+      strict: 'throw',
+      autoIndex: false,
+      autoCreate: false,
+      bufferCommands: false,
+      toJSON: {
+        transform(_document, value) {
+          Reflect.deleteProperty(value, 'passwordHash');
+          return value;
+        },
+      },
+      toObject: {
+        transform(_document, value) {
+          Reflect.deleteProperty(value, 'passwordHash');
+          return value;
+        },
+      },
+    },
+  );
+  schema.index({ emailNormalizado: 1 }, { unique: true });
+  requireDocumentValidation(schema);
+  return connection.model<UserRecord>('User', schema);
+}
