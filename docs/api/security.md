@@ -81,3 +81,9 @@ A [classificação de pendências e primeiro bloco](phase-3.2-readiness.md) não
 users/producers implementados localmente, sem novas rotas; ver [privacidade, validações e limites efetivos](phase-3.2-identity-implementation.md). Hash bcrypt apenas por representação válida, sem hashing/login; select:false e redigido em JSON/toObject. Telefone e autor da decisão excluídos das leituras por omissão e do JSON do perfil. A conta populada não é serializada integralmente no perfil.
 
 Os modelos não recebem pedidos HTTP nem convertem papéis do frontend em autoridade. Guardas de escrita exigem documentos com validação completa, mas não substituem DTO, serviço, JWT ou autorização; ref não comprova que uma conta existe ou é administradora. Esses controlos mantêm-se para as fases autorizadas correspondentes. Nenhum administrador real foi criado; os testes usam apenas entidades fictícias numa base efémera própria.
+
+## Products — elegibilidade interna e C04
+
+P04 permite rascunho com nome editável e owner técnico; publicação manual exige dados completos, conta com papel produtor e perfil aprovado. O modelo verifica essa elegibilidade por referências na conexão/sessão recebida, **sem autenticar um ator ou implementar autorização HTTP**. Atribuição do owner pelo servidor e controlo de ownership continuam responsabilidade dos serviços futuros; nenhuma rota foi acrescentada. Ver [limites de consistência e dados](phase-3.2-products.md).
+
+A leitura de aprovação durante a validação não bloqueia mudanças concorrentes do perfil nem substitui a verificação atual nos serviços/consultas públicas. Atualizações parciais/bulk e save com projeção que omite campos críticos são recusados no bloco. Hashes não entram em products; imagens são só referências sem credenciais/bytes. P03 não introduz débito e P08 não implementa confirmação no browser.

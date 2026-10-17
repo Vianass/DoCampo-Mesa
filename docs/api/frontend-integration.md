@@ -67,3 +67,9 @@ T32-01–T32-06 não autorizam integração. Meses opcionais não passam a contr
 ## Bloco de identidade local implementado
 
 A01–A03 aprovadas e users/producers implementados/testados apenas no backend, sem integração ou alteração de frontend. O perfil inclui concelho, descrição e telefone obrigatórios; responsável deriva da conta e imagem é metadado opcional. DTOs privados e formulários reais ainda precisam de alinhamento antes de qualquer integração. Ver [entrega e limites](phase-3.2-identity-implementation.md). Os 123 backend foram executados; os 274 Playwright continuam referência anterior, com ficheiros preservados.
+
+## Contrato de produtos após P01–P08
+
+O frontend demonstrativo permanece inalterado. Integração futura usa doze categorias, preço por kg/L ou uma unidade/embalagem, stock e quantidades mínimas em g/ml/contagens, referência separada do conteúdo da embalagem e até duas fotografias com principal identificável. A declaração de aplicabilidade de ingredientes e os campos de publicação exigem adaptação própria dos formulários; não alterar mocks por efeito da criação do schema.
+
+P08 exige confirmação de mudanças e snapshots nas encomendas futuras; apenas um preço atual no Product não implementa reconfirmação ou preservação comercial do histórico. P07 é condição derivada de estado/stock/mínimo/perfil atual, não um booleano de disponibilidade persistido. Ver [decisões e limites implementados](phase-3.2-products.md). Não migrar o carrinho nem executar funcionalidades web nesta tarefa.

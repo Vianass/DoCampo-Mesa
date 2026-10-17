@@ -1,6 +1,6 @@
 # Fase 3.2 — consolidação documental dos modelos MongoDB
 
-**Estado: T32-01–T32-06 aprovadas no âmbito explícito; A01–A03 aprovadas e primeiro bloco users/producers implementado localmente; restantes modelos não autorizados.** Consolidação em 2026-10-17, após preparação em 2026-10-16 na branch `feat/api-foundation`, HEAD `68f41ec`, após publicação da fundação. Main permanece em `c10d031`. A preparação inicial era documental; a autorização posterior abrangeu apenas os dois modelos, validações, índices e testes, conforme a [entrega do primeiro bloco](phase-3.2-identity-implementation.md). C04 mantém todas as operações privadas inacessíveis até à segurança real da semana 4.
+**Estado: T32-01–T32-06 aprovadas no âmbito explícito; A01–A03 aprovadas e primeiro bloco users/producers implementado localmente; products posteriormente autorizado/implementado com P01–P08; restantes quatro modelos não autorizados.** Consolidação em 2026-10-17, após preparação em 2026-10-16 na branch `feat/api-foundation`, HEAD `68f41ec`, após publicação da fundação. Main permanece em `c10d031`. A preparação inicial era documental; a autorização posterior abrangeu apenas os dois modelos, validações, índices e testes, conforme a [entrega do primeiro bloco](phase-3.2-identity-implementation.md). C04 mantém todas as operações privadas inacessíveis até à segurança real da semana 4.
 
 Este documento complementa [decisions.md](decisions.md), [modelos detalhados](phase-3.2-models.md), [correspondência de dados](data-mapping.md), [segurança](security.md), [OpenAPI](openapi.yaml), [integração futura](frontend-integration.md) e [plano](implementation-plan.md). A [entrega 3.1](foundation-implementation.md) é evidência histórica; os ajustes seguintes não alteram a implementação publicada.
 
@@ -82,23 +82,9 @@ Leilão guarda quantidade física/comercial e snapshot da unidade do lote; `valo
 
 ## 5. Categoria, etiquetas, ingredientes e sazonalidade
 
-Lista inicial **sugerida**, não enum oficial. IDs atribuídos são estáveis e não regenerados ao alterar o rótulo. Nenhuma coleção de categorias é criada por esta proposta; recomendar lista controlada em configuração do módulo quando autorizada.
+A lista inicial sugerida foi substituída pelas **doze categorias aprovadas P01**, com códigos técnicos estáveis cat-001–cat-012; rótulo de cat-004 «Pão e padaria» e cat-012 «Outros produtos locais». Ver [lista integral e constantes efetivas](phase-3.2-products.md). Nenhuma coleção de categorias adicional.
 
-| ID candidato | Rótulo sugerido           |
-| ------------ | ------------------------- |
-| cat-001      | Hortícolas                |
-| cat-002      | Fruta                     |
-| cat-003      | Leguminosas e cereais     |
-| cat-004      | Pão e produtos de padaria |
-| cat-005      | Laticínios e queijos      |
-| cat-006      | Ovos                      |
-| cat-007      | Mel e compotas            |
-| cat-008      | Azeite e azeitonas        |
-| cat-009      | Frutos secos e sementes   |
-| cat-010      | Ervas e aromáticas        |
-| cat-011      | Bebidas                   |
-
-Uma categoria principal por produto. Etiquetas complementam, não substituem categoria nem provam certificação biológica. Detalhes residuais de T32-04, ainda propostos: até 10 etiquetas, 40 caracteres Unicode por rótulo, deduplicadas pela forma normalizada; até 30 ingredientes, 80 caracteres cada. Estes números não vêm do enunciado nem ficam aprovados por aparecerem aqui. Definir rótulo NFC, trim e espaços consolidados; chave de pesquisa minúscula, sem marcas diacríticas e espaços normalizados. Evitar HTML ativo e nomes de campos arbitrários vindos do cliente.
+Uma categoria principal obrigatória na publicação; P04 permite rascunho sem categoria. Etiquetas complementam, não substituem categoria nem provam certificação biológica. Detalhes residuais de T32-04, ainda propostos: até 10 etiquetas, 40 caracteres Unicode por rótulo, deduplicadas pela forma normalizada; até 30 ingredientes, 80 caracteres cada. Estes números não vêm do enunciado nem ficam aprovados por aparecerem aqui. Definir rótulo NFC, trim e espaços consolidados; chave de pesquisa minúscula, sem marcas diacríticas e espaços normalizados. Evitar HTML ativo e nomes de campos arbitrários vindos do cliente.
 
 Ingredientes são termos explícitos quando aplicáveis; ausência não significa declaração de inexistência de ingredientes/alergénios. Propor array de `{rotulo, normalizado}` em etiquetas/ingredientes e campos derivados pelo servidor. Não aceitar `normalizado` arbitrariamente como autoridade do cliente.
 
@@ -118,7 +104,7 @@ Pesquisa: normalizar tanto a consulta como nomes/etiquetas/ingredientes/localida
 
 Na conta acumulada, capacidades de comprador continuam avaliadas pela identidade/capacidade de compra, não pelo estado comercial do perfil. Toda esta matriz é alvo futuro: nenhuma destas operações privadas fica acessível agora. Aprovar perfil nunca altera rascunhos automaticamente. Produto público exige estado publicado e perfil atual aprovado, não apenas um indicador guardado no produto.
 
-**T32-05 aprovado:** produto inicia em rascunho; estados exclusivos rascunho/publicado/arquivado. Publicação exige ação explícita de produtor aprovado; aprovação administrativa não publica. Publicado com stock zero pode continuar visível como esgotado, sem compra: esgotado é disponibilidade derivada, não quarto estado. Arquivo retira da venda e preserva histórico. Campos mínimos de rascunho além da categoria obrigatória, restauro, detalhe público do arquivado e remoção continuam pendentes. A estrutura de decisão/justificação do perfil é distinta dos estados de produto; foi aprovada separadamente em A03 e implementada no bloco de identidade, sem endpoints.
+**T32-05 aprovado:** produto inicia em rascunho; estados exclusivos rascunho/publicado/arquivado. Publicação exige ação explícita de produtor aprovado; aprovação administrativa não publica. Publicado com stock zero pode continuar visível como esgotado, sem compra: esgotado é disponibilidade derivada, não quarto estado. Arquivo retira da venda e preserva histórico. P04 permite rascunho apenas com nome editável, sem categoria obrigatória; define os campos completos de publicação. Restauro, detalhe público do arquivado e remoção continuam pendentes. A estrutura de decisão/justificação do perfil é distinta dos estados de produto; foi aprovada separadamente em A03 e implementada no bloco de identidade, sem endpoints.
 
 ## 7. Relações e integridade
 
@@ -147,7 +133,7 @@ Preparar interfaces de sessão/serviços para futuras transações sem as implem
 
 ## 8. Compatibilidade com o contrato e frontend
 
-O [OpenAPI](openapi.yaml) mantém 45 operações: só getHealth está implementado; as outras 44 continuam bloqueadas. Documenta lista de papéis, quantidades inteiras nas unidades mínimas, half-up, meses opcionais e estados aprovados, sem criar endpoints. SaleUnit passa a forma candidata alinhada com os modelos, ainda marcada para revisão: campos/required da referência de preço, limites e comandos não foram aprovados em bloco. O DTO privado de rascunho/publicação continua por detalhar.
+O [OpenAPI](openapi.yaml) mantém 45 operações: só getHealth está implementado; as outras 44 continuam bloqueadas. Documenta lista de papéis, quantidades inteiras nas unidades mínimas, half-up, meses opcionais e estados aprovados, sem criar endpoints. SaleUnit passa a forma candidata alinhada com os modelos, ainda marcada para revisão: campos/required da referência de preço, limites e comandos não foram aprovados em bloco. O DTO privado de rascunho/publicação deve refletir P04, com criação só com nome e campos de publicação condicionais, antes dos endpoints.
 
 | Ponto                            | Compatibilidade e trabalho futuro                                                                                                                                                            |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -164,7 +150,7 @@ Na integração futura: preservar modo demo e 274 testes; obter identidade/capac
 
 ## 9. Plano de implementação futuro, por aprovação separada
 
-Os caminhos seguintes ficam sob `apps/api`; apenas os modelos users/producers, apoio de validação e respetivos testes já foram criados, conforme a entrega. Outros caminhos continuam previsões. Preservar `src/config`, `src/database`, `src/http` e runtime existentes. Não abrir rotas privadas. Não instalar dependências por esta proposta.
+Os caminhos seguintes ficam sob `apps/api`; os modelos users/producers e products, apoio de validação e respetivos testes já foram criados, conforme as entregas. Os caminhos históricos sugeridos na tabela podem diferir dos ficheiros efetivos ligados na entrega products; restantes caminhos continuam previsões. Preservar `src/config`, `src/database`, `src/http` e runtime existentes. Não abrir rotas privadas. Não instalar dependências por esta proposta.
 
 | Etapa | Objetivo / modelos                                            | Ficheiros previstos                                                                                                                    | Dependências e pendências                                                                                | Testes futuros / aceitação                                                                                                                                                                                                                                       | Riscos                                                                                                    |
 | ----- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -199,3 +185,7 @@ A lista de categorias, recandidatura, preço zero e restantes Q/C mantêm as pen
 - [Índices multikey e restrição de arrays em índices compostos](https://www.mongodb.com/docs/manual/core/indexes/index-types/index-multikey/).
 
 Validar estrutura OpenAPI, referências, ligações, formatação e âmbito documental; a preparação inicial não executou MongoDB ou suites. A implementação posterior ensaiou MongoDB real e aprovou 123 backend, incluindo os 49 anteriores; 274 Playwright permanece referência preservada, sem nova execução. A verificação estrutural não prova regras comerciais, integridade em produção ou autorização implementada.
+
+## Products — execução local após P01–P08
+
+Products foi autorizado condicionalmente e implementado depois de o utilizador resolver as duas pendências: preço por kg/L/unidade/embalagem e aplicabilidade declarada de ingredientes. Ver [entrega específica](phase-3.2-products.md). Categoria em rascunho pode faltar; doze categorias aprovadas; zero/preço máximo/stock/fotografias/requisitos de publicação definidos no âmbito de produto. Number é usado apenas com inteiros seguros e limites do domínio; não se implementou aritmética de encomendas. P03/P08 não autorizam checkout ou UI. Os resultados anteriores dos blocos de identidade permanecem históricos.

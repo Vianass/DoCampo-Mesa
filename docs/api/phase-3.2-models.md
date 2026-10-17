@@ -1,6 +1,6 @@
-# Fase 3.2 — users/producers implementados; modelos seguintes propostos
+# Fase 3.2 — users/producers/products implementados; modelos seguintes propostos
 
-Ler em conjunto com a [proposta principal](phase-3.2-proposal.md), que define autoridade, alternativas de quantidade, categorias, permissões e plano. Consolidação: 2026-10-17; preparação: 2026-10-16; base `68f41ec`. A preparação era documental; users/producers foram posteriormente implementados/testados. Ver [entrega do primeiro bloco](phase-3.2-identity-implementation.md). Outros cinco modelos não implementados. Q01/Q03/Q04/Q06/Q14 estão aprovadas no âmbito funcional; T32-01–T32-06 estão aprovadas no âmbito do registo; detalhes residuais e restantes Q continuam pendentes. Ver [prontidão, bloqueios A01–A03 e primeiro bloco](phase-3.2-readiness.md).
+Ler em conjunto com a [proposta principal](phase-3.2-proposal.md), que define autoridade, alternativas de quantidade, categorias, permissões e plano. Consolidação: 2026-10-17; preparação: 2026-10-16; base `68f41ec`. A preparação era documental; users/producers foram posteriormente implementados/testados. Ver [entrega do primeiro bloco](phase-3.2-identity-implementation.md). products implementado após aprovação P01–P08; outros quatro modelos não implementados. Q01/Q03/Q04/Q06/Q14 estão aprovadas no âmbito funcional; T32-01–T32-06 estão aprovadas no âmbito do registo; detalhes residuais e restantes Q continuam pendentes. Ver [prontidão, bloqueios A01–A03 e primeiro bloco](phase-3.2-readiness.md).
 
 ## Convenções e leitura dos exemplos
 
@@ -8,7 +8,7 @@ O = requisito académico; A = decisão funcional ou técnica aprovada; P = concr
 
 Proposta comum P: `_id: ObjectId` obrigatório, `createdAt` e `updatedAt: Date` UTC geridas pelo servidor; versão inteira não negativa quando necessária. DTO usa ID estável em string e datas ISO, nunca exporta documento Mongoose. Contas e perfis têm IDs distintos. Não permitir atribuição pelo cliente de proprietários, autores de decisão, timestamps, totais, permissões ou resultados. Validar tipos e representações antes dos casts permissivos do Mongoose; não aceitar booleanos, strings malformadas, NaN/Infinity ou perda de resolução só porque o driver consegue convertê-los. A política de conversão explícita faz parte de T32.
 
-Os blocos JSON são **recortes documentais ilustrativos**, não fixtures/seeds/documentos prontos a inserir: omitem timestamps comuns e alguns campos condicionais; hash é placeholder explícito, nunca credencial real. Quantidades dos exemplos usam a representação B aprovada; nomes dos subcampos, limites e referência de preço ainda são concretizações propostas. IDs são sintaticamente plausíveis e fictícios: user vendedor/comprador `...001`, comprador `...002`, administrador `...003`, perfil `...101`, produto `...201`, encomenda `...301`, leilão `...401`, bid `...501`, review `...601`. Identidades referenciadas seriam fornecidas num conjunto de teste autorizado; não existem na base por esta documentação.
+Os blocos JSON são **recortes documentais ilustrativos**, não fixtures/seeds/documentos prontos a inserir: omitem timestamps comuns e alguns campos condicionais; hash é placeholder explícito, nunca credencial real. Quantidades dos exemplos usam a representação B aprovada; products concretiza P01–P08 e os esclarecimentos aprovados. Campos dos modelos seguintes e referências de preço fora de products continuam propostas. IDs são sintaticamente plausíveis e fictícios: user vendedor/comprador `...001`, comprador `...002`, administrador `...003`, perfil `...101`, produto `...201`, encomenda `...301`, leilão `...401`, bid `...501`, review `...601`. Identidades referenciadas seriam fornecidas num conjunto de teste autorizado; não existem na base por esta documentação.
 
 ## 1. users — obrigatório O
 
@@ -90,41 +90,46 @@ A02/A03 aprovadas incluem userId, nomePublico, responsável derivado da conta, l
 }
 ```
 
-## 3. products — obrigatório O
+## 3. products — modelo implementado localmente
 
-**Finalidade:** catálogo, rascunho próprio, modalidade de venda, preço por referência e stock. Campo/código concretos abaixo são P, com suporte funcional A/Q03/Q04/Q06/Q14.
+P01–P08 e os esclarecimentos de preço/aplicabilidade foram aprovados antes do código. Ver [decisões, estrutura, testes e limites](phase-3.2-products.md). Os campos abaixo são efetivos do modelo; orders/auctions/bids/reviews seguintes continuam propostas.
 
-| Campo candidato          | Tipo                                   | Obrigatório proposto                                      | Valores / validação / dependência                                                                     |
-| ------------------------ | -------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| produtor                 | ObjectId → users                       | Sim                                                       | Atribuído à identidade proprietária; resolver perfil por userId, nunca usar ID de perfil como userId. |
-| nome / descricao         | String                                 | Nome sim; descrição não                                   | Comprimentos P; mínimo de rascunho T32-05.                                                            |
-| estadoPublicacao         | String enum                            | Sim                                                       | A/T32-05: rascunho/publicado/arquivado, inicial rascunho; sem quarto estado esgotado.                 |
-| categoriaId              | String de lista controlada             | Sim, incluindo rascunho                                   | A/T32-04; lista/IDs ainda pendentes.                                                                  |
-| etiquetas / ingredientes | Arrays embebidos de rotulo/normalizado | Etiquetas podem ser vazias; ingredientes quando aplicável | A/Q14; limites e estrutura P/T32-04; deduplicação normalizada.                                        |
-| sazonalidade             | Array de meses inteiros                | Não; informação opcional                                  | A/T32-04: meses opcionais, sem controlar disponibilidade; ausência/vazio residuais.                   |
-| modoProducao             | String controlada                      | Para publicação, proposta                                 | Filtro académico inclui biológico; enum/certificação não definidos por etiquetas, Q14 residual.       |
-| precoCent / moeda        | Inteiro / String                       | Para publicação                                           | A/Q06: EUR/cêntimos; Number seguro ou BSON long P; zero pendente, sem default de gratuitidade.        |
-| unidadeVenda             | Objeto embebido                        | Para publicação                                           | A/T32-02: g/ml/unidades/embalagens inteiras; referência/conteúdo/mínimo/passo concretos pendentes.    |
-| stockDisponivel          | Inteiro não negativo                   | Para publicação                                           | Unidade/escala do produto; não aceitar NaN/Infinity/fração incompatível/overflow.                     |
-| stockReservadoLeilao     | Quantidade                             | Só após Q07                                               | Não criar reserva nem decrementar só por carrinho.                                                    |
-| limiarStockBaixo         | Quantidade                             | Só após Q15                                               | Mesma dimensão/escala; não usar três automaticamente.                                                 |
-| imagens                  | Array de metadados                     | Conforme regra futura                                     | Pequeno e limitado; sem bytes, credenciais ou URLs de escrita no DTO.                                 |
-| versao                   | Inteiro não negativo                   | Se política adotada                                       | P/D07/C02; impedir edição antiga de repor stock; política concreta pendente.                          |
+| Campo                                 | Regras implementadas                                                                                                                                                                                                                          |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| produtor                              | ObjectId obrigatório/imutável → users. ID de perfil não é identidade da conta. Atribuição pela sessão fica para serviço futuro, sem API agora.                                                                                                |
+| nome                                  | Obrigatório, String NFC/trim não vazia, inclusive em rascunho.                                                                                                                                                                                |
+| estadoPublicacao                      | rascunho/publicado/arquivado, inicial rascunho; reposição de stock/aprovação de perfil não publica.                                                                                                                                           |
+| descricao / categoriaId               | Podem faltar em rascunho; obrigatórios na publicação. Categoria entre cat-001–cat-012, com rótulos separados dos IDs. P04 substitui a antiga obrigatoriedade de categoria em rascunho.                                                        |
+| precoCent / moeda                     | Preço opcional no rascunho, obrigatório para publicar; inteiro seguro de 1 a 1 000 000, EUR. Sem valor zero por omissão.                                                                                                                      |
+| unidadeVenda                          | Opcional no rascunho, obrigatória para publicar; modalidade, base e referência fixas coerentes; mínimo/incremento inteiros positivos na base. Referências: 1000 g, 1000 ml, uma unidade ou uma embalagem.                                     |
+| unidadeVenda.conteudoPorUnidade       | Metadados opcionais para unidade/embalagem, com quantidade inteira positiva e dimensão un/g/ml; não altera a contagem comercial do stock.                                                                                                     |
+| stockDisponivel                       | Inteiro seguro não negativo; obrigatório na publicação. Máximo por peso/volume 10 000 000 g/ml; unidade/embalagem 100 000. Sem modalidade num rascunho, aplica-se apenas o teto global 10 000 000 até ser possível validar o teto específico. |
+| ingredientesAplicaveis / ingredientes | Declaração booleana obrigatória na publicação. Se true, lista não vazia; se false, lista vazia, sem apagar dados silenciosamente. Rascunho pode ter a declaração/lista ainda incompletas.                                                     |
+| etiquetas / epocaMeses                | Opcionais; etiquetas e ingredientes como listas de strings NFC/trim não vazias; meses inteiros 1–12 sem repetição, informativos. Sem limites comerciais de dez etiquetas/trinta ingredientes adotados por inferência.                         |
+| imagens                               | De zero a duas no rascunho; uma ou duas para publicar. URL HTTP(S) sem credenciais, alt opcional, principal booleana com no máximo uma marcada. Só metadados; sem bytes/upload. Sem principal escolhida não há seleção automática nesta fase. |
+| modoProducao                          | Texto opcional; taxonomia/certificação não fechadas por P01–P08 nem exigidas para publicar por inferência.                                                                                                                                    |
+| _id / createdAt / updatedAt / __v     | Identidade e timestamps; versão técnica Mongoose no documento raiz. Unidade/conteúdo/imagens sem identidade ou versão própria. Não define protocolo público de concorrência.                                                                  |
 
-**Embedding/referências:** unidade/conteúdo/etiquetas/imagens pequenas embebidas; owner users referenciado; snapshots residem nas orders/auctions, não são recalculados deste documento.
+**Índices efetivos:** _id intrínseco; compostos produtor/estadoPublicacao e estadoPublicacao/categoriaId, sem unicidade do nome. Sem índices multikey, geoespaciais, TTL ou contadores de disponibilidade por antecipação.
 
-**Índices P:** `{produtor:1, estadoPublicacao:1}`; `{estadoPublicacao:1, categoriaId:1, precoCent:1}` se útil ao filtro por preço da referência acordada. Índices separados de etiquetas.normalizado, ingredientes.normalizado e meses se adotados; não compor dois arrays paralelos. Nome não é único; etiqueta não é identidade global. Unicidade de slug só se política C01 aprovada.
+**Integridade:** publicar valida internamente existência da conta com papel produtor e perfil aprovado, usando a mesma conexão/sessão quando fornecida. Esta é elegibilidade do dado; não autentica um ator, não verifica ownership de um pedido e não implementa middleware de autorização. Não existe transação que bloqueie mudanças concorrentes do perfil; leituras públicas futuras têm de verificar aprovação atual. Rascunho apenas referencia o owner, sem prometer chave estrangeira.
 
-**Integridade/estados/acesso:** pendente pode criar/editar rascunhos próprios; publicar exige perfil aprovado no momento e dados completos. O serviço valida existência do owner/perfil. Perfil aprovado com produto rascunho não é público. Aprovar perfil não publica; reduzir stock/alterar unidade não pode ignorar concorrência/reservas futuras. Rascunhos públicos, autoatribuição de owner/aprovação e publicação por atualização implícita são recusados. Compradores só veem produtos publicados de produtores aprovados; publicado com stock zero pode continuar visível como esgotado, mas não pode ser comprado. Arquivado não se vende e preserva histórico; recomenda-se excluí-lo do catálogo ativo. Visibilidade do detalhe arquivado ainda Q12, sem nova regra por inferência. Sazonalidade é informativa, sem controlo automático de stock/visibilidade. Restauro e DELETE físico não são concedidos. Rejeitado não recebe permissões adicionais por este desenho.
+**Persistência:** tipos e campos fornecidos são validados mesmo incompletos; publicação exige a combinação completa. Escritas por documento/create/save com validação; queries/bulk recusadas como nos modelos existentes. Save com projeção que omite campos de publicação é recusado. Sem reserva, desconto ou checkout. Um publicado com stock zero mantém estado publicado; disponibilidade comercial é derivada futuramente de estado/stock/mínimo/perfil, nunca um booleano persistido controlável pelo cliente.
+
+Exemplo documental com quantidade comercial por embalagem distinta do seu conteúdo:
 
 ```json
 {
-  "_id": { "$oid": "000000000000000000000201" },
-  "produtor": { "$oid": "000000000000000000000001" },
+  "_id": {
+    "$oid": "000000000000000000000201"
+  },
+  "produtor": {
+    "$oid": "000000000000000000000001"
+  },
   "nome": "Morangos de exemplo",
   "estadoPublicacao": "publicado",
   "categoriaId": "cat-002",
-  "etiquetas": [{ "rotulo": "Colheita local", "normalizado": "colheita local" }],
+  "etiquetas": ["Colheita local"],
   "precoCent": 350,
   "moeda": "EUR",
   "unidadeVenda": {
@@ -134,13 +139,24 @@ A02/A03 aprovadas incluem userId, nomePublico, responsável derivado da conta, l
     "quantidadeMinima": 1,
     "incrementoCompra": 1,
     "rotulo": "Embalagem de 500 g",
-    "conteudoPorUnidade": { "quantidade": 500, "unidade": "g" }
+    "conteudoPorUnidade": {
+      "quantidade": 500,
+      "unidade": "g"
+    }
   },
-  "stockDisponivel": 20
+  "stockDisponivel": 20,
+  "descricao": "Morangos fictícios para documentação.",
+  "ingredientesAplicaveis": false,
+  "imagens": [
+    {
+      "url": "https://example.invalid/morangos.jpg",
+      "principal": true
+    }
+  ]
 }
 ```
 
-O exemplo supõe publicação explícita posterior à aprovação e não é documento completo de publicação. A categoria cat-002 e os campos/limites da unidade são ilustrativos; estados e inteiros em unidades mínimas estão aprovados.
+O exemplo não é seed nem prova de produtor real aprovado. O snapshot das linhas de encomenda abaixo continua proposta para o modelo futuro, não implementação de P08 nesta etapa.
 
 ## 4. orders — obrigatório O
 

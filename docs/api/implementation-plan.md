@@ -1,6 +1,6 @@
 # Plano detalhado proposto — subfases 3.1–3.7
 
-Complementa o [plano oficial](../planning/implementation-plan.md) sem o alterar. Base histórica `807aa68`; fundação publicada em `68f41ec` e preparação documental 3.2 a partir desta última versão; integração em main adiada por decisão do utilizador. **A autorização posterior implementou apenas o primeiro bloco users/producers de 3.2**, sem novas dependências, branches ou operações Git de escrita. Outros modelos/fases continuam sem autorização; main intacta.
+Complementa o [plano oficial](../planning/implementation-plan.md) sem o alterar. Base histórica `807aa68`; fundação publicada em `68f41ec` e preparação documental 3.2 a partir desta última versão; integração em main adiada por decisão do utilizador. **O primeiro bloco users/producers de 3.2 foi implementado e consolidado nos commits locais 77673a5/c87f928; a autorização seguinte acrescentou apenas products**, sem novas dependências, branches ou operações Git de escrita nesta tarefa. Restantes modelos/fases continuam sem autorização; main intacta.
 
 ## Sequência, segurança e preservação
 
@@ -91,3 +91,7 @@ Nenhuma branch nova é criada nesta preparação. Uma autorização futura deve 
 ## Ordem proposta após a consolidação T32
 
 A01–A03 aprovadas e users/producers autorizados/implementados; não esperar por todas as Q comerciais para esse bloco. A etapa 3.2.a não é uma obrigação de implementar dinheiro/categorias antes da identidade: resolver cada representação antes do modelo respetivo. Blocos comerciais continuam dependentes de decisões B; segurança real, integração, mapa e Cloud mantêm a sequência prevista. Ver campos, índices mínimos, testes e aceitação na [análise de prontidão](phase-3.2-readiness.md). Ver [entrega efetiva do primeiro bloco](phase-3.2-identity-implementation.md); não avançar sem nova autorização.
+
+## Products — bloco local concluído após esclarecimentos
+
+P01–P08 aprovadas; referência fixa por kg/L/unidade/embalagem e declaração explícita de ingredientes resolvidas pelo utilizador antes do código. Modelo products, tipos/constantes, validações, dois índices compostos e testes locais implementados conforme [entrega específica](phase-3.2-products.md). Não foi iniciada a etapa Order: P03 é apenas a regra futura de débito na submissão; P08 reserva confirmação/UI e snapshots para as fases respetivas. Quatro modelos restantes e operações HTTP continuam futuros. A implementação local não concede autorização Git de publicação.

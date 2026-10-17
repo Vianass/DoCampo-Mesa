@@ -214,3 +214,11 @@ O utilizador aprovou A01–A03 e autorizou implementar apenas users/producers, v
 | A03     | pendente/aprovado/rejeitado; pendente sem decisão; aprovado/rejeitado com autor e data; rejeição com justificação obrigatória; limites/data coerentes do bloco aprovado. Sem endpoints administrativos, transições de recandidatura ou autenticação.                                                                                                                             |
 
 As verificações cruzadas de existência/papel/competência pertencem ao serviço futuro autorizado; ref não as implementa. Os modelos validam a forma local, privacidade e unicidade, sem conceder permissões de venda. Q02/Q05/Q07–Q13/Q15/Q16, C03/C05 e detalhes residuais comerciais não se tornam aprovados por este bloco. Publicação e modelos seguintes continuam sujeitos a nova autorização.
+
+## Produtos P01–P08 e esclarecimentos — 2026-10-17
+
+P01–P08 aprovadas para o modelo products, com autorização condicional de implementação local; ver [registo integral e categorias](phase-3.2-products.md). As duas pendências identificadas foram respondidas pelo utilizador antes do código: preço fixo por kg/L ou unidade/embalagem, com stock em g/ml/contagens; aplicabilidade de ingredientes declarada explicitamente pelo produtor e lista obrigatória quando aplicáveis na publicação.
+
+A categoria pode faltar no rascunho (P04 substitui a obrigatoriedade anterior nesse estado); para publicar, exige-se a lista completa de campos aprovada. Preço de produto entre 1 e 1 000 000 cêntimos, até duas fotos, stock máximo por modalidade. A lista de doze categorias substitui a sugestão anterior. P03 resolve o débito na submissão da encomenda, mas não autoriza checkout/transações; P08 preserva snapshots e exige confirmação futura, sem UI ou carrinho agora.
+
+As recomendações históricas sobre preço zero/lista final/categoria em rascunho/referência de preço deixam de ser pendências no âmbito de products. Restantes questões Q/C continuam no seu âmbito próprio. Sem autorização para staging/commits/push/branches/merge/PR, novos endpoints, autenticação ou modelos seguintes.

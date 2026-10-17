@@ -34,23 +34,28 @@ x-approved-functional-decisions: [Q01, Q03, Q04, Q06, Q14]
 x-pending-functional-decisions: [Q02, Q05, Q07, Q08, Q09, Q10, Q11, Q12, Q13, Q15, Q16]
 x-residual-functional-details:
   Q01: Aquisição/provisionamento por aprovar; A01/A02 aprovadas no bloco local de identidade.
-  Q03: Tipo BSON, limites, referência de preço, mínimos/passos, DTO e entrada por aprovar; inteiros em unidades mínimas aprovados.
+  Q03: Product usa Number inteiro seguro e limites P02/P05, referência fixa aprovada; grelha de compras, entrada e outros modelos mantêm detalhes futuros.
   Q04: Recandidatura e direitos adicionais do rejeitado por aprovar.
-  Q06: Zero, entrega, custos, dados e mecanismo de reconfirmação por aprovar.
-  Q14: Lista final, limites, modo de produção e ausência/lista vazia de meses por aprovar; meses opcionais aprovados.
+  Q06: Product tem preço 1–1 000 000 cêntimos aprovado P02; entrega/custos/dados/reconfirmação e preços de outros recursos continuam com âmbito próprio.
+  Q14: Doze categorias P01 aprovadas; limites adicionais de etiquetas/ingredientes, modo de produção e filtros C03 continuam futuros; meses informativos opcionais.
 x-approved-model-decisions: [T32-01, T32-02, T32-03, T32-04, T32-05, T32-06, A01, A02, A03]
 x-local-identity-models: phase-3.2-identity-implementation.md
+x-approved-product-decisions: [P01, P02, P03, P04, P05, P06, P07, P08]
+x-local-product-model: phase-3.2-products.md
+x-approved-product-clarifications:
+  price-reference: Preço por kg/L/unidade/embalagem; quantidades em g/ml/contagens.
+  ingredients: Aplicabilidade declarada pelo produtor; lista obrigatória quando aplicáveis.
 x-model-decision-scope: decisions.md
 x-residual-model-details:
   T32-01: Aquisição/provisionamento futuro; identidade e unicidade A01/A02 aprovadas/implementadas no modelo.
-  T32-02: BSON, limites, referência de preço, mínimos/passos, DTO e entrada.
+  T32-02: Product implementa inteiros seguros, base/ref fixa, mínimo/passo positivos; grelha de checkout e outros modelos ainda por detalhar.
   T32-03: Agregação de linhas, limites e versão da referência de preço.
   T32-04: Lista final, limites/estrutura, modo de produção, ausência/vazio e C03.
-  T32-05: Outros mínimos de rascunho, restauro/DELETE e poderes Q12.
+  T32-05: P04 resolve rascunho/publicação de Product; comando HTTP de publicação, restauro/DELETE e poderes Q12 futuros.
   T32-06: Campos/required/índices dos restantes modelos; DTOs futuros do perfil alargado A02 por alinhar antes dos endpoints.
 x-dependency-interpretation: >-
   x-decision-dependencies rastreia Q; consultar decisões aprovadas e detalhes residuais,
-  sem interpretar todos os IDs como totalmente pendentes. users/producers implementados apenas localmente; restantes modelos
+  sem interpretar todos os IDs como totalmente pendentes. users/producers/products implementados apenas localmente; outros quatro modelos
   não autorizados. As 44 operações futuras continuam bloqueadas por escolhas,
   regras pendentes e segurança real C04. Ver phase-3.2-proposal.md.
 
@@ -2341,6 +2346,102 @@ components:
         - userId
         - candidatura
       description: Só o próprio produtor e administração autorizada; não reutilizar em resposta pública.
+    ProductCategoryId:
+      type: string
+      enum:
+        [
+          cat-001,
+          cat-002,
+          cat-003,
+          cat-004,
+          cat-005,
+          cat-006,
+          cat-007,
+          cat-008,
+          cat-009,
+          cat-010,
+          cat-011,
+          cat-012,
+        ]
+      description: Doze IDs estáveis P01; rótulos no registo phase-3.2-products.md, independentes dos nomes.
+    ProductPrice:
+      type: integer
+      minimum: 1
+      maximum: 1000000
+      description: P02 e esclarecimento aprovado. EUR/cêntimos por 1 kg, 1 L, uma unidade ou uma embalagem. Não impõe estes limites a outros recursos.
+    ProductPhoto:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL HTTP(S) sem credenciais, validado no modelo; não contém bytes nem autoriza upload.
+        alt:
+          type: string
+        principal:
+          type: boolean
+          default: false
+      required: [url]
+      additionalProperties: false
+    ProductSaleUnit:
+      type: object
+      properties: &productSaleProperties
+        modalidade:
+          type: string
+          enum: [peso, volume, unidade, embalagem]
+        unidadeBase:
+          type: string
+          enum: [g, ml, un]
+        quantidadeReferencia:
+          type: integer
+          enum: [1, 1000]
+        quantidadeMinima:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        incrementoCompra:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        rotulo:
+          type: string
+        conteudoPorUnidade:
+          type: object
+          properties:
+            quantidade:
+              type: integer
+              minimum: 1
+              maximum: 9007199254740991
+            unidade:
+              type: string
+              enum: [g, ml, un]
+          required: [quantidade, unidade]
+          additionalProperties: false
+      required: [modalidade, unidadeBase, quantidadeReferencia, quantidadeMinima, incrementoCompra]
+      oneOf:
+        - properties:
+            modalidade: { enum: [peso] }
+            unidadeBase: { enum: [g] }
+            quantidadeReferencia: { enum: [1000] }
+        - properties:
+            modalidade: { enum: [volume] }
+            unidadeBase: { enum: [ml] }
+            quantidadeReferencia: { enum: [1000] }
+        - properties:
+            modalidade: { enum: [unidade] }
+            unidadeBase: { enum: [un] }
+            quantidadeReferencia: { enum: [1] }
+        - properties:
+            modalidade: { enum: [embalagem] }
+            unidadeBase: { enum: [un] }
+            quantidadeReferencia: { enum: [1] }
+      additionalProperties: false
+      description: Unidade completa para produto publicado. Base/ref fixas por modalidade, campos mínimos positivos; conteúdo opcional apenas em unidade/embalagem, separado da contagem comercial. Grelha do checkout não implementada.
+    ProductDraftSaleUnit:
+      type: object
+      properties: *productSaleProperties
+      additionalProperties: false
+      description: Rascunho pode guardar unidade incompleta; campos fornecidos têm de ser válidos/coerentes. Base/ref são derivadas da modalidade quando presentes; o modelo valida as combinações, sem endpoint ativo.
     Product:
       type: object
       properties:
@@ -2352,15 +2453,20 @@ components:
           $ref: '#/components/schemas/Id'
         nome: &id009
           type: string
+          minLength: 1
         descricao: &id010
           type: string
+          minLength: 1
         categoria: &id011
-          type: string
+          $ref: '#/components/schemas/ProductCategoryId'
         etiquetas:
           type: array
           items:
             type: string
           description: Rótulos personalizados aprovados Q14; limites e normalização T32-04 por aprovar.
+        ingredientesAplicaveis:
+          type: boolean
+          description: Declaração do produtor; true exige lista de ingredientes não vazia na publicação.
         ingredientes: &id012
           type: array
           items:
@@ -2375,22 +2481,26 @@ components:
         modoProducao: &id014
           type: string
         precoCent: &id015
-          $ref: '#/components/schemas/Money'
+          $ref: '#/components/schemas/ProductPrice'
         moeda:
           type: string
           enum: [EUR]
         unidadeVenda: &id016
-          $ref: '#/components/schemas/SaleUnit'
+          $ref: '#/components/schemas/ProductSaleUnit'
         stockDisponivel: &id017
           type: integer
           minimum: 0
+          maximum: 10000000
+          description: Máximo 10 000 000 g/ml para peso/volume; máximo 100 000 para unidade/embalagem, validado conforme a modalidade.
         limiarStockBaixo: &id018
           type: integer
           minimum: 0
         imagens:
           type: array
+          minItems: 1
+          maxItems: 2
           items:
-            $ref: '#/components/schemas/Image'
+            $ref: '#/components/schemas/ProductPhoto'
         createdAt:
           $ref: '#/components/schemas/Timestamp'
         versao:
@@ -2402,11 +2512,36 @@ components:
         - nome
         - categoria
         - estadoPublicacao
+        - descricao
+        - ingredientesAplicaveis
+        - imagens
         - precoCent
         - unidadeVenda
         - stockDisponivel
+      allOf:
+        - oneOf:
+            - properties:
+                ingredientesAplicaveis: { enum: [true] }
+                ingredientes: { type: array, minItems: 1, items: { type: string } }
+              required: [ingredientes]
+            - properties:
+                ingredientesAplicaveis: { enum: [false] }
+                ingredientes: { type: array, maxItems: 0, items: { type: string } }
+        - oneOf:
+            - properties:
+                unidadeVenda:
+                  type: object
+                  properties:
+                    modalidade: { enum: [peso, volume] }
+                stockDisponivel: { type: integer, maximum: 10000000 }
+            - properties:
+                unidadeVenda:
+                  type: object
+                  properties:
+                    modalidade: { enum: [unidade, embalagem] }
+                stockDisponivel: { type: integer, maximum: 100000 }
       description: >-
-        DTO público proposto de produto publicado e perfil aprovado. produtorId é ID de perfil, não userId. categoria corresponde ao candidato categoriaId interno; lista final não escolhida. Etiquetas são rótulos públicos, normalização interna. Quantidades inteiras na unidade mínima; meses opcionais e informativos. Catálogo ativo proposto só inclui publicado, podendo mostrar esgotado sem compra; rascunho nunca público. Detalhe público de arquivado ainda Q12; venda sempre bloqueada. O DTO privado parcial continua por detalhar; não inferir meses dos mocks.
+        DTO público proposto de produto publicado e perfil aprovado. produtorId é ID de perfil, não userId. categoria corresponde ao candidato categoriaId interno; doze IDs P01 aprovados. Etiquetas são rótulos públicos, normalização interna. Quantidades inteiras na unidade mínima; meses opcionais e informativos. Catálogo ativo proposto só inclui publicado, podendo mostrar esgotado sem compra; rascunho nunca público. Detalhe público de arquivado ainda Q12; venda sempre bloqueada. ProductWrite representa rascunho; comando manual de publicação ainda por detalhar antes dos endpoints; não inferir meses dos mocks.
       x-residual-model-decisions: [T32-02, T32-03, T32-04, T32-05]
       x-revision-required: true
     OrderLine:
@@ -2843,23 +2978,28 @@ components:
           items:
             type: string
           description: Rótulos personalizados aprovados Q14; limites e normalização T32-04 por aprovar.
+        ingredientesAplicaveis:
+          type: boolean
         ingredientes: *id012
         epocaMeses: *id013
         modoProducao: *id014
         precoCent: *id015
-        unidadeVenda: *id016
+        unidadeVenda:
+          $ref: '#/components/schemas/ProductDraftSaleUnit'
         stockDisponivel: *id017
         limiarStockBaixo: *id018
-      required:
-        - nome
-        - categoria
-        - modoProducao
-        - precoCent
-        - unidadeVenda
-        - stockDisponivel
+        imagens:
+          type: array
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/ProductPhoto'
+      required: [nome]
       additionalProperties: false
       description: >-
-        Criação própria como rascunho; pendente pode preparar/editar sem publicar. Aprovar o perfil não publica automaticamente. Os required atuais representam um produto completo; rascunho parcial/DTO privado e comando de publicação ainda por detalhar. Inteiros, estados e meses opcionais aprovados; zero/limites/referência continuam por escolher; owner/aprovação/totais nunca atribuídos pelo cliente.
+        P04: criar rascunho pode exigir apenas nome editável; owner é atribuído pelo serviço autenticado futuro.
+        Campos adicionais fornecidos são validados, preço 1–1 000 000 cêntimos por referência fixa e até duas fotos.
+        Publicação não é efeito de guardar ou aprovar perfil; exige ação manual e todos os campos P04,
+        declaração/lista de ingredientes coerentes, uma fotografia e produtor aprovado. Comando ainda futuro.
       x-contract-status: proposta-bloqueada
       x-residual-model-decisions: [T32-02, T32-03, T32-04, T32-05]
       x-revision-required: true
@@ -3133,12 +3273,14 @@ components:
         descricao:
           type: string
         categoria:
-          type: string
+          $ref: '#/components/schemas/ProductCategoryId'
         etiquetas:
           type: array
           items:
             type: string
           description: Rótulos personalizados aprovados Q14; limites e normalização T32-04 por aprovar.
+        ingredientesAplicaveis:
+          type: boolean
         ingredientes:
           type: array
           items:
@@ -3153,12 +3295,13 @@ components:
         modoProducao:
           type: string
         precoCent:
-          $ref: '#/components/schemas/Money'
+          $ref: '#/components/schemas/ProductPrice'
         unidadeVenda:
-          $ref: '#/components/schemas/SaleUnit'
+          $ref: '#/components/schemas/ProductDraftSaleUnit'
         stockDisponivel:
           type: integer
           minimum: 0
+          maximum: 10000000
         limiarStockBaixo:
           type: integer
           minimum: 0
@@ -3168,16 +3311,18 @@ components:
           description:
             Proposta C02 de precondição para detetar edição obsoleta; obrigatoriedade e política
             a aprovar antes de escrita.
-      required:
-        - nome
-        - categoria
-        - modoProducao
-        - precoCent
-        - unidadeVenda
-        - stockDisponivel
+        imagens:
+          type: array
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/ProductPhoto'
+      required: [nome]
       additionalProperties: false
       description: >-
-        PUT completo dos campos editáveis conforme C01, respeitando propriedade e estado do perfil/produto; guardar não publica automaticamente. Publicação explícita e estados aprovados T32-05; DTO parcial/comando ainda por detalhar. Precondição de versão continua proposta C02; referência, limites e etiquetas exigem confirmação residual. Meses opcionais não controlam disponibilidade.
+        PUT completo dos campos editáveis conforme C01. Nome é mínimo de rascunho P04; se o estado atual for publicado,
+        o servidor exige todos os campos de publicação, incluindo declaração/ingredientes e uma ou duas fotos.
+        Guardar não publica nem altera owner; comando explícito de publicação e precondição de versão C02
+        continuam futuros. Nenhuma rota privada é disponibilizada pelo contrato.
       x-contract-status: proposta-bloqueada
       x-residual-model-decisions: [T32-02, T32-03, T32-04, T32-05]
       x-revision-required: true
