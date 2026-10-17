@@ -1,6 +1,6 @@
 # Plano detalhado proposto — subfases 3.1–3.7
 
-Complementa o [plano oficial](../planning/implementation-plan.md) sem o alterar. Base aprovada `807aa68`, desenvolvimento futuro a partir dessa versão; integração em main adiada por decisão do utilizador. **Este plano não autoriza criar branches, instalar bibliotecas ou iniciar 3.1.** A Fase 3.0 produz apenas os documentos desta pasta.
+Complementa o [plano oficial](../planning/implementation-plan.md) sem o alterar. Base histórica `807aa68`; fundação publicada em `68f41ec` e preparação documental 3.2 a partir desta última versão; integração em main adiada por decisão do utilizador. **A autorização posterior implementou apenas o primeiro bloco users/producers de 3.2**, sem novas dependências, branches ou operações Git de escrita. Outros modelos/fases continuam sem autorização; main intacta.
 
 ## Sequência, segurança e preservação
 
@@ -23,12 +23,15 @@ C01/C02/C04/C06 estão aprovadas nos princípios e no âmbito do [registo](decis
 
 ## 3.2 — Schemas, referências e testes de persistência
 
-- **Objetivos/funcionalidades:** cinco coleções académicas, referências/embedding e índices mínimos; coleções adicionais apenas se adotadas; fixtures determinísticas e isolamento de base de teste.
-- **Dependências:** Q01/Q03/Q04/Q06/Q10/Q12/Q14 conforme cada modelo; D05/D09 e C01/C06; ambiente com suporte transacional para os ensaios D06/D08. Campos de reservas/resultado aguardam Q07/Q08.
-- **Ficheiros previstos:** modules/{users, producers, products, orders, reviews, auctions}/*.model.ts, modelo bids no módulo auctions, testes de schemas/índices/referências e fixtures em apps/api/tests. Não gerar notifications por omissão nem copiar IDs DEMO como identidades reais.
-- **Testes:** required/enum/min e números inválidos; email único; alvo review exclusivo; coerência de owner; linhas/histórico embebidos; transação abortada sem alteração parcial. Banco real transacional para provar atomicidade; mocks só para limites unitários.
-- **Aceitação:** schema/serviço rejeitam dados incoerentes; regras aprovadas rastreadas; snapshots não recalculados após edição; justificação de índices/embedding documentada. Base de teste separada de desenvolvimento; sem limpeza destrutiva de dados reais.
-- **Riscos/decisões:** confusão User/ProducerProfile; unique não é validator nem foreign key; índices com arrays paralelos; regras de schema ainda dependentes de Q. Não implementar parte bloqueada fingindo que a decisão foi tomada.
+**Estado: preparação documental concluída; primeiro bloco users/producers implementado localmente. Outros modelos não autorizados.** Q01/Q03/Q04/Q06/Q14 aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito, detalhes residuais ainda por aprovar. Ver [prontidão A/B/C e primeiro bloco](phase-3.2-readiness.md). Ver [plano detalhado 3.2.a–g](phase-3.2-proposal.md) e [sete modelos candidatos](phase-3.2-models.md).
+
+- **Objetivo:** cinco coleções académicas e justificação de referências/embedding; producers/reviews aprovadas T32-06, total de sete coleções. Campos e índices não foram aprovados em bloco. Sem novos endpoints privados.
+- **Sequência futura:** a) representações/contrato; b) User/perfil; c) Product/unidades/rascunhos; d) Order/snapshots; e) Auction/Bid; f) Review condicionada; g) índices/integridade/regressão. Cada etapa tem ficheiros, testes, aceitação, dependências e riscos na proposta.
+- **Dependências:** Q02/Q05/Q07–Q13/Q15/Q16 conforme o modelo, C03/C05 quando aplicável, Q04 recandidatura, Q06 zero/entrega/custos e Q14 listas/limites; inteiros g/ml/unidades/embalagens, half-up e meses opcionais já aprovados. A01–A03 aprovadas e aplicadas ao primeiro bloco; as regras comerciais B só bloqueiam os modelos posteriores afetados.
+- **Ficheiros previstos:** módulos e testes próprios da API, sem alterar frontend/segurança ou criar packages compartilhados antes de C05. Paths concretos constam de 3.2.a–g; nenhum foi criado agora.
+- **Testes futuros:** MongoDB real isolado para required/enums/quantidades/preços/referências/índices únicos/consistência e transações aplicáveis; criar/aguardar índices explicitamente porque autoIndex=false. Preservar 49 backend/274 Playwright e acrescentar apenas casos pertinentes.
+- **Aceitação:** campos e invariantes rastreados; valores exatos, snapshots imutáveis, identidade única com capacidades acumuladas, pendente com rascunho privado e nenhuma publicação automática; sem regra inventada nas áreas bloqueadas.
+- **Riscos:** confundir user/perfil ou papel/aprovação/publicação; misturar g/ml/embalagens; regex ou índices multikey inadequados; pretender que ref/unique/validator bastem para integridade concorrente.
 
 ## 3.3 — Catálogo e produtores
 
@@ -77,10 +80,14 @@ C01/C02/C04/C06 estão aprovadas nos princípios e no âmbito do [registo](decis
 
 ## Estado de execução 3.1
 
-Fundação implementada localmente após autorização explícita de 2026-10-16, com Node 22.21.1/npm 10.9.4 e MongoDB 8.0.34 de membro único por replica set. Ver [implementação e evidências](foundation-implementation.md). Subfases 3.2–3.7 não foram iniciadas. C04 mantém todas as operações privadas inacessíveis.
+Fundação implementada localmente após autorização explícita de 2026-10-16, com Node 22.21.1/npm 10.9.4 e MongoDB 8.0.34 de membro único por replica set. Ver [implementação e evidências](foundation-implementation.md). 3.2 tem agora users/producers, validações, índices e testes locais; outros cinco modelos e 3.3–3.7 não foram iniciados. C04 mantém todas as operações privadas inacessíveis.
 
 ## Fora do âmbito e estratégia de entrega
 
 Autenticação final/Swagger UI/SPA integrada: semana 4; leilões/notificações em tempo real: semana 5; Blob/estado Cloud/publicação: semana 6; aceitação global/relatório/vídeo: semana 7. Laravel/elasticidade só depois dos obrigatórios. Antecipações precisam de decisão explícita e não substituem critérios académicos.
 
-Nenhuma branch nova é proposta como ação imediata. Uma autorização futura deve indicar a branch de implementação baseada em 807aa68, sem merge em main nesta etapa. Commits/push/PR continuam sujeitos a autorização própria. Cada subfase deve entregar uma fatia verificável, respetivos testes, ficheiros e pendências, antes de pedir autorização para publicação ou para avançar.
+Nenhuma branch nova é criada nesta preparação. Uma autorização futura deve indicar a branch de implementação a partir da fundação publicada 68f41ec, sem merge em main nesta etapa. Commits/push/PR continuam sujeitos a autorização própria. Cada subfase deve entregar uma fatia verificável, respetivos testes, ficheiros e pendências, antes de pedir autorização para publicação ou para avançar.
+
+## Ordem proposta após a consolidação T32
+
+A01–A03 aprovadas e users/producers autorizados/implementados; não esperar por todas as Q comerciais para esse bloco. A etapa 3.2.a não é uma obrigação de implementar dinheiro/categorias antes da identidade: resolver cada representação antes do modelo respetivo. Blocos comerciais continuam dependentes de decisões B; segurança real, integração, mapa e Cloud mantêm a sequência prevista. Ver campos, índices mínimos, testes e aceitação na [análise de prontidão](phase-3.2-readiness.md). Ver [entrega efetiva do primeiro bloco](phase-3.2-identity-implementation.md); não avançar sem nova autorização.

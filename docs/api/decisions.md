@@ -1,12 +1,12 @@
 # Decisões de entrada — análise Q01–Q16
 
-Complementa, sem substituir ou alterar, [decisions.md da Fase 0](../architecture/decisions.md). **C01/C02/C04/C06 foram aprovadas explicitamente no âmbito registado abaixo. Q01–Q16 e C03/C05 continuam pendentes.** As experiências demonstrativas anteriores continuam aprovadas no seu âmbito e não são modificadas. A autorização documental não resolve automaticamente as questões.
+Complementa, sem substituir ou alterar, [decisions.md da Fase 0](../architecture/decisions.md). **C01/C02/C04/C06 foram aprovadas explicitamente no âmbito registado abaixo. Q01/Q03/Q04/Q06/Q14 têm aprovação funcional registada em 2026-10-16; T32-01–T32-06 aprovadas em 2026-10-17 nos limites do registo; A01–A03 aprovadas para o bloco users/producers implementado localmente; restantes Q, C03/C05 e detalhes residuais continuam pendentes.** As experiências demonstrativas anteriores continuam aprovadas no seu âmbito e não são modificadas. A autorização documental não resolve automaticamente as questões.
 
 ## Base aprovada e propostas transversais
 
-D01/D02: monorepo e monólito modular, React/TypeScript e Node.js/Express/TypeScript/Mongoose. D04: JWT/bcrypt escolhidos; armazenamento/duração continuam proposta. D10/D12: Atlas e serviços Azure escolhidos; configuração, versões e planos concretos não escolhidos. D13: OpenAPI 3, Swagger UI, Vitest, Supertest e Playwright selecionados. A decisão atual aprova adiar integração em main e produzir apenas documentos na branch atual.
+D01/D02: monorepo e monólito modular, React/TypeScript e Node.js/Express/TypeScript/Mongoose. D04: JWT/bcrypt escolhidos; armazenamento/duração continuam proposta. D10/D12: Atlas e serviços Azure escolhidos; configuração, versões e planos concretos não escolhidos. D13: OpenAPI 3, Swagger UI, Vitest, Supertest e Playwright selecionados. A decisão atual mantém a integração em main adiada e autoriza exclusivamente a implementação local de users/producers; nenhuma operação Git de escrita.
 
-D03 (propriedade/aprovação), D05 (cêntimos), D06/D08 (transações/idempotência), D07 (versões/snapshots), D09 (coleções adicionais), D10 (mediação de upload), D11 (agendador), D12 (instância inicial) mantêm o estado de proposta nos aspetos assinalados em F0. O vocabulário público em português de D14 foi aprovado agora no âmbito C01; não se aprovaram automaticamente todos os nomes, rotas ou campos do rascunho. Não se presume que todos foram adotados por existirem mocks semelhantes.
+D03 (propriedade/aprovação), D05 (cêntimos), D06/D08 (transações/idempotência), D07 (versões/snapshots), D09 (campos/índices adicionais não aprovados), D10 (mediação de upload), D11 (agendador), D12 (instância inicial) mantêm o estado de proposta nos aspetos assinalados em F0. O vocabulário público em português de D14 foi aprovado agora no âmbito C01; não se aprovaram automaticamente todos os nomes, rotas ou campos do rascunho. Não se presume que todos foram adotados por existirem mocks semelhantes.
 
 | ID técnico | Estado atual                    | Conteúdo e efeito                                                                                                                                                                                                        | Momento                                                                                            |
 | ---------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
@@ -21,11 +21,11 @@ C04 fixa a sequência na semana 4. O bloqueio abrange todas as operações priva
 
 ## Q01 — Cardinalidade dos papéis e auto-licitação
 
-**Problema:** uma conta pode comprar e produzir? Como evitar licitar no próprio lote? **Documentado:** E distingue três papéis; F0 recomenda um papel comercial por conta, administrador separado. A sessão demonstrativa escolhe um papel, sem provar a política real.
+**Estado: aprovada funcionalmente em 2026-10-16.** A mesma conta pode comprar e produzir e aceder às duas áreas. A venda depende de aprovação da candidatura. Impedir licitar nos próprios leilões por comparação de identidade, mesmo mudando o contexto ativo. Administrador não pode ser criado no registo público e exige procedimento controlado.
 
-**Alternativas e balanço:** papel único simplifica schema, autorização e navegação, mas pode obrigar a contas distintas; vários papéis facilitam uso misto, mas exigem seleção de contexto e impedimento de auto-licitação. **Backend:** users.papel/roles, claims, autorização e relação de proprietário. **Frontend:** identidade real e eventual troca de contexto, preservando a demonstração existente.
+A antiga recomendação de papel comercial único não foi escolhida e é ultrapassada por esta aprovação; F0 permanece como documento histórico inalterado. O protótipo de role único não define a conta real. **T32-01 aprovada em 2026-10-17:** lista de papéis por conta, acumuláveis comprador/produtor, perfil separado e aprovação comercial independente. Flags/papel único deixam de ser alternativas pendentes. Aquisição de capacidade e provisionamento admin continuam pendentes; A01/A02 aprovadas e implementadas no âmbito descrito na entrega; admin não ganha poderes comerciais por inferência.
 
-**Recomendação P:** papel único na base académica; administrador por procedimento controlado, sem autorregisto. Se forem aceites vários papéis, proibir auto-licitação no servidor. **Necessária:** antes de User/schema, registo, autenticação e filtros próprios (3.2/4).
+**Impacto:** User/DTO/sessão futura suportam capacidades acumuladas; fonte real tem identidade única, sem duplicar conta ou confiar no papel demo. A lista de papéis e o vínculo de perfil estão implementados no modelo; fluxo de aquisição/provisionamento permanece para aprovação antes da semana 4. Nenhuma autenticação é implementada nesta tarefa.
 
 ## Q02 — Checkout com vários produtores
 
@@ -37,19 +37,19 @@ C04 fixa a sequência na semana 4. O bloqueio abrange todas as operações priva
 
 ## Q03 — Unidades e frações
 
-**Problema:** quantidade representa embalagens, kg fracionários ou inteiros escalados? **Documentado:** F0 recomenda unidades comerciais inteiras; demonstração usa inteiros e rótulos, sem fechar política real.
+**Estado: aprovada funcionalmente em 2026-10-16.** Sistema misto: unidade, embalagem, peso e volume; o produtor define a modalidade adequada. Embalagem tem conteúdo próprio (500 g, caixa de 6, garrafa de 750 ml), distinto da quantidade comercial comprada. A recomendação antiga de limitar toda a plataforma a unidades comerciais inteiras não foi adotada.
 
-**Alternativas e balanço:** embalagens inteiras simplificam cálculo/stock, mas não cobrem peso variável; decimais são familiares mas exigem precisão definida; gramas/ml inteiros evitam erro binário, mas exigem conversões e rótulos. **Backend:** tipos, min/escala, snapshots e reservas. **Frontend:** QuantityControl, formularização de stock/unidade e totais.
+**T32-02/T32-03 aprovadas em 2026-10-17:** quantidades inteiras em g, ml, unidades inteiras ou número de embalagens; embalagem distinta do conteúdo. Subtotal exato, half-up por linha, soma das linhas arredondadas e servidor como fonte de verdade, sem operações monetárias de ponto flutuante imprecisas. Decimal128 para quantidades deixa de ser alternativa pendente.
 
-**Recomendação P:** unidades comerciais inteiras com tamanho explícito, sujeitas a confirmação. **Necessária:** antes de Product/Order e criação/stock (3.2–3.4). Quantity no OpenAPI mantém número positivo sem declarar que frações são autorizadas; o schema final deverá restringir a opção aprovada.
+**Continuam pendentes:** mínimos/passos, limites, referência de preço, tipo BSON e campos concretos de DTO/entrada; agregação de linhas iguais e versionamento. Product/Order/lote/stock partilham unidade/escala e snapshots; frontend/cart exigem futura adaptação autorizada. Quantity no OpenAPI passa a inteiro, sem escolher Number versus BSON long.
 
 ## Q04 — Produtores pendentes, rejeição e recandidatura
 
-**Problema:** que capacidades existem antes da aprovação? **Documentado:** aprovação/rejeição é obrigatória; F0 recomenda login/consulta da candidatura e bloqueio comercial até aprovação. O protótipo permite experiências privadas sem efeitos públicos.
+**Estado: aprovada no âmbito explícito em 2026-10-16; recandidatura continua pendente.** Pendente consulta candidatura, edita perfil e cria/edita produtos em rascunho; não publica, recebe encomendas ou cria leilões. Aprovado gere a loja, publica, recebe encomendas e cria leilões. Aprovação do perfil não publica automaticamente rascunhos. Rejeitado consulta decisão/justificação e não publica/vende; não conceder outros direitos por inferência.
 
-**Alternativas e balanço:** bloquear tudo é simples mas dificulta consulta; rascunhos privados ajudam preparação, com novo ciclo de publicação; publicar antes de aprovação reduz barreiras mas enfraquece validação. **Backend:** elegibilidade nas leituras públicas e escritas, conflito de decisão, recandidatura. **Frontend:** mensagens/capacidades reais e candidatura, sem remover os cenários demo.
+Esta escolha permite preparação privada antes da aprovação e ultrapassa a recomendação anterior de só consulta. T32-05 aprova estados rascunho/publicado/arquivado, início rascunho, publicação explícita por aprovado e arquivo preservando histórico. Outros mínimos de rascunho e justificação/metadados do perfil foram aprovados em A02/A03 e implementados no primeiro bloco. Aprovação da candidatura não atribui arbitrariamente papel administrativo ou novas capacidades comerciais à conta.
 
-**Recomendação P:** consulta própria permitida, publicação/vendas/leilões bloqueados até aprovação; sem recandidatura automática. Aprovar uma candidatura não altera o papel arbitrariamente. **Necessária:** antes de perfis públicos/CRUD e decisões (3.2/3.3/3.5). Recandidatura exige decisão explícita antes de adicionar endpoint.
+**Impacto:** separar estado do perfil de estado de publicação do produto; consultas públicas exigem publicado + produtor aprovado, permissões de rascunho não exigem aprovação. Resolver recandidatura antes de criar endpoint ou transição e outros direitos do rejeitado antes de os disponibilizar. Os modelos podem ser planeados agora, mas nenhuma rota privada é ativada antes da segurança real C04.
 
 ## Q05 — Estados de encomenda e stock
 
@@ -61,11 +61,11 @@ C04 fixa a sequência na semana 4. O bloqueio abrange todas as operações priva
 
 ## Q06 — Moeda, zero, entrega, pagamento e alteração de preço
 
-**Problema:** preços, encargos, entrega e confirmação de total. **Documentado:** exemplos em EUR; D05 propõe cêntimos; F0 recomenda sem pagamento eletrónico e sem taxas inventadas. Demonstração permite zero, não há checkout real.
+**Estado: aprovada no âmbito explícito em 2026-10-16.** Moeda EUR, preços em cêntimos inteiros; sem pagamentos eletrónicos, pagamento diretamente ao produtor; totais exclusivamente do servidor; alterações de preço exigem reconfirmação antes de concluir a encomenda.
 
-**Alternativas e balanço:** EUR sem pagamento reduz âmbito; prestador de pagamentos implica segurança/estados adicionais; preço zero ou estritamente positivo altera validação; entrega sem tarifa definida evita inventar valor, mas exige explicitar condições. **Backend:** Money, totais, morada condicional, cálculo de preço e recusa/reconfirmação. **Frontend:** confirmação do checkout e apresentação dos encargos acordados.
+**Continuam pendentes:** preço zero, métodos de entrega/recolha, encargos, dados de entrega e mecanismo exato de reconfirmação. Half-up por linha e soma das linhas arredondadas aprovados T32-03; limites, agregação de linhas iguais e versão de preço pendentes; não escolher tarifa, morada obrigatória ou estado pago por omissão. O mínimo zero do rascunho não aprova produtos gratuitos.
 
-**Recomendação P:** EUR em inteiros seguros, sem pagamento integrado; acordar zero/condições de entrega; nunca aceitar silenciosamente novo preço. Definir mecanismo de reconfirmação antes de ativar checkout (por exemplo proposta de total e nova confirmação; mecanismo exato pendente). **Necessária:** antes de preços e 3.4. mínimo zero no schema é a proposta identificada, não decisão final.
+**Impacto:** preço por quantidade de referência, subtotal/total e moeda nos modelos/DTOs, com snapshot imutável e quantidade coerente. Fórmula peso/volume não é simples preço por unidade × número de embalagens em todos os casos. A parte monetária de D05 fica aprovada; snapshots essenciais das linhas aprovados T32-06; transações/idempotência e campos adicionais continuam propostas nos aspetos não explicitamente adotados. Resolver detalhes antes de preços/escritas e checkout 3.4.
 
 ## Q07 — Stock do lote, resultado e conversão
 
@@ -109,7 +109,7 @@ C04 fixa a sequência na semana 4. O bloqueio abrange todas as operações priva
 
 ## Q12 — Remoção e moderação de conteúdos
 
-**Problema:** apagar, arquivar ou ocultar; quais poderes administrativos existem? **Documentado:** DELETE 204 e moderação são obrigatórios; F0 recomenda arquivo de produtos referenciados e ocultação com autoria/data. Protótipo não permite apagar contas ou alterar encomendas.
+**Parcialmente resolvida por T32-05:** arquivo retira produtos da venda preservando histórico; publicado com stock zero pode permanecer visível sem compra. Estados de produto são rascunho/publicado/arquivado. **Problema residual:** restauro, DELETE físico, moderação de outros conteúdos e poderes administrativos. **Documentado:** DELETE 204 e moderação são obrigatórios; F0 recomenda arquivo de produtos referenciados e ocultação com autoria/data. Protótipo não permite apagar contas ou alterar encomendas.
 
 **Alternativas e balanço:** apagamento físico simplifica consultas mas quebra evidência/referências; arquivo preserva histórico e exige filtro de visibilidade; poderes genéricos de moderação aumentam risco/âmbito. **Backend:** visibilidade, constraints de referências e rastreabilidade. **Frontend:** estados públicos/privados e recuperação de recurso removido.
 
@@ -125,11 +125,13 @@ C04 fixa a sequência na semana 4. O bloqueio abrange todas as operações priva
 
 ## Q14 — Taxonomias e pesquisa
 
-**Problema:** categoria, ingredientes, época e modo de produção. **Documentado:** filtros/pesquisa são obrigatórios; F0 recomenda listas controladas, termos de ingredientes e meses 1–12; mocks usam oito categorias e quatro estações, não contrato final.
+**Estado: aprovada funcionalmente em 2026-10-16.** Categoria principal controlada/predefinida, etiquetas personalizadas, ingredientes quando aplicável e informação de sazonalidade. Pesquisa reconhece palavras com e sem acentos.
 
-**Alternativas e balanço:** texto livre é flexível mas inconsistente; enums são previsíveis mas exigem manutenção; meses são precisos mas não se mapeiam automaticamente para estações. **Backend:** normalização, pesquisas por produtor/perfil, índices e limites de regex. **Frontend:** opções/URL e equivalência da pesquisa sem acentos; nunca derivar época de createdAt.
+**Continuam sujeitos a aprovação:** lista definitiva de categorias/IDs, estrutura/limites/normalização das etiquetas/ingredientes, semântica de ausência/lista vazia de meses, taxonomia de modo de produção e detalhe de filtros/paginação C03. A [lista inicial e alternativas](phase-3.2-proposal.md) são T32-04; não transformar as oito categorias/quatro estações dos mocks num contrato oficial.
 
-**Recomendação P:** taxonomias controladas e ingredientes explícitos, acordando mapeamento de época e pesquisa normalizada em C03. **Necessária:** antes de Product/schema e catálogo 3.3. Nenhum enum dos mocks foi promovido a taxonomia real.
+**Recomendação técnica P:** IDs atribuídos estáveis, rótulos humanos separados de formas normalizadas, ingredientes explícitos, índices separados de arrays. T32-04 aprova categoria principal obrigatória, etiquetas opcionais, sazonalidade opcional por meses, pesquisa sem caixa/acentos e sazonalidade sem efeito automático na disponibilidade. Não foi escolhido um enum definitivo ou fornecedor de pesquisa. Não derivar sazonalidade de createdAt nem tratar etiquetas como prova de certificação.
+
+**Impacto:** Product e filtros/URLs/adaptadores futuros precisam de correspondências explícitas; pesquisa por produtor resolve perfil→user. Escolher estrutura antes de schemas/catálogo; nenhuma alteração ao frontend nesta tarefa.
 
 ## Q15 — Indicadores e stock baixo
 
@@ -169,3 +171,46 @@ O utilizador autorizou criar `feat/api-foundation` a partir de 807aa68 e impleme
 Após confirmar engines/peers, mantiveram-se Node 22.21.1 e npm 10.9.4; instalaram-se as versões documentadas na [entrega 3.1](foundation-implementation.md), incluindo Zod/tsx/Vite, Mongoose/Vitest/Supertest e TypeScript 5.9.3. Configuração e scripts são próprios da API. O endpoint técnico foi autorizado; limite JSON 100 KiB e HTTP 413 são detalhes técnicos da fundação, não regras comerciais.
 
 Esta autorização substitui o bloqueio anterior de execução apenas no âmbito 3.1. **Q01–Q16 e C03/C05 continuam pendentes**; não aprova D06/D08/D09 ou modelos comerciais. Autenticação real permanece na semana 4 e todas as operações privadas continuam inacessíveis. Não há autorização para staging, commit, push, merge, PR ou início de 3.2.
+
+## Preparação documental 3.2 — 2026-10-16
+
+Registo histórico da primeira preparação, atualizado pela consolidação técnica de 2026-10-17 abaixo.
+
+Fonte: pedido «FASE: 3.2 — PREPARAÇÃO DOS MODELOS MONGODB», exclusivamente documental. A Fase 3.1 foi posteriormente autorizada para publicação e está publicada em feat/api-foundation, HEAD 68f41ec; main continua c10d031. Os registos anteriores mantêm o seu âmbito e datas.
+
+| Decisão | Estado atual                    | Aprovação e limite                                                                                                                                                                                         |
+| ------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q01     | **Aprovada**                    | Conta acumulável comprador/produtor; venda só com aprovação; proibição de auto-licitação; admin controlado. Codificação das capacidades T32-01 não escolhida.                                              |
+| Q03     | **Aprovada funcionalmente**     | Unidade/embalagem/peso/volume. Codificação A/B, escala, mínimos/passos, conversão/arredondamento não escolhidos.                                                                                           |
+| Q04     | **Aprovada no âmbito indicado** | Preparação privada pendente, publicação/venda apenas aprovado; rascunhos não publicados automaticamente; rejeitado consulta decisão/justificação. Recandidatura e direitos adicionais continuam pendentes. |
+| Q06     | **Aprovada no âmbito indicado** | EUR/cêntimos inteiros, pagamento direto sem integração, totais servidor e reconfirmação. Zero/entrega/custos/dados e mecanismo exato continuam pendentes.                                                  |
+| Q14     | **Aprovada funcionalmente**     | Categoria principal controlada + etiquetas, ingredientes/sazonalidade e pesquisa sem diferença de acentos. Lista/limites/representação sazonal e detalhe C03 continuam pendentes.                          |
+
+**Restantes questões pendentes:** Q02, Q05, Q07, Q08, Q09, Q10, Q11, Q12, Q13, Q15, Q16 e C03/C05. A aprovação das cinco regras não aprova T32-01..06, D06/D07/D08/D09, implementação, Git ou novos recursos. Ver [proposta 3.2](phase-3.2-proposal.md) e [modelos candidatos](phase-3.2-models.md). Nenhum schema, teste, dado ou ligação comercial é criado nesta tarefa.
+
+## Consolidação técnica 3.2 — aprovação de 2026-10-17
+
+Este registo atualiza os estados históricos acima; não os interpreta como recusando aprovações posteriores. Não autoriza implementação, testes novos, instalações ou Git.
+
+| Decisão | Âmbito aprovado                                                                                                                                                        | Limites / pendências preservadas                                                                                                            |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| T32-01  | Lista de papéis na mesma conta; comprador/produtor acumuláveis; perfil separado; vender exige aprovação administrativa.                                                | Aquisição de capacidades, admin/claims e campos/índices concretos A01/A02.                                                                  |
+| T32-02  | Quantidades inteiras em g/ml/unidades/número de embalagens; kg/L na apresentação; embalagem distinta do conteúdo.                                                      | Number/BSON long, limites, preço por referência, mínimos/passos e DTO concreto.                                                             |
+| T32-03  | Subtotal exato por linha, half-up em cêntimos; total soma subtotais arredondados; servidor autoritativo; sem ponto flutuante impreciso.                                | Agregação de linhas repetidas, limites e versão de preço/reconfirmação.                                                                     |
+| T32-04  | Categoria principal obrigatória/controlada, etiquetas opcionais, ingredientes aplicáveis, meses opcionais informativos, busca sem caixa/acentos.                       | Lista definitiva, IDs, limites/estrutura, modo de produção, ausência/vazio e C03.                                                           |
+| T32-05  | rascunho/publicado/arquivado; início rascunho; publicação explícita por aprovado; aprovação não publica; zero stock visível sem compra; arquivo preserva histórico.    | Outros mínimos de rascunho, restauro/DELETE e moderação Q12; não aprova metadados da candidatura.                                           |
+| T32-06  | Sete coleções users/producers/products/orders/auctions/bids/reviews; perfis/bids/reviews separados; linhas embebidas com snapshots essenciais e referências adequadas. | Campos/obrigatoriedades/índices específicos não são aprovados em bloco. D09 adotada apenas quanto à separação das duas coleções adicionais. |
+
+Q02/Q05/Q07–Q13/Q15/Q16 e C03/C05 mantêm pendências, com Q12 parcialmente resolvida quanto ao arquivo de produtos. Q01/Q03/Q04/Q06/Q14 conservam os detalhes residuais explicitados. A [análise de prontidão](phase-3.2-readiness.md) classifica todas as pendências em A/B/C e propõe users/producers como primeiro bloco, dependente da confirmação de **A01 (identidade/email), A02 (perfil mínimo/cardinalidade), A03 (decisão administrativa)** e de autorização explícita de implementação. As recomendações A não são decisões tomadas.
+
+## Implementação autorizada A01–A03 — 2026-10-17
+
+O utilizador aprovou A01–A03 e autorizou implementar apenas users/producers, validações, índices e testes locais, preservando frontend e F0. Ver [campos efetivos, evidências e limites](phase-3.2-identity-implementation.md). Este registo atualiza as pendências A das secções históricas acima.
+
+| Decisão | Âmbito aprovado e realizado                                                                                                                                                                                                                                                                                                                                                      |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A01     | Nome completo, email normalizado/único sem distinção de caixa, identidade estável, lista de papéis acumuláveis e hash privado compatível com bcrypt. Concretizações do bloco: ObjectId, timestamps, limites de nome/email, índice único e validação do formato bcrypt; sem hashing/login/registo/JWT ou administrador real.                                                      |
+| A02     | No máximo um perfil por conta, índice único userId; nome da exploração/negócio, responsável derivado da conta, localidade, concelho, descrição da atividade e telefone obrigatórios; fotografia/logótipo opcional por metadados. Estado inicial pendente. **A descrição deixa de ser opcional; concelho e telefone entram por aprovação expressa.** Sem upload/candidatura HTTP. |
+| A03     | pendente/aprovado/rejeitado; pendente sem decisão; aprovado/rejeitado com autor e data; rejeição com justificação obrigatória; limites/data coerentes do bloco aprovado. Sem endpoints administrativos, transições de recandidatura ou autenticação.                                                                                                                             |
+
+As verificações cruzadas de existência/papel/competência pertencem ao serviço futuro autorizado; ref não as implementa. Os modelos validam a forma local, privacidade e unicidade, sem conceder permissões de venda. Q02/Q05/Q07–Q13/Q15/Q16, C03/C05 e detalhes residuais comerciais não se tornam aprovados por este bloco. Publicação e modelos seguintes continuam sujeitos a nova autorização.

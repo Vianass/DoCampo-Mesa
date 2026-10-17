@@ -4,8 +4,8 @@ info:
   title: Do Campo à Mesa — contrato inicial da API
   version: 0.1.0-draft
   description:
-    'Contrato comercial da Fase 3.0 e fundação local 3.1. Apenas GET /api/health está implementado localmente; nenhum endpoint está publicado. Métodos/códigos
-    académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. x-decision-dependencies identifica Q pendentes:
+    'Contrato comercial da Fase 3.0 e fundação local 3.1, com modelos users/producers implementados localmente em 3.2 após aprovação A01–A03. Apenas GET /api/health está implementado localmente; nenhum endpoint está publicado. Métodos/códigos
+    académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
     essas operações não podem ser disponibilizadas antes de aprovação e segurança real. Papéis nas extensões
     são propostas da matriz, não permissões concedidas. Ver README.md, decisions.md e security.md.'
 servers:
@@ -29,6 +29,31 @@ x-contract-status: aprovacao-parcial-com-fundacao-local
 x-local-implementation: foundation-implementation.md
 x-base-commit: 807aa68
 x-preserved-phase0: true
+x-model-preparation-base: 68f41ec
+x-approved-functional-decisions: [Q01, Q03, Q04, Q06, Q14]
+x-pending-functional-decisions: [Q02, Q05, Q07, Q08, Q09, Q10, Q11, Q12, Q13, Q15, Q16]
+x-residual-functional-details:
+  Q01: Aquisição/provisionamento por aprovar; A01/A02 aprovadas no bloco local de identidade.
+  Q03: Tipo BSON, limites, referência de preço, mínimos/passos, DTO e entrada por aprovar; inteiros em unidades mínimas aprovados.
+  Q04: Recandidatura e direitos adicionais do rejeitado por aprovar.
+  Q06: Zero, entrega, custos, dados e mecanismo de reconfirmação por aprovar.
+  Q14: Lista final, limites, modo de produção e ausência/lista vazia de meses por aprovar; meses opcionais aprovados.
+x-approved-model-decisions: [T32-01, T32-02, T32-03, T32-04, T32-05, T32-06, A01, A02, A03]
+x-local-identity-models: phase-3.2-identity-implementation.md
+x-model-decision-scope: decisions.md
+x-residual-model-details:
+  T32-01: Aquisição/provisionamento futuro; identidade e unicidade A01/A02 aprovadas/implementadas no modelo.
+  T32-02: BSON, limites, referência de preço, mínimos/passos, DTO e entrada.
+  T32-03: Agregação de linhas, limites e versão da referência de preço.
+  T32-04: Lista final, limites/estrutura, modo de produção, ausência/vazio e C03.
+  T32-05: Outros mínimos de rascunho, restauro/DELETE e poderes Q12.
+  T32-06: Campos/required/índices dos restantes modelos; DTOs futuros do perfil alargado A02 por alinhar antes dos endpoints.
+x-dependency-interpretation: >-
+  x-decision-dependencies rastreia Q; consultar decisões aprovadas e detalhes residuais,
+  sem interpretar todos os IDs como totalmente pendentes. users/producers implementados apenas localmente; restantes modelos
+  não autorizados. As 44 operações futuras continuam bloqueadas por escolhas,
+  regras pendentes e segurança real C04. Ver phase-3.2-proposal.md.
+
 x-approved-technical-decisions:
   - C01
   - C02
@@ -57,7 +82,7 @@ x-socket-command:
     - Q09
     - Q13
   notes:
-    'Transporte não descrito como operação HTTP. Validar mínimo, estado e prazo no servidor; CAS + bid
+    'Transporte não descrito como operação HTTP. Q01 proíbe auto-licitação por identidade mesmo com capacidades acumuladas. Validar mínimo, estado e prazo no servidor; CAS + bid
     transacional são D06 por aprovar. Protocolo histórico: ../architecture/auction-consistency.md.'
 paths:
   /health:
@@ -92,9 +117,8 @@ paths:
       tags:
         - Autenticação
       summary: Registar comprador ou produtor
-      description:
-        Público apenas para registo. Nunca aceita administrador, aprovação, hash ou permissões do
-        cliente. Login/aprovação não decorrem automaticamente do registo.
+      description: >-
+        Registo público futuro nunca atribui administrador, aprovação ou hash pelo cliente. Q01 permite acumular capacidades na mesma conta; papel inicial não é exclusividade. Aquisição de capacidade produtor T32-01 e sessão Q13 ainda por detalhar.
       security: []
       x-authorized-roles:
         - visitante
@@ -331,9 +355,8 @@ paths:
       tags:
         - Produtores
       summary: Alterar campos públicos do próprio perfil
-      description:
-        Produtor da sessão; não aceita alteração de aprovação, proprietário ou certificação. Permissões
-        antes da aprovação e publicação aguardam Q04.
+      description: >-
+        Propriedade da conta; Q04 permite editar perfil pendente, sem alterar aprovação/proprietário/certificação. Rejeitado tem consulta da decisão, sem novos direitos implícitos de edição. Não implementado.
       security:
         - bearerAuth: []
       x-authorized-roles: *id001
@@ -484,7 +507,8 @@ paths:
       tags:
         - Produtos
       summary: Criar produto próprio
-      description: Criar produto próprio. Operação proposta; não implementada.
+      description: >-
+        Operação futura: pendente cria rascunhos próprios; aprovado gere/publica por ação explícita. Não publicar por guardar ou aprovar candidatura. DTO de rascunho/publicação e campos mínimos T32-05 por aprovar; esta rota continua indisponível.
       security:
         - bearerAuth: []
       x-authorized-roles: *id001
@@ -572,9 +596,8 @@ paths:
       tags:
         - Produtos
       summary: Alterar produto próprio
-      description:
-        PUT da representação completa dos campos editáveis. Sem transferir propriedade. Preserva
-        snapshots de encomendas e não ignora reservas se Q07 as introduzir.
+      description: >-
+        PUT completo conforme C01; pendente edita apenas rascunhos próprios, aprovado gere segundo validações. Guardar não publica. Preservar snapshots/stock; estados T32-05 aprovados; campos, limites e restauro/DELETE Q12 residuais por aprovar. Nenhuma operação privada disponível agora.
       security:
         - bearerAuth: []
       x-authorized-roles: *id001
@@ -658,7 +681,8 @@ paths:
       tags:
         - Produtos
       summary: Consultar produtos próprios e disponibilidade
-      description: Consultar produtos próprios e disponibilidade. Operação proposta; não implementada.
+      description: >-
+        Consulta privada futura de produtos/rascunhos próprios, conforme estado/capacidades Q04; não divulgar no catálogo público. DTO de rascunho parcial e direitos adicionais do rejeitado por detalhar T32-05.
       security:
         - bearerAuth: []
       x-authorized-roles: *id001
@@ -1139,9 +1163,8 @@ paths:
       tags:
         - Leilões
       summary: Criar leilão próprio
-      description:
-        Contrato de criação bloqueado por Q07/Q08. Preparação REST/modelo na Fase 3; ciclo de vida/concorrência
-        completos na Fase 5. Preço base não cria bid nem vencedor.
+      description: >-
+        Só produtor aprovado pode criar; Q01 permite comprar noutros contextos mas nunca auto-licitar no próprio lote. Q07/Q08 bloqueiam origem/reserva/ciclo temporal. Preparação futura não implementa sockets ou cria bid do preço base.
       security:
         - bearerAuth: []
       x-authorized-roles: *id001
@@ -1584,9 +1607,8 @@ paths:
       tags:
         - Candidaturas
       summary: Aprovar ou rejeitar candidatura
-      description:
-        Só candidatura pendente. Autor/data são atribuídos pelo servidor; decisão concorrente exige
-        conflito e atualização, segundo política C02. Não autoriza alterações de papéis ou aprovação por registo.
+      description: >-
+        Só admin decide candidatura pendente; autor/data pelo servidor. Aprovação não publica rascunhos nem muda papeis arbitrariamente. Representação da justificação aprovada A03; concorrência C02 pendente; recandidatura não aprovada. Operação privada indisponível até segurança real.
       security:
         - bearerAuth: []
       x-authorized-roles: *id008
@@ -2062,28 +2084,37 @@ components:
       type: integer
       minimum: 0
       maximum: 9007199254740991
-      description:
-        'Proposta D05: unidade monetária mínima em inteiro seguro; moeda e aceitação de zero dependem
-        de Q06.'
+      description: >-
+        EUR/cêntimos inteiros aprovados em Q06. Limites numéricos concretos são proposta técnica; zero e limites permanecem pendentes, sem aprovar produtos gratuitos. T32-03 aprova cálculo exato e half-up por linha; total soma linhas arredondadas.
       x-decision-dependencies:
         - Q06
       x-proposal: D05
+      x-residual-model-decisions: [T32-03]
     Quantity:
-      type: number
+      type: integer
       minimum: 0
       exclusiveMinimum: true
-      description:
-        Quantidade positiva; Q03 decidirá se apenas inteiros comerciais ou representação escalada.
-        Não autoriza compra fracionária por si.
+      description: >-
+        Inteiro positivo em g/ml/unidades/número de embalagens conforme T32-02; frações de kg/L convertem-se em g/ml. O contexto da unidade é obrigatório para interpretar o valor; embalagem não é o seu conteúdo. Tipo BSON, limites e DTO completo ainda por confirmar; não transportar valores que o cliente não represente exatamente.
       x-decision-dependencies:
         - Q03
+      x-revision-required: true
+      x-residual-model-decisions: [T32-02, T32-03]
     Role:
       type: string
       enum:
         - comprador
         - produtor
         - administrador
-      description: Papéis académicos. Cardinalidade da conta depende de Q01; visitante não é conta.
+      description: >-
+        Capacidade académica individual; uma conta pode acumular comprador/produtor conforme Q01. Admin só por procedimento controlado; visitante não é conta; aprovação comercial é separada.
+    ProductStatus:
+      type: string
+      enum: [rascunho, publicado, arquivado]
+      description: >-
+        T32-05 aprovado. Inicial rascunho; publicação explícita por produtor aprovado.
+        Aprovação do perfil não publica. Publicado com stock zero pode ficar visível sem compra;
+        esgotado é disponibilidade derivada. Arquivo retira da venda e preserva histórico.
     OrderStatus:
       type: string
       enum:
@@ -2157,17 +2188,41 @@ components:
     SaleUnit:
       type: object
       properties:
-        codigo:
+        modalidade:
           type: string
+          enum: [unidade, embalagem, peso, volume]
+        unidadeBase:
+          type: string
+          enum: [un, g, ml]
+        quantidadeReferencia:
+          $ref: '#/components/schemas/Quantity'
+        quantidadeMinima:
+          $ref: '#/components/schemas/Quantity'
+        incrementoCompra:
+          $ref: '#/components/schemas/Quantity'
         rotulo:
           type: string
-        tamanhoEmbalagem:
-          type: string
-      required:
-        - codigo
-        - rotulo
-      description: Catálogo e escala dependem de Q03; rótulo não permite inferir fracionamento.
+        conteudoPorUnidade:
+          type: object
+          properties:
+            quantidade:
+              $ref: '#/components/schemas/Quantity'
+            unidade:
+              type: string
+              enum: [un, g, ml]
+          required: [quantidade, unidade]
+          additionalProperties: false
+      required: [modalidade, unidadeBase, quantidadeReferencia, rotulo]
+      description: >-
+        Forma candidata alinhada com phase-3.2-models.md, sem aprovação global dos campos/required.
+        T32-02 aprova peso em g, volume em ml, unidade inteira e contagem de embalagens;
+        embalagem usa unidade comercial un e conteúdo separado, sem venda fracionada implícita.
+        O preço em cêntimos refere-se a quantidadeReferencia na unidadeBase; limites,
+        mínimos/passos, validação das combinações e shape definitivo continuam pendentes.
       additionalProperties: false
+      x-revision-required: true
+      x-field-shape-status: proposta-aguarda-confirmacao
+      x-residual-model-decisions: [T32-02]
     UserSummary:
       type: object
       properties:
@@ -2175,15 +2230,21 @@ components:
           $ref: '#/components/schemas/Id'
         nome:
           type: string
-        papel:
-          $ref: '#/components/schemas/Role'
+        papeis:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Role'
         createdAt:
           $ref: '#/components/schemas/Timestamp'
       required:
         - id
         - nome
-        - papel
-      description: Projeção administrativa mínima; formato de papel único é a proposta Q01, não decisão final.
+        - papeis
+      description: >-
+        Projeção própria ou administrativa mínima conforme o recurso. Q01/T32-01 aprovam lista de papéis e acumulação comprador/produtor; não há aprovação automática de venda ou combinação administrativa. Nunca inclui hash.
+      x-residual-model-decisions: [T32-01]
     UserSelf:
       type: object
       properties:
@@ -2194,13 +2255,20 @@ components:
         email:
           type: string
           format: email
-        papel:
-          $ref: '#/components/schemas/Role'
+        papeis:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Role'
       required:
         - id
         - nome
         - email
-        - papel
+        - papeis
+      description: >-
+        Projeção própria ou administrativa mínima conforme o recurso. Q01/T32-01 aprovam lista de papéis e acumulação comprador/produtor; não há aprovação automática de venda ou combinação administrativa. Nunca inclui hash.
+      x-residual-model-decisions: [T32-01]
     ProducerPublic:
       type: object
       properties:
@@ -2257,7 +2325,8 @@ components:
         - produtorId
         - estado
         - submetidaEm
-      description: Decisão ausente enquanto pendente. Permissões intermédias e recandidatura Q04.
+      description: >-
+        Pendente pode consultar e preparar perfil/rascunhos; aprovado pode publicar/vender/criar leilões; rejeitado consulta decisão e justificação. Decisão ausente em pendente; recandidatura continua pendente. Campos/justificação A02/A03 aprovados e implementados no modelo; DTOs privados do perfil alargado precisam de alinhamento antes dos endpoints.
     ProducerManaged:
       type: object
       properties:
@@ -2277,6 +2346,8 @@ components:
       properties:
         id:
           $ref: '#/components/schemas/Id'
+        estadoPublicacao:
+          $ref: '#/components/schemas/ProductStatus'
         produtorId:
           $ref: '#/components/schemas/Id'
         nome: &id009
@@ -2285,11 +2356,17 @@ components:
           type: string
         categoria: &id011
           type: string
+        etiquetas:
+          type: array
+          items:
+            type: string
+          description: Rótulos personalizados aprovados Q14; limites e normalização T32-04 por aprovar.
         ingredientes: &id012
           type: array
           items:
             type: string
         epocaMeses: &id013
+          description: Meses opcionais informativos aprovados T32-04; não controlam disponibilidade. Ausência/lista vazia ainda por detalhar.
           type: array
           items:
             type: integer
@@ -2301,13 +2378,14 @@ components:
           $ref: '#/components/schemas/Money'
         moeda:
           type: string
+          enum: [EUR]
         unidadeVenda: &id016
           $ref: '#/components/schemas/SaleUnit'
         stockDisponivel: &id017
-          type: number
+          type: integer
           minimum: 0
         limiarStockBaixo: &id018
-          type: number
+          type: integer
           minimum: 0
         imagens:
           type: array
@@ -2322,12 +2400,15 @@ components:
         - id
         - produtorId
         - nome
+        - categoria
+        - estadoPublicacao
         - precoCent
         - unidadeVenda
         - stockDisponivel
-      description:
-        DTO proposto. produtorId refere perfil público, resolvido a partir de products.produtor
-        → users → producers.userId. Q03/Q06/Q14/Q15 condicionam escala/taxonomias.
+      description: >-
+        DTO público proposto de produto publicado e perfil aprovado. produtorId é ID de perfil, não userId. categoria corresponde ao candidato categoriaId interno; lista final não escolhida. Etiquetas são rótulos públicos, normalização interna. Quantidades inteiras na unidade mínima; meses opcionais e informativos. Catálogo ativo proposto só inclui publicado, podendo mostrar esgotado sem compra; rascunho nunca público. Detalhe público de arquivado ainda Q12; venda sempre bloqueada. O DTO privado parcial continua por detalhar; não inferir meses dos mocks.
+      x-residual-model-decisions: [T32-02, T32-03, T32-04, T32-05]
+      x-revision-required: true
     OrderLine:
       type: object
       properties:
@@ -2399,6 +2480,7 @@ components:
           $ref: '#/components/schemas/Money'
         moeda:
           type: string
+          enum: [EUR]
         estado:
           $ref: '#/components/schemas/OrderStatus'
         entrega:
@@ -2712,10 +2794,10 @@ components:
         - password
         - papel
       additionalProperties: false
-      description:
-        Papel solicitado no registo; administrador nunca aceite. Perfil produtor necessário nessa
-        opção (regra cruzada no serviço). Cardinalidade final Q01, capacidades Q04; política de password ainda
-        por aprovar, não herda mínimo demonstrativo.
+      description: >-
+        papel é uma preferência inicial proposta, não exclusividade permanente. Q01 permite uma conta comprador/produtor, sem admin no registo público. O fluxo de adquirir capacidade produtor e formato de registo são detalhes residuais de T32-01; vender exige aprovação Q04. Política de password e sessão continuam Q13.
+      x-revision-required: true
+      x-residual-model-decisions: [T32-01, T32-05]
     Credentials:
       type: object
       properties:
@@ -2756,6 +2838,11 @@ components:
         nome: *id009
         descricao: *id010
         categoria: *id011
+        etiquetas:
+          type: array
+          items:
+            type: string
+          description: Rótulos personalizados aprovados Q14; limites e normalização T32-04 por aprovar.
         ingredientes: *id012
         epocaMeses: *id013
         modoProducao: *id014
@@ -2771,11 +2858,11 @@ components:
         - unidadeVenda
         - stockDisponivel
       additionalProperties: false
-      description:
-        Campos públicos em português e PUT completo aprovados em C01. PUT envia a representação completa
-        destes campos; ID, proprietário, versão, aprovação e imagens Cloud não são atribuídos pelo cliente.
-        Taxonomias e escala ainda bloqueadas pelas Q indicadas.
+      description: >-
+        Criação própria como rascunho; pendente pode preparar/editar sem publicar. Aprovar o perfil não publica automaticamente. Os required atuais representam um produto completo; rascunho parcial/DTO privado e comando de publicação ainda por detalhar. Inteiros, estados e meses opcionais aprovados; zero/limites/referência continuam por escolher; owner/aprovação/totais nunca atribuídos pelo cliente.
       x-contract-status: proposta-bloqueada
+      x-residual-model-decisions: [T32-02, T32-03, T32-04, T32-05]
+      x-revision-required: true
     ProfileWrite:
       type: object
       properties:
@@ -2955,7 +3042,8 @@ components:
         - produtorId
         - estado
         - submetidaEm
-      description: Candidatura do próprio produtor, com decisão minimizada; Q04 define motivo e recandidatura.
+      description: >-
+        Candidatura/decisão/justificação do próprio, sem identidade privada do administrador. Q04 aprova consulta pelos três estados e preparação privada enquanto pendente; recandidatura continua pendente.
     ProducerSelf:
       type: object
       properties:
@@ -3046,11 +3134,17 @@ components:
           type: string
         categoria:
           type: string
+        etiquetas:
+          type: array
+          items:
+            type: string
+          description: Rótulos personalizados aprovados Q14; limites e normalização T32-04 por aprovar.
         ingredientes:
           type: array
           items:
             type: string
         epocaMeses:
+          description: Meses opcionais informativos aprovados T32-04; não controlam disponibilidade. Ausência/lista vazia ainda por detalhar.
           type: array
           items:
             type: integer
@@ -3063,10 +3157,10 @@ components:
         unidadeVenda:
           $ref: '#/components/schemas/SaleUnit'
         stockDisponivel:
-          type: number
+          type: integer
           minimum: 0
         limiarStockBaixo:
-          type: number
+          type: integer
           minimum: 0
         versaoEsperada:
           type: integer
@@ -3082,8 +3176,8 @@ components:
         - unidadeVenda
         - stockDisponivel
       additionalProperties: false
-      description:
-        Representação completa dos campos editáveis mais precondição de versão proposta C02. Servidor
-        valida stock e conflitos contra estado persistido, nunca sobrescreve débitos concorrentes por confiar
-        no formulário. Não permite atribuir a versão persistida.
+      description: >-
+        PUT completo dos campos editáveis conforme C01, respeitando propriedade e estado do perfil/produto; guardar não publica automaticamente. Publicação explícita e estados aprovados T32-05; DTO parcial/comando ainda por detalhar. Precondição de versão continua proposta C02; referência, limites e etiquetas exigem confirmação residual. Meses opcionais não controlam disponibilidade.
       x-contract-status: proposta-bloqueada
+      x-residual-model-decisions: [T32-02, T32-03, T32-04, T32-05]
+      x-revision-required: true
