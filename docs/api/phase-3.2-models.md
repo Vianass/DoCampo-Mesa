@@ -1,6 +1,8 @@
 # Fase 3.2 — users/producers/products implementados; modelos seguintes propostos
 
-Ler em conjunto com a [proposta principal](phase-3.2-proposal.md), que define autoridade, alternativas de quantidade, categorias, permissões e plano. Consolidação: 2026-10-17; preparação: 2026-10-16; base `68f41ec`. A preparação era documental; users/producers foram posteriormente implementados/testados. Ver [entrega do primeiro bloco](phase-3.2-identity-implementation.md). products implementado após aprovação P01–P08; outros quatro modelos não implementados. Q01/Q03/Q04/Q06/Q14 estão aprovadas no âmbito funcional; T32-01–T32-06 estão aprovadas no âmbito do registo; detalhes residuais e restantes Q continuam pendentes. Ver [prontidão, bloqueios A01–A03 e primeiro bloco](phase-3.2-readiness.md).
+> Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.
+
+Ler em conjunto com a [proposta principal](phase-3.2-proposal.md), que define autoridade, alternativas de quantidade, categorias, permissões e plano. Consolidação: 2026-10-17; preparação: 2026-10-16; base `68f41ec`. A preparação era documental; users/producers foram posteriormente implementados/testados. Ver [entrega do primeiro bloco](phase-3.2-identity-implementation.md). products implementado após aprovação P01–P08; orders em revisão documental após O01–O16, sem schema criado; outros quatro modelos não implementados. Q01/Q03/Q04/Q06/Q14 estão aprovadas no âmbito funcional; T32-01–T32-06 estão aprovadas no âmbito do registo; detalhes residuais e restantes Q continuam pendentes. Ver [prontidão, bloqueios A01–A03 e primeiro bloco](phase-3.2-readiness.md).
 
 ## Convenções e leitura dos exemplos
 
@@ -158,67 +160,85 @@ Exemplo documental com quantidade comercial por embalagem distinta do seu conte�
 
 O exemplo não é seed nem prova de produtor real aprovado. O snapshot das linhas de encomenda abaixo continua proposta para o modelo futuro, não implementação de P08 nesta etapa.
 
-## 4. orders — obrigatório O
+## 4. orders — obrigatório O; apenas análise
 
-**Finalidade:** encomenda com comprador/produtor referenciados e linhas embebidas, como E p. 18. Uma encomenda por produtor continua proposta Q02; não fechar esquema de agrupamento sem essa decisão.
+**Finalidade e aprovação:** O01–O16 aprovadas funcionalmente, sem autorização de implementação. Referências comprador/produtor a users e linhas embebidas cumprem E p. 18; uma order independente por produtor e referência comum à compra são agora decisões aprovadas. Ver [prontidão, estrutura completa, OR01–OR12 e plano de testes](phase-3.2-orders-readiness.md). O01 não escolhe a representação física de idempotência nem aprova todos os campos desta tabela.
 
-| Campo candidato                                               | Tipo                                  | Obrigatório proposto   | Valores / validação / dependência                                                                                                     |
-| ------------------------------------------------------------- | ------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| comprador / produtor                                          | ObjectId → users                      | Sim                    | O para referências; dono vem da sessão, produtor é owner dos produtos segundo Q02. Conta pode acumular relações Q01.                  |
-| linhas                                                        | Array de subdocumentos                | Sim, não vazio         | O para embedding; limites P.                                                                                                          |
-| linhas[].produto / nome                                       | ObjectId → products / String snapshot | Sim                    | Referência válida e nome do momento da compra; não usar nome atual para histórico.                                                    |
-| linhas[].quantidade / unidadeSnapshot                         | Inteiro / objeto snapshot             | Sim                    | A/T32-02: inteiro na unidade mínima do produto; mesma dimensão/escala; snapshot aprovado T32-06.                                      |
-| linhas[].precoUnitCent / unidadeSnapshot.quantidadeReferencia | Inteiro / quantidade                  | Sim na proposta        | A: preço em cêntimos; guardar a referência necessária a calcular peso/volume, sem fingir preço por 1 g/ml.                            |
-| linhas[].subtotalCent                                         | Inteiro                               | Sim                    | A/T32-03: cálculo exato no servidor, half-up por linha; agrupamento continua pendente.                                                |
-| subtotalCent / totalCent / moeda                              | Inteiros / EUR                        | Sim                    | Soma coerente; encargos não são zero por omissão sem decisão. Pagamento direto não é pagamento confirmado.                            |
-| estado / historicoEstado                                      | Enum / array de estado, data, autor   | Sim na proposta        | O: pendente/confirmada/pronta/entregue; transições, débito/reposição Q05.                                                             |
-| entrega                                                       | Objeto embebido                       | Bloqueado nos detalhes | Levantamento/entrega previstos academicamente, modalidades/custos/campos finais Q06 residual. Não impor morada ou tarifa sem decisão. |
-| checkoutId / requestHash                                      | String                                | Só se adotado          | Q02/D08; chave não vem a ser obrigação por existir no rascunho.                                                                       |
-| origemLeilao / versao                                         | ObjectId → auctions / inteiro         | Condicional            | Q07/D07; não converter lote automaticamente.                                                                                          |
+| Campo/grupo candidato                                      | Tipo / conteúdo proposto                                                                                           | Aprovação e decisões residuais                                                                                                      |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| comprador / produtor                                       | ObjectId → users, imutáveis; perfil resolvido por producers.userId                                                 | Referências académicas, O01; atribuição pelo serviço autenticado, não por IDs do frontend.                                          |
+| operacaoCompraId / chave do pedido                         | Referência comum opaca; chave idempotente e hash canónico internos separados                                       | O01 exige referência; OR05 define formato, documento âncora ou coleção extra e índices.                                             |
+| linhas[]                                                   | Array embebido não vazio; produto → products, nome, quantidade, unidadeSnapshot, precoReferenciaCent, subtotalCent | O11/T32-02/03/06 e P02; OR03 grelha/duplicados, OR04 limites. Valores comerciais imutáveis após submissão.                          |
+| subtotalProdutosCent / taxaEntregaCent / totalCent / moeda | Cêntimos inteiros/EUR; subtotal soma linhas, total soma subtotal e taxa                                            | O06/O11; levantamento sem taxa; OR04 define tetos e subtotal zero derivado de half-up. Não aplicar teto do preço unitário ao total. |
+| entrega                                                    | Modalidade, morada/concelho/local necessários, taxa e período pedido/acordado/propostas                            | O05–O08; formatos e configuração de origem OR02/OR08; guardar só condições aplicadas, não todas as zonas.                           |
+| pagamento                                                  | Método, estado e histórico próprio com responsável/data                                                            | O09/O10; três estados independentes da encomenda; OR10 transições/correções; sem processamento bancário ou dados privados públicos. |
+| estado / historicoEstado[]                                 | pendente/confirmada/em_preparacao/pronta/concluida/cancelada e histórico estruturado                               | O02/O03; OR01 explicita entregue académico versus concluida; OR07 ações/concorrência.                                               |
+| pedidosCancelamento[] / cancelamento                       | Pedido identificado, responsável/data/motivo, decisão e estado anterior ao cancelamento efetivo                    | O03; OR07 cardinalidade e progressão enquanto aguarda. Pedido não cancela por si.                                                   |
+| reposicaoStock[]                                           | Movimento/saldo por linha, unidade histórica, autor/data e decisão                                                 | O04; OR06 reposição controlada, teto, unidade alterada/ausência de produto e exceções sem duplicações.                              |
+| rececao                                                    | Declaração de entrega, limite, confirmação/conclusão e motivo                                                      | O13/O14; OR09 contagem dos sete dias e retoma após reclamação. Não modifica pagamento.                                              |
+| reclamacoes[]                                              | Reclamações e intervenções embebidas com IDs/atores/datas/tipos/conteúdo/decisões; quatro estados O16              | O15/O16; OR11 cardinalidade/limites/resolução/reabertura. Sem coleção adicional nem reembolso automático.                           |
+| versao / timestamps                                        | Controlo concorrente explícito proposto e datas UTC do servidor                                                    | OR12 nos serviços; não assumir que __v existente resolve todos os escritores.                                                       |
 
-**Índices/unicidade P:** comprador/data; produtor/estado/data. Único composto comprador/checkoutId/produtor só se Q02/D08 adotados. Origem de leilão única parcial apenas se conversão Q07 aprovada; não criar índice único de campo opcional que proíba vários documentos sem valor.
+**Índices propostos, não criados:** comprador/data; produtor/estado/data; operação/produtor único; unicidade global da chave do pedido por comprador conforme OR05. Um índice comprador/chave/produtor isolado não impede retries com produtores disjuntos. Não criar índice de origem de leilão ou TTL nesta etapa. Índices/refs não garantem ownership ou existência automaticamente.
 
-**Correspondência com o DTO:** a referência de preço da linha fica em `unidadeSnapshot.quantidadeReferencia`, também em SaleUnit no OpenAPI; não exige uma segunda cópia divergente na linha. Os recortes documentais podem omitir outros campos, não são DTOs completos.
+**Correspondência e integridade:** o preço candidato precoReferenciaCent corresponde semanticamente ao precoUnitCent legado do DTO, com referência numérica em unidadeSnapshot.quantidadeReferencia. Nomes de campos e DTOs finais ainda são propostas. Snapshots não mudam ao editar produto, taxa, zona ou agenda habitual; proposta de novo período exige aceitação e histórico O08. Linhas de todas as orders do grupo são debitadas na mesma compra atómica futura, sem reservas na cesta. Reclamação não resolvida bloqueia conclusão automática; pagamento tem ciclo independente.
 
-**Integridade/embedding:** todos os produtos pertencem ao produtor atribuído se a opção de order única por produtor for aprovada; cada linha contém quantidade/preço/unidade coerentes e totais do servidor. Alterar produto não altera snapshots. Linhas, entrega/histórico limitado são embebidos; identidades partilhadas referenciadas. Transação de stock/encomendas fica dependente de Q05/D08, não executada em 3.2 preparatória.
+**Acesso:** privado ao comprador/produtor intervenientes e administração por projeção necessária. Produtor não recebe restantes orders do grupo. O03/O13/O15 concedem intervenção administrativa limitada, sem alteração genérica de preços/linhas ou confirmação de pagamento. Não criar comandos ou endpoints nesta revisão; C04 preservada.
 
-**Acesso:** comprador próprio e produtor interveniente recebem dados necessários; admin consulta projeção mínima pela rota própria. Moradas privadas não são públicas nem se copiam para métricas. Não criar operações de pagamento, cancelamento ou alteração administrativa de encomendas.
+**Recorte JSON ilustrativo, não DTO completo nem fixture inserível:** representa conclusão pelo comprador usando O02, com uma linha já comprada. Omite operação comum, entrega, pagamento, receção e parte do histórico para não fixar OR pendentes. Não prova conformidade do futuro schema nem resolve a equivalência académica OR01. A review ilustrativa posterior conserva ligação a esta order; critérios finais de avaliação continuam Q10.
 
 ```json
 {
-  "_id": { "$oid": "000000000000000000000301" },
-  "comprador": { "$oid": "000000000000000000000002" },
-  "produtor": { "$oid": "000000000000000000000001" },
+  "_id": {
+    "$oid": "000000000000000000000301"
+  },
+  "comprador": {
+    "$oid": "000000000000000000000002"
+  },
+  "produtor": {
+    "$oid": "000000000000000000000001"
+  },
   "linhas": [
     {
-      "produto": { "$oid": "000000000000000000000201" },
+      "produto": {
+        "$oid": "000000000000000000000201"
+      },
       "nome": "Morangos de exemplo",
       "quantidade": 2,
-      "precoUnitCent": 350,
       "unidadeSnapshot": {
         "modalidade": "embalagem",
         "unidadeBase": "un",
         "quantidadeReferencia": 1,
-        "conteudoPorUnidade": { "quantidade": 500, "unidade": "g" }
+        "conteudoPorUnidade": {
+          "quantidade": 500,
+          "unidade": "g"
+        },
+        "quantidadeMinima": 1,
+        "incrementoCompra": 1
       },
-      "subtotalCent": 700
+      "subtotalCent": 700,
+      "precoReferenciaCent": 350
     }
   ],
   "subtotalCent": 700,
   "totalCent": 700,
   "moeda": "EUR",
-  "estado": "entregue",
+  "estado": "concluida",
   "historicoEstado": [
     {
-      "estado": "entregue",
-      "data": { "$date": "2026-10-12T12:00:00Z" },
-      "autor": { "$oid": "000000000000000000000001" }
+      "estado": "concluida",
+      "data": {
+        "$date": "2026-10-12T12:00:00Z"
+      },
+      "autor": {
+        "$oid": "000000000000000000000002"
+      }
     }
   ]
 }
 ```
 
-O recorte não escolhe entrega/taxas nem transições intermédias; o total representa apenas as linhas ilustrativas, sem política implícita de encargos. O histórico completo e entrega requerem as decisões correspondentes antes de qualquer documento real.
+Subtotal de duas embalagens permanece 700 cêntimos. totalCent igual ao subtotal neste recorte não aprova uma política geral de entrega gratuita; a taxa será registada no modelo completo segundo O06. Este exemplo não executa conclusão, pagamento, débito ou reposição.
 
 ## 5. auctions — obrigatório O
 
@@ -336,3 +356,13 @@ Não criar notifications, candidaturas, moderação, categorias, carrinho ou sa�
 O ambiente real da fundação já tem autoIndex false e base de teste isolada: numa implementação autorizada, definir explicitamente a criação/espera dos índices no ensaio, nunca usar syncIndexes/limpeza de desenvolvimento por conveniência. Testar required/enums/números inválidos, referências/ownership no serviço, índices únicos sob concorrência, snapshots, quantidades/preços exatos e transações aplicáveis. Não converter testes técnicos existentes em endpoints comerciais.
 
 As tabelas são candidatas nos detalhes não aprovados; A01/A02/A03 da [análise de prontidão](phase-3.2-readiness.md) foram aprovadas e delimitam os dois schemas implementados. Ver etapas, riscos, critérios de aceitação e decisões T32 no [plano da proposta](phase-3.2-proposal.md). Os recortes acima não são inseridos. Os testes novos usam dados próprios fictícios na base isolada; só users/producers foram implementados, como documenta a entrega.
+
+## Orders — especificação vigente após OR01–OR12
+
+A tabela e o exemplo anteriores são a base documental preservada; as OR deixam de ser bloqueios funcionais pendentes. Estrutura final proposta e limites estão na [consolidação](phase-3.2-orders-readiness.md). Orders isolado está pronto para autorização própria, sem qualquer schema criado.
+
+Acrescentar aos grupos candidatos: versao explícita, unidade histórica/versionada, snapshot inicial de entrega e acordo atual separado, estado/histórico de pagamento, pedidos pendente/aceite/rejeitado sem congelar preparação, reposição autorizada/reposta/pendente/não destinada a reposição, várias reclamações independentes e cronómetro de 604800000 ms efetivamente consumidos. Zero de linha após half-up é inválido; agrupar antes de validar/calcular. Todos os nomes/tipos auxiliares são concretização técnica compatível, não funcionalidades novas.
+
+Índices propostos: comprador/data, produtor/estado/data, operação/produtor único, chave global de idempotência única parcial só na âncora, prazo de receção para job futuro. O índice chave/produtor antigo é insuficiente e não é a proposta vigente. Pedido original tem recibo imutável; alterações de estado posteriores não mudam replay.
+
+Imutabilidade comercial não impede acontecimentos legítimos: acordos aceites, pagamentos/correções, cancelamento/reposição e intervenções são acrescentados com versão/auditoria. Alterar fuso/agenda/método/taxa em producers não reescreve condições já submetidas. Fora das projeções privadas necessárias, não serializar morada/contactos, chave/hash/manifesto ou capacidade de auditoria; projeções parciais têm guardas de leitura e gravação.

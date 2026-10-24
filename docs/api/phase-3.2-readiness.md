@@ -1,5 +1,7 @@
 # Fase 3.2 — decisões residuais e primeiro bloco de modelos
 
+> Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.
+
 Consolidação documental de 2026-10-17, em `feat/api-foundation`, base `68f41ec`. As seis decisões T32 estão aprovadas **no âmbito expresso pelo utilizador**; users/producers foram depois autorizados e implementados localmente, conforme a entrega ligada abaixo. products foi posteriormente autorizado/implementado após P01–P08 e os esclarecimentos; outros quatro modelos continuam sem autorização. Este documento complementa o [registo de decisões](decisions.md), a [proposta](phase-3.2-proposal.md) e os [modelos](phase-3.2-models.md). A análise inicial era documental. A [entrega do primeiro bloco](phase-3.2-identity-implementation.md) regista o código/testes posteriores; nenhum endpoint novo.
 
 ## 1. Conclusão e ordem de execução proposta
@@ -116,3 +118,15 @@ A01–A03 e a implementação local deste bloco foram aprovadas. Rever a entrega
 ## Atualização após P01–P08 — products
 
 As duas pendências efetivamente bloqueantes para este bloco foram resolvidas pelo utilizador: referência fixa de preço e declaração explícita de aplicabilidade de ingredientes. Ver [registo e implementação de products](phase-3.2-products.md). Não se escolheu automaticamente uma alternativa. P04 substitui a proposta antiga de categoria obrigatória em rascunho; P02/P05 fixam os limites do produto. P03 resolve o momento de débito futuro de stock, sem aprovar transações/checkout agora. As restantes recomendações B/C conservam os respetivos momentos; não voltar a apresentar lista/zero de produto como decisões pendentes.
+
+## Atualização O01–O16 — próximo bloco orders, apenas documentação
+
+Users/producers/products consolidados localmente em feat/api-foundation, HEAD 15c85e9. A [prontidão de orders](phase-3.2-orders-readiness.md) é a classificação atual para 3.2.d e prevalece sobre as pendências genéricas da tabela histórica quanto a Q02/Q05/Q06 já resolvidas funcionalmente. Referência comum não é idempotência aprovada; entregue académico não foi automaticamente equiparado a concluida.
+
+M (antes do modelo completo): OR03/OR04/OR05/OR10/OR11 e formatos estruturais OR02/OR06–OR09. S (antes dos serviços 3.4): regras operacionais residuais desses pacotes e OR12, com autorização específica para alterar configuração de producers/caminho de stock em products. H (antes do contrato final/integração): OR01 e DTOs/payloads/projeções. Não se exige decidir Cloud/leilões/reviews para um modelo isolado que não os usa. Nesta tarefa, nenhuma implementação ou operação Git de escrita é autorizada.
+
+## Prontidão final de orders após aprovação OR
+
+O01–O16 e OR01–OR12 aprovadas: as classes M/S/H da revisão anterior deixam de significar pedidos de decisão OR. M está documentalmente resolvida para persistência isolada; S/H são agora dependências de implementação/verificação nas fases próprias. Nomes/índices/fingerprint/versões/medição BSON/timeouts são detalhes técnicos, não novas escolhas funcionais a devolver ao utilizador.
+
+Pronto para implementação de orders isolado quando explicitamente autorizado. Permanecem sem código: configuração comercial aditiva de producers, repositório de stock/versionamento e coordenação concorrente, serviços, agendador, segurança e DTOs de comandos/integradores. Não exigir que todos existam antes do schema isolado; exigir antes de ativar checkout. Confirmar preservação da auditoria dentro dos limites técnicos e interromper se os ensaios mostrarem necessidade de mudança estrutural. Não aprovar coleção adicional automaticamente. [Plano e critérios](phase-3.2-orders-readiness.md).

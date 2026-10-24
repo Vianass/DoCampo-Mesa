@@ -1,5 +1,7 @@
 # Fase 3.2 — consolidação documental dos modelos MongoDB
 
+> Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.
+
 **Estado: T32-01–T32-06 aprovadas no âmbito explícito; A01–A03 aprovadas e primeiro bloco users/producers implementado localmente; products posteriormente autorizado/implementado com P01–P08; restantes quatro modelos não autorizados.** Consolidação em 2026-10-17, após preparação em 2026-10-16 na branch `feat/api-foundation`, HEAD `68f41ec`, após publicação da fundação. Main permanece em `c10d031`. A preparação inicial era documental; a autorização posterior abrangeu apenas os dois modelos, validações, índices e testes, conforme a [entrega do primeiro bloco](phase-3.2-identity-implementation.md). C04 mantém todas as operações privadas inacessíveis até à segurança real da semana 4.
 
 Este documento complementa [decisions.md](decisions.md), [modelos detalhados](phase-3.2-models.md), [correspondência de dados](data-mapping.md), [segurança](security.md), [OpenAPI](openapi.yaml), [integração futura](frontend-integration.md) e [plano](implementation-plan.md). A [entrega 3.1](foundation-implementation.md) é evidência histórica; os ajustes seguintes não alteram a implementação publicada.
@@ -189,3 +191,13 @@ Validar estrutura OpenAPI, referências, ligações, formatação e âmbito docu
 ## Products — execução local após P01–P08
 
 Products foi autorizado condicionalmente e implementado depois de o utilizador resolver as duas pendências: preço por kg/L/unidade/embalagem e aplicabilidade declarada de ingredientes. Ver [entrega específica](phase-3.2-products.md). Categoria em rascunho pode faltar; doze categorias aprovadas; zero/preço máximo/stock/fotografias/requisitos de publicação definidos no âmbito de produto. Number é usado apenas com inteiros seguros e limites do domínio; não se implementou aritmética de encomendas. P03/P08 não autorizam checkout ou UI. Os resultados anteriores dos blocos de identidade permanecem históricos.
+
+## Preparação de orders após consolidação de products
+
+Base atual 15c85e9, com users/producers/products consolidados localmente; O01–O16 aprovadas funcionalmente. [Orders readiness](phase-3.2-orders-readiness.md) sucede às pendências genéricas B na parte já resolvida: grupo por produtor e atomicidade, cadeia/cancelamento/reposição, entrega/taxa/zonas/agenda, métodos/estado de pagamento, snapshots, receção e reclamações. As alternativas históricas Q02/entrega/pagamento deixam de ser escolhas livres nesse âmbito. OR01–OR12 mantêm recomendações concretas por aprovar. Não implementado, sem autorização para schemas ou serviços, outros modelos, dependências ou Git.
+
+## Consolidação OR01–OR12 — entrada documental resolvida
+
+Todas OR aprovadas no âmbito explícito do novo pedido; a [especificação vigente](phase-3.2-orders-readiness.md) substitui recomendações antigas sem apagar a revisão anterior. Não há escolha funcional OR pendente para o primeiro bloco orders. Configuração comercial pertence a producers, com alteração aditiva futura; idempotência global/transações, stock condicionado e proteção concorrente de aprovação estão aprovados para serviços futuros, não implementados.
+
+Preparação dos campos/índices/limites está concluída documentalmente. Antes da execução, autorizar tipos/cálculos e persistência isolada; depois, autorizar separadamente extensões comerciais/versionamento/reposições e serviços. A diferença literal entregue/concluida deve ser explicada e validada academicamente antes da aceitação final, sem adicionar estado nem bloquear a escolha de domínio aprovada.

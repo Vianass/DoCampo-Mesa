@@ -1,5 +1,7 @@
 # Integração futura com o frontend aprovado
 
+> Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.
+
 **Análise e proposta; nenhum ficheiro do frontend é alterado.** Base `807aa68`, com 274 testes aprovados na última validação publicada. Preservar mercado, comprador, produtor, administrador, carrinho, navegação, sistema visual e testes demonstrativos. A implementação real de integração pertence à semana 4/M2 e precisa de autorização específica. A preparação documental 3.2 regista Q01/Q03/Q04/Q06/Q14 e T32-01–T32-06 no âmbito aprovado sem modificar os tipos/componentes existentes.
 
 ## Diferenças observadas e adaptações necessárias
@@ -73,3 +75,17 @@ A01–A03 aprovadas e users/producers implementados/testados apenas no backend, 
 O frontend demonstrativo permanece inalterado. Integração futura usa doze categorias, preço por kg/L ou uma unidade/embalagem, stock e quantidades mínimas em g/ml/contagens, referência separada do conteúdo da embalagem e até duas fotografias com principal identificável. A declaração de aplicabilidade de ingredientes e os campos de publicação exigem adaptação própria dos formulários; não alterar mocks por efeito da criação do schema.
 
 P08 exige confirmação de mudanças e snapshots nas encomendas futuras; apenas um preço atual no Product não implementa reconfirmação ou preservação comercial do histórico. P07 é condição derivada de estado/stock/mínimo/perfil atual, não um booleano de disponibilidade persistido. Ver [decisões e limites implementados](phase-3.2-products.md). Não migrar o carrinho nem executar funcionalidades web nesta tarefa.
+
+## Impacto de orders O01–O16 — integração ainda não autorizada
+
+O frontend aprovado conserva os quatro estados demonstrativos. O domínio futuro usa seis estados O02, grupo de compra com order independente por produtor, opções de entrega/período/método por produtor, taxa, pagamento separado, receção e reclamações. [OR01–OR12](phase-3.2-orders-readiness.md) identificam escolhas antes dos adaptadores; não converter entregue/concluida silenciosamente nem considerar o desenho demonstrativo uma implementação dessas regras.
+
+A cesta atual não armazena toda a referência/unidade necessária a g/ml e subtotal half-up; revisão de storage/DTO será explícita. Mudança de preço exige aceitação e stock insuficiente ajuste/remoção pelo comprador. Conservar carrinho em erro ou resultado de commit incerto; retirar linhas só depois de recuperar confirmação inequívoca da operação. Não distribuir moradas, métodos/valores de outras orders do grupo pelo DTO do produtor. Nenhum componente, navegação, design system, provider ou teste web é alterado nesta tarefa.
+
+## OR aprovadas — adaptação futura, sem alterações web
+
+O01–O16/OR01–OR12 fechadas funcionalmente. O modo real futuro apresenta concluida, entrega declarada e receção separadas, sem sétimo estado ou tradução silenciosa para os quatro estados demo. Agrega produto por ID antes de preço/quantidade e recusa subtotal zero; seleção de modalidade/período/método/taxa por produtor e recibo original do grupo são os DTOs documentais propostos.
+
+Pedido de cancelamento pendente não congela produção; stock que não caiba na reposição fica auditado como pendente; várias reclamações podem coexistir, pausando uma só contagem que retoma o tempo restante; proposta de período não muda acordo antes de aceitação. Pagamento rejeitado/corrigido tem história própria e a reversão administrativa não apaga receção anterior nem confirma pagamentos.
+
+Propostas, campos e regras serão adaptados só com autorização de integração, preservando cesta, áreas privadas, navegação, SCSS/design e 274 testes. Repetir checkout usa a mesma chave/condições; timeout não limpa cesta nem gera compra nova. Não inferir estados atuais a partir do recibo original de replay. Nenhuma fonte demonstrativa é promovida a autenticação ou backend real.
