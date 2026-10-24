@@ -1,7 +1,11 @@
-import { Schema } from 'mongoose';
+import { Error as MongooseError, Schema } from 'mongoose';
 import type { Connection, Model, Types } from 'mongoose';
 import { dateField, requireDocumentValidation, textField } from '../shared/model-validation.js';
 import { createUserModel } from '../users/user.model.js';
+import { createProducerCommercialSchema } from './producer-commercial.schema.js';
+import type { ProducerCommercialSettings } from './producer-commercial.types.js';
+import { validateProducerCommercial } from './producer-commercial.validation.js';
+import { redactProducerSerialization } from './producer.serialization.js';
 
 export const applicationStatuses = ['pendente', 'aprovado', 'rejeitado'] as const;
 export type ApplicationStatus = (typeof applicationStatuses)[number];
@@ -33,6 +37,7 @@ export interface ProducerRecord {
   telefone: string;
   imagem?: ProducerImage;
   aprovacao: ProducerApplication;
+  comercial?: ProducerCommercialSettings;
   createdAt: Date;
   updatedAt: Date;
   /** Virtual de leitura: exige populate de userId com nome; nunca é persistido. */
@@ -109,6 +114,7 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
       telefone: { ...textField('telefone'), select: false },
       imagem: { type: imageSchema, default: undefined },
       aprovacao: { type: applicationSchema, required: true, default: () => ({}) },
+      comercial: { type: createProducerCommercialSchema(), default: undefined },
     },
     {
       collection: 'producers',
@@ -120,16 +126,78 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
       toJSON: {
         virtuals: true,
         transform(_document, value) {
-          Reflect.deleteProperty(value, 'telefone');
-          if (value.aprovacao?.decisao) Reflect.deleteProperty(value.aprovacao.decisao, 'autor');
-          // Um populate futuro nunca transforma a conta inteira num perfil público.
-          const account: unknown = value.userId;
-          if (account && typeof account === 'object' && '_id' in account) {
-            value.userId = account._id as Types.ObjectId;
-          }
-          return value;
+          return redactProducerSerialization(value);
         },
       },
+      toObject: { transform: (_document, value) => redactProducerSerialization(value) },
+    },
+  );
+  schema.pre('validate', function () {
+    if (this.isNew || !this.isModified('comercial')) return;
+    const fields = [
+      'comercial',
+      'comercial.modalidades.levantamento',
+      'comercial.modalidades.entrega',
+      'comercial.taxaEntregaCent',
+      'comercial.concelhosEntregaIds',
+      'comercial.catalogoConcelhosVersao',
+      'comercial.disponibilidade.fusoHorario',
+      'comercial.disponibilidade.levantamento',
+      'comercial.disponibilidade.entrega',
+      'comercial.metodosPagamento',
+      'comercial.pagamentoPrivado',
+      'comercial.disponibilidade.levantamento.diaSemana',
+      'comercial.disponibilidade.levantamento.inicio',
+      'comercial.disponibilidade.levantamento.fim',
+      'comercial.disponibilidade.entrega.diaSemana',
+      'comercial.disponibilidade.entrega.inicio',
+      'comercial.disponibilidade.entrega.fim',
+      'comercial.pagamentoPrivado.mbWay.contacto',
+      'comercial.pagamentoPrivado.transferenciaBancaria.iban',
+      'comercial.pagamentoPrivado.transferenciaBancaria.titular',
+    ];
+    if (fields.some((field) => !this.isSelected(field)))
+      throw new Error(
+        'Alterar configuração comercial exige leitura completa, incluindo dados privados selecionados explicitamente.',
+      );
+  });
+  schema.post('validate', function (document) {
+    const settings = document.toObject({ transform: false }).comercial;
+    const issues = validateProducerCommercial(settings);
+    if (!issues.length) return;
+    const error = new MongooseError.ValidationError();
+    for (const issue of issues)
+      error.addError(
+        issue.campo,
+        new MongooseError.ValidatorError({ path: issue.campo, message: issue.mensagem }),
+      );
+    throw error;
+  });
+  schema.post(
+    'validate',
+    function (error: Error, _document: unknown, next: (error?: Error) => void) {
+      if (!(error instanceof MongooseError.ValidationError)) {
+        next(error);
+        return;
+      }
+      const paths = Object.keys(error.errors);
+      if (!paths.some((path) => path === 'comercial' || path.startsWith('comercial.'))) {
+        next(error);
+        return;
+      }
+      const safe = new MongooseError.ValidationError();
+      for (const path of paths) {
+        if (path === 'comercial' || path.startsWith('comercial.')) {
+          safe.addError(
+            path,
+            new MongooseError.ValidatorError({
+              path,
+              message: 'Configuração comercial inválida; valor omitido.',
+            }),
+          );
+        } else safe.addError(path, error.errors[path]!);
+      }
+      next(safe);
     },
   );
   schema.virtual('nomeResponsavel').get(function () {
