@@ -16,6 +16,7 @@ export function redactProducerSerialization(
 ): Record<string, unknown> {
   Reflect.deleteProperty(value, 'telefone');
   Reflect.deleteProperty(value, 'comercial');
+  Reflect.deleteProperty(value, 'revisaoOperacional');
   if (object(value.aprovacao) && object(value.aprovacao.decisao))
     Reflect.deleteProperty(value.aprovacao.decisao, 'autor');
   if (object(value.userId) && '_id' in value.userId) value.userId = value.userId._id;

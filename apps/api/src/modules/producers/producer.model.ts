@@ -6,6 +6,7 @@ import { createProducerCommercialSchema } from './producer-commercial.schema.js'
 import type { ProducerCommercialSettings } from './producer-commercial.types.js';
 import { validateProducerCommercial } from './producer-commercial.validation.js';
 import { redactProducerSerialization } from './producer.serialization.js';
+import { protectDocumentRevision } from '../concurrency/document-revision.js';
 
 export const applicationStatuses = ['pendente', 'aprovado', 'rejeitado'] as const;
 export type ApplicationStatus = (typeof applicationStatuses)[number];
@@ -38,6 +39,7 @@ export interface ProducerRecord {
   imagem?: ProducerImage;
   aprovacao: ProducerApplication;
   comercial?: ProducerCommercialSettings;
+  revisaoOperacional?: number;
   createdAt: Date;
   updatedAt: Date;
   /** Virtual de leitura: exige populate de userId com nome; nunca é persistido. */
@@ -115,6 +117,17 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
       imagem: { type: imageSchema, default: undefined },
       aprovacao: { type: applicationSchema, required: true, default: () => ({}) },
       comercial: { type: createProducerCommercialSchema(), default: undefined },
+      revisaoOperacional: {
+        type: Number,
+        cast: false,
+        required: true,
+        default: 0,
+        min: 0,
+        validate: {
+          validator: Number.isSafeInteger,
+          message: 'Revisão inteira segura obrigatória.',
+        },
+      },
     },
     {
       collection: 'producers',
@@ -206,5 +219,6 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
   });
   schema.index({ userId: 1 }, { unique: true });
   requireDocumentValidation(schema);
+  protectDocumentRevision(schema);
   return connection.model<ProducerRecord>('ProducerProfile', schema);
 }

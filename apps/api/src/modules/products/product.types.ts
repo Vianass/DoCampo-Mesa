@@ -41,4 +41,5 @@ export interface ProductRecord {
   imagens: ProductImage[];
   createdAt: Date;
   updatedAt: Date;
+  revisaoOperacional?: number;
 }

@@ -12,6 +12,7 @@ import {
   saleModalities,
 } from './product.constants.js';
 import type { ProductImage, ProductRecord, SaleUnitRecord } from './product.types.js';
+import { protectDocumentRevision } from '../concurrency/document-revision.js';
 
 type UnitDocument = HydratedDocument<SaleUnitRecord> & {
   ownerDocument(): HydratedDocument<ProductRecord>;
@@ -149,6 +150,7 @@ export function createProductModel(connection: Connection): Model<ProductRecord>
         ...integerField(0),
         required: publishedProduct,
       },
+      revisaoOperacional: { ...integerField(0), required: true, default: 0 },
       ingredientesAplicaveis: {
         type: Boolean,
         cast: false,
@@ -190,6 +192,18 @@ export function createProductModel(connection: Connection): Model<ProductRecord>
       autoCreate: false,
       autoIndex: false,
       bufferCommands: false,
+      toJSON: {
+        transform: (_document, value) => {
+          Reflect.deleteProperty(value, 'revisaoOperacional');
+          return value;
+        },
+      },
+      toObject: {
+        transform: (_document, value) => {
+          Reflect.deleteProperty(value, 'revisaoOperacional');
+          return value;
+        },
+      },
     },
   );
   schema.path('stockDisponivel').validate({
@@ -269,5 +283,6 @@ export function createProductModel(connection: Connection): Model<ProductRecord>
   schema.index({ produtor: 1, estadoPublicacao: 1 });
   schema.index({ estadoPublicacao: 1, categoriaId: 1 });
   requireDocumentValidation(schema);
+  protectDocumentRevision(schema);
   return connection.model<ProductRecord>('Product', schema);
 }
