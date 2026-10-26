@@ -1,10 +1,10 @@
-# Fase 3.0 — rascunho documental, não autorização de implementação.
+# Contrato comercial proposto; diagnóstico e quatro endpoints de autenticação implementados localmente.
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.1.0-draft
+  version: 0.2.0-local-auth
   description:
-    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. Apenas GET /api/health está implementado localmente; nenhum endpoint está publicado. Métodos/códigos
+    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health e os quatro endpoints de autenticação da Fase 4 estão implementados localmente. O checkout permanece interno; não existem endpoints comerciais nem publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
     essas operações não podem ser disponibilizadas antes de aprovação e segurança real. Papéis nas extensões
     são propostas da matriz, não permissões concedidas. Ver README.md, decisions.md e security.md.'
@@ -85,7 +85,7 @@ x-pending-technical-decisions:
   - C03
   - C05
 x-approval-scope: decisions.md
-x-private-api-availability: Bloqueada até autenticação/autorização reais da semana 4, conforme C04.
+x-private-api-availability: Autenticação local implementada na Fase 4; operações comerciais permanecem ausentes.
 x-technical-decisions:
   - C01
   - C02
@@ -133,25 +133,18 @@ paths:
           $ref: '#/components/responses/Error413'
         '500':
           $ref: '#/components/responses/Error500'
-  /auth/registo:
+  /auth/register:
     post:
       operationId: register
-      tags:
-        - Autenticação
-      summary: Registar comprador ou produtor
+      tags: [Autenticação]
+      summary: Registar exclusivamente uma conta compradora
       description: >-
-        Registo público futuro nunca atribui administrador, aprovação ou hash pelo cliente. Q01 permite acumular capacidades na mesma conta; papel inicial não é exclusividade. Aquisição de capacidade produtor T32-01 e sessão Q13 ainda por detalhar.
+        Normaliza email, protege password com Argon2id e força capacidade comprador.
+        Email duplicado recebe a mesma resposta 202, sem substituir a conta existente.
+        Não emite token no registo nem atribui produtor ou administrador. Sem confirmação de password neste contrato.
       security: []
-      x-authorized-roles:
-        - visitante
-        - comprador
-        - produtor
-        - administrador
-      x-decision-dependencies:
-        - Q01
-        - Q04
-        - Q13
-      x-contract-status: proposta-bloqueada
+      x-authorized-roles: [visitante, comprador, produtor, administrador]
+      x-contract-status: implementado-localmente
       x-implementation-stage: '4'
       requestBody:
         required: true
@@ -159,49 +152,43 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Registration'
+            example:
+              nome: Pessoa fictícia
+              email: pessoa@example.invalid
+              password: Frase fictícia apenas para exemplo!
       responses:
-        '201':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+        '202':
+          description: Resposta genérica, igual para email novo e duplicado; sem revelar a existência da conta.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserSelf'
-          headers:
-            Location:
-              description: URI do recurso criado. Para checkout, forma final depende de Q02.
-              schema:
-                type: string
+                $ref: '#/components/schemas/RegistrationAcknowledgement'
+              example:
+                mensagem: Pedido de registo recebido. Tenta iniciar sessão com os dados indicados.
         '400':
           $ref: '#/components/responses/Error400'
-        '409':
-          $ref: '#/components/responses/Error409'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
-      x-registration-roles:
-        - comprador
-        - produtor
   /auth/login:
     post:
       operationId: login
-      tags:
-        - Autenticação
-      summary: Autenticar e emitir JWT
-      description:
-        Autenticar credenciais com bcrypt; JWT expira. Não define duração de 2 h como obrigação.
-        Sessão/refresh/logout dependem de Q13.
+      tags: [Autenticação]
+      summary: Autenticar e emitir JWT HS256 com expiração
+      description: >-
+        Verifica Argon2id ou bcrypt legado; conta inexistente, desativada e password
+        incorreta devolvem o mesmo erro 401. JWT contém apenas sub/iss/aud/iat/exp/jti,
+        nunca papéis ou dados pessoais. Duração por omissão 900 segundos, configurável entre 60 e 3600.
       security: []
-      x-authorized-roles:
-        - visitante
-        - comprador
-        - produtor
-        - administrador
-      x-decision-dependencies:
-        - Q01
-        - Q04
-        - Q13
-      x-contract-status: proposta-bloqueada
+      x-authorized-roles: [visitante, comprador, produtor, administrador]
+      x-contract-status: implementado-localmente
       x-implementation-stage: '4'
       requestBody:
         required: true
@@ -209,48 +196,62 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Credentials'
+            example:
+              email: pessoa@example.invalid
+              password: Frase fictícia apenas para exemplo!
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Token e projeção própria mínima; Cache-Control no-store. Sem token real nos exemplos.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccessToken'
+              example:
+                accessToken: JWT_FICTICIO_NAO_UTILIZAVEL
+                tokenType: Bearer
+                expiresAt: '2026-10-26T12:15:00.000Z'
+                utilizador:
+                  id: '000000000000000000000011'
+                  nome: Pessoa fictícia
+                  email: pessoa@example.invalid
+                  papeis: [comprador]
         '400':
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
-        '409':
-          $ref: '#/components/responses/Error409'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
-  /me:
+  /auth/me:
     get:
       operationId: getMe
-      tags:
-        - Utilizadores
-      summary: Consultar a própria identidade
-      description: Consultar a própria identidade. Operação proposta; não implementada.
+      tags: [Autenticação]
+      summary: Consultar apenas a identidade autenticada
+      description: JWT Bearer verificado e conta ativa consultada em cada pedido; papéis atuais da base de dados, sem hash ou revisão.
       security:
         - bearerAuth: []
-      x-authorized-roles: &id007
-        - comprador
-        - produtor
-        - administrador
-      x-decision-dependencies:
-        - Q01
-        - Q13
-      x-contract-status: proposta-bloqueada
+      x-authorized-roles: &id007 [comprador, produtor, administrador]
+      x-contract-status: implementado-localmente
       x-implementation-stage: '4'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Projeção da própria conta, sem dados de outros utilizadores; Cache-Control no-store.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserSelf'
+              example:
+                id: '000000000000000000000011'
+                nome: Pessoa fictícia
+                email: pessoa@example.invalid
+                papeis: [comprador]
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -259,8 +260,38 @@ paths:
           $ref: '#/components/responses/Error403'
         '500':
           $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [Autenticação]
+      summary: Declarar o encerramento local sem revogação do JWT
+      description: >-
+        Exige Bearer válido. O cliente deve descartar o token; o servidor NÃO o revoga.
+        O token continua válido até expirar, sujeito à verificação atual da conta.
+        Não há refresh token, cookie de sessão ou denylist nesta fase.
+      security:
+        - bearerAuth: []
+      x-authorized-roles: [comprador, produtor, administrador]
+      x-contract-status: implementado-localmente
+      x-implementation-stage: '4'
+      responses:
+        '200':
+          description: Informação explícita sobre a ausência de revogação; Cache-Control no-store.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResult'
+              example:
+                mensagem: Termina a sessão no cliente. O token continua válido até expirar.
+                revogado: false
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
   /producers:
     get:
       operationId: listProducers
@@ -2043,6 +2074,24 @@ components:
         Proposta D08, ainda não obrigatória. Após adoção, mesma chave/payload devolve o grupo persistido;
         payload diferente gera conflito. Não adotar sem aprovação.
   responses:
+    Error415:
+      description: Content-Type/codificação não suportados; corpos comprimidos não são aceites.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error429:
+      description: Limite de tentativas excedido; igual para contas existentes e inexistentes.
+      headers:
+        Retry-After:
+          description: Segundos antes de repetir.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     Error400:
       description: Dados/parâmetros inválidos.
       content:
@@ -3504,75 +3553,73 @@ components:
         Uma ilustração de UI nunca se converte numa observação real.
     Registration:
       type: object
+      additionalProperties: false
+      required: [nome, email, password]
       properties:
         nome:
           type: string
+          minLength: 1
+          maxLength: 120
+          description: NFC e trim; sem caracteres de controlo ou surrogates isolados.
         email:
           type: string
           format: email
+          maxLength: 254
+          description: Trim e minúsculas; sem remover aliases ou pontos.
         password:
           type: string
           writeOnly: true
-        papel:
-          type: string
-          enum:
-            - comprador
-            - produtor
-        perfilProdutor:
-          type: object
-          properties:
-            nomePublico:
-              type: string
-            localidade:
-              type: string
-          required:
-            - nomePublico
-            - localidade
-          additionalProperties: false
-      required:
-        - nome
-        - email
-        - password
-        - papel
-      additionalProperties: false
-      description: >-
-        papel é uma preferência inicial proposta, não exclusividade permanente. Q01 permite uma conta comprador/produtor, sem admin no registo público. O fluxo de adquirir capacidade produtor e formato de registo são detalhes residuais de T32-01; vender exige aprovação Q04. Política de password e sessão continuam Q13.
-      x-revision-required: true
-      x-residual-model-decisions: [T32-01, T32-05]
+          minLength: 15
+          maxLength: 128
+          description: Máximo adicional de 512 bytes UTF-8; sem NUL/surrogates isolados; sem trim ou normalização.
+      description: Apenas compradores; papéis, estado, IDs e hash não são campos editáveis. Sem confirmação de password neste contrato.
     Credentials:
       type: object
+      additionalProperties: false
+      required: [email, password]
       properties:
         email:
           type: string
           format: email
+          maxLength: 254
         password:
           type: string
           writeOnly: true
-      required:
-        - email
-        - password
-      additionalProperties: false
+          minLength: 1
+          maxLength: 128
+          description: Máximo de 512 bytes UTF-8; permite passwords legadas mais curtas; bcrypt recusa mais de 72 bytes.
     AccessToken:
       type: object
+      additionalProperties: false
+      required: [accessToken, tokenType, expiresAt, utilizador]
       properties:
         accessToken:
           type: string
+          description: JWT assinado; nunca colocar tokens reais em exemplos ou logs.
         tokenType:
           type: string
-          enum:
-            - Bearer
+          enum: [Bearer]
         expiresAt:
           $ref: '#/components/schemas/Timestamp'
         utilizador:
           $ref: '#/components/schemas/UserSelf'
-      required:
-        - accessToken
-        - tokenType
-        - expiresAt
-        - utilizador
-      description:
-        JWT com expiração. Não define duração, persistência, refresh ou revogação (Q13). Nunca usar
-        token real nos exemplos.
+    RegistrationAcknowledgement:
+      type: object
+      additionalProperties: false
+      required: [mensagem]
+      properties:
+        mensagem:
+          type: string
+    LogoutResult:
+      type: object
+      additionalProperties: false
+      required: [mensagem, revogado]
+      properties:
+        mensagem:
+          type: string
+        revogado:
+          type: boolean
+          enum: [false]
     ProductWrite:
       type: object
       properties:

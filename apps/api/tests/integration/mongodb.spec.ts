@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -145,6 +145,7 @@ describe('MongoDB 8 real e isolado', () => {
         NODE_ENV: 'test',
         MONGODB_URI: testUri,
         MONGODB_DB_NAME: configuration.databaseName,
+        JWT_SECRET: randomBytes(32).toString('base64url'),
         API_PORT: '3099',
         SHUTDOWN_TIMEOUT_MS: '2000',
       },

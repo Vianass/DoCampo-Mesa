@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Fundação técnica da API REST; sem módulos comerciais ou autenticação real.",
+  "description": "API REST com autenticação JWT e checkout transacional interno.",
   "engines": {
     "node": "^22.21.1 || ^24.0.0",
     "npm": ">=10"
@@ -24,7 +24,10 @@
     "mongo:test:up": "docker compose --profile test up -d --wait mongo-test"
   },
   "dependencies": {
+    "argon2": "0.45.1",
+    "bcryptjs": "3.0.3",
     "express": "5.3.0",
+    "jose": "6.2.13",
     "mongoose": "9.11.2",
     "zod": "4.6.7"
   },

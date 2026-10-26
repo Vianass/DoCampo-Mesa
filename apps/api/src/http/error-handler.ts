@@ -30,6 +30,12 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _request, resp
     });
     return;
   }
+  if (type === 'encoding.unsupported' || type === 'charset.unsupported') {
+    response
+      .status(415)
+      .json({ codigo: 'CONTEUDO_NAO_SUPORTADO', mensagem: 'Codificação não suportada.' });
+    return;
+  }
 
   response
     .status(500)

@@ -1,3 +1,5 @@
+> **Atualização da Fase 4 — 26/10/2026:** autenticação JWT real implementada localmente, com os quatro endpoints pedidos, Argon2id/bcrypt legado e controlo de acesso atual. Ver [segurança](security.md), [OpenAPI](openapi.yaml) e [arranque da API](../../apps/api/README.md). Operações comerciais continuam sem endpoints; frontend e Fase 0 preservados. Os registos seguintes descrevem as suas datas históricas.
+
 # Fase 3.0 — contrato da API e decisões de entrada
 
 > Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.

@@ -1,3 +1,43 @@
+# API — autenticação local da Fase 4
+
+Além do diagnóstico `GET /api/health`, estão implementados `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` e `POST /api/auth/logout`. Checkout continua interno e os endpoints comerciais não existem. Ver [segurança e limitações](../../docs/api/security.md) e [OpenAPI](../../docs/api/openapi.yaml).
+
+## Arranque com autenticação
+
+Copiar `.env.example` para `.env` local, manter a configuração MongoDB de desenvolvimento e preencher **JWT_SECRET** com pelo menos 32 bytes aleatórios codificados em base64url. Não versionar `.env` ou o segredo. Um comando local para gerar o valor é:
+
+```sh
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
+```
+
+Não usar o segredo gerado como exemplo público. `JWT_ISSUER=docampo-api`, `JWT_AUDIENCE=docampo-web` e `JWT_TTL_SECONDS=900` são os valores por omissão. `CORS_ORIGINS` contém origens exatas separadas por vírgulas; vazio bloqueia origens de browser. `TRUSTED_PROXY_IPS` vazio não confia em X-Forwarded-*; produção exige HTTPS através de proxy confiável explicitamente configurado e acesso de rede restrito.
+
+```sh
+npm run mongo:dev:up --workspace @docampo/api
+npm run dev --workspace @docampo/api
+```
+
+O arranque real falha sem segredo válido e prepara o índice único de email antes de abrir HTTP. Registo aceita apenas `{nome, email, password}`, com 202 genérico também para duplicados e sem token; não aceita papel/estado ou confirmação de password. Login aceita `{email, password}` e devolve Bearer/expiração/identidade própria. Usar `Authorization: Bearer ...` em me/logout. Logout devolve `revogado: false`: descartar o token no cliente **não o revoga no servidor**.
+
+Hashes novos são Argon2id; bcrypt anterior continua verificável. A conta tem capacidades acumuláveis e um indicador ativo compatível com documentos antigos; não há criação de administrador, reset de password, refresh, UI real ou endpoint de alteração de permissões.
+
+## Validação atual
+
+```sh
+npm run typecheck --workspace @docampo/api
+npm run lint --workspace @docampo/api
+npm run format:check --workspace @docampo/api -- --ignore-path ../../.prettierignore
+npm run build --workspace @docampo/api
+npm run mongo:test:up --workspace @docampo/api
+npm test --workspace @docampo/api
+```
+
+Os testes não leem `.env`, usam MongoDB real isolado na porta 27019 e segredos aleatórios gerados apenas em memória. Dependências novas exatas: argon2 0.45.1, bcryptjs 3.0.3 e jose 6.2.13; body-parser transitivo corrigido para 2.4.0. Não se alteram dependências do frontend.
+
+---
+
+## Fundação 3.1 — registo histórico
+
 # API — fundação técnica, Fase 3.1
 
 Node.js 22.21.1, npm 10.9.4, Express 5 e TypeScript, com configuração própria independente do frontend. Implementação local, sem módulos comerciais, autenticação real, integração web, recursos Cloud ou publicação. Q01–Q16 e C03/C05 continuam pendentes.

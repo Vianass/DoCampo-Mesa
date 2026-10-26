@@ -1,8 +1,9 @@
 import { ConfigurationError, parseEnvironment } from './config/environment.js';
 import { startApi } from './runtime.js';
+import { parseAuthEnvironment } from './config/auth-environment.js';
 
 try {
-  const runtime = await startApi(parseEnvironment());
+  const runtime = await startApi(parseEnvironment(), undefined, parseAuthEnvironment());
   console.info('API_INICIADA: processo HTTP disponível.');
   let stopping = false;
   const stop = () => {

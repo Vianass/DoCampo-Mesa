@@ -35,15 +35,16 @@ export async function guardUserCapabilities(
     { _id: contaId },
     {
       session,
-      projection: { _id: 1, papeis: 1, revisaoOperacional: 1 },
+      projection: { _id: 1, papeis: 1, revisaoOperacional: 1, ativo: 1 },
     },
   );
-  if (!record || !papeis.every((role) => record.papeis.includes(role)))
+  if (!record || record.ativo === false || !papeis.every((role) => record.papeis.includes(role)))
     throw new UserCapabilityError();
   const revision = operationalRevision(record.revisaoOperacional);
   const result = await users.findOneAndUpdate(
     {
       _id: contaId,
+      ativo: { $ne: false },
       papeis: { $all: [...papeis] },
       ...revisionCondition(revision),
     },

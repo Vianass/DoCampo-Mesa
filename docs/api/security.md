@@ -1,3 +1,58 @@
+# Fase 4 — autenticação JWT e controlo de acessos
+
+Implementação local de **26 de outubro de 2026**, em `feat/api-foundation`, base `745402983b0393e3ef64906860d6d627044a7207`. O pedido da Fase 4 autoriza autenticação real e estes quatro endpoints; não ativa as operações comerciais da matriz histórica abaixo, não altera frontend e não autoriza publicação Git.
+
+| Endpoint                  | Segurança e resultado                                                                                                                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/auth/register` | Público, apenas comprador. JSON estrito com `nome`, `email`, `password`. Resposta **202 idêntica** para novo registo/email duplicado, sem token ou perfil; não substitui conta existente. |
+| `POST /api/auth/login`    | Público, credenciais válidas e conta ativa. **200** com JWT Bearer, expiração e projeção própria; **401 genérico** para email inexistente, password errada ou conta desativada.           |
+| `GET /api/auth/me`        | Bearer obrigatório; **200** apenas com `id`, `nome`, `email`, `papeis` da própria conta, consultada na base em cada pedido.                                                               |
+| `POST /api/auth/logout`   | Bearer obrigatório; **200** com `revogado: false` e mensagem explícita de que o cliente deve descartar o token, válido até expirar.                                                       |
+
+`/api/auth/registo` e `/api/me` eram caminhos documentais propostos: não são aliases implementados. O [OpenAPI](openapi.yaml) passa a descrever os caminhos pedidos, DTOs, exemplos fictícios e códigos. Os restantes endpoints comerciais permanecem ausentes, incluindo checkout. `GET /api/health` é preservado.
+
+## Passwords e identidade
+
+Novos hashes usam **Argon2id**, com 19 MiB, duas iterações, paralelismo um, salt aleatório e digest de 32 bytes, seguindo a configuração de base da [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html). Dependência `argon2@0.45.1`, verificada no Node.js 22.21.1 instalado. O enunciado original refere bcrypt; o pedido atual dá preferência a Argon2id quando compatível. `bcryptjs@3.0.3` mantém verificação dos hashes anteriores 2a/2b/2y sem migração silenciosa. Bcrypt recusa mais de 72 bytes para impedir equivalências por truncagem.
+
+Política local de registo: 15–128 pontos de código, máximo 512 bytes UTF-8, sem NUL/surrogates isolados; sem trim, normalização ou regras artificiais de maiúsculas/símbolos. Não se recebe confirmação de password neste contrato. Login aceita passwords legadas mais curtas dentro dos limites técnicos. Nome: NFC/trim, 1–120 pontos de código, sem controlos; email: trim/minúsculas e formato válido, até 254 caracteres, sem remover aliases/pontos.
+
+Reutiliza-se `User` e o índice único de `emailNormalizado`; a preparação explícita desse índice ocorre antes de o arranque real abrir HTTP e antes do primeiro registo numa composição de teste. Hashing ocorre também em pedidos duplicados; a violação concorrente do índice devolve o mesmo 202. Uma verificação Argon2 de referência reduz a diferença de trabalho para emails inexistentes. Não se promete igualdade perfeita de tempos, sobretudo entre hashes bcrypt legados e Argon2id. Não se implementa verificação de email, recuperação de password ou consulta de listas de passwords comprometidas.
+
+`ativo?: boolean` é a única propriedade nova em users: novas contas têm `true`, ausência legada equivale a ativa, `false` impede login/autenticação e participação em compras novas. Não se cria endpoint para ativar/desativar ou editar papéis. O campo participa em `save`/revisão operacional. A guarda de capacidades inclui atividade no diagnóstico e na escrita condicionada; o serviço de checkout não é alterado. Ensaios reais verificam desativação concorrente e rollback.
+
+## JWT e autorização
+
+`jose@6.2.13` assina e verifica **HS256**, com algoritmo permitido explícito, tipo JWT, issuer/audience esperados e campos `sub`, `iat`, `exp`, `jti` obrigatórios. Duração por omissão **900 segundos**, configurável entre 60 e 3600; sem segredo ou fallback fixo. A implementação segue a [API de verificação da biblioteca](https://github.com/panva/jose/blob/main/docs/jwt/verify/interfaces/JWTVerifyOptions.md). O segredo tem pelo menos 32 bytes aleatórios em base64url e vem exclusivamente de `JWT_SECRET`. Não há chaves, passwords ou JWT reais no Git.
+
+O token contém apenas `sub/iss/aud/iat/exp/jti`; não contém nome, email, papéis, hashes ou revisões. O servidor consulta a conta ativa e os papéis atuais em cada pedido, pelo que alterações de capacidade/desativação têm efeito mesmo com um token já emitido. Não aceita tokens em query/body/cookies, cabeçalhos DEMO ou papéis enviados pelo cliente.
+
+Os middlewares [access-control.ts](../../apps/api/src/modules/auth/access-control.ts) ligam a identidade ao pedido por `WeakMap`, verificam papéis e propriedade. O resolvedor de propriedade deve consultar uma fonte autoritativa, nunca aceitar o owner do corpo como prova. Um administrador não recebe bypass implícito de propriedade ou autorização para todas as ações. As rotas comerciais terão de compor estes controlos com as suas próprias regras antes de serem expostas; nesta fase são testados em harnesses sem criar endpoints comerciais.
+
+**Logout é stateless e não revoga o JWT no servidor.** O endpoint comunica essa limitação em todas as respostas de sucesso; o token continua aceite até expirar, sujeito ao estado atual da conta. Não há refresh token, denylist ou sessão persistida. Uma password alterada por intervenção interna não revoga automaticamente tokens existentes. A política residual de sessões distribuídas, refresh e armazenamento no futuro frontend continua pendente; não se afirma aprovação global de Q13 além deste bloco autorizado.
+
+## Proteções HTTP e operação
+
+- Validação Zod estrita, sem atribuição de papéis/IDs/estado/hash pelo registo. Não existe provisionamento automático de administrador.
+- Respostas de autenticação com `Cache-Control: no-store`; erros 400/401/403/413/415/429/500 sem stack, payload, chave, JWT ou valores privados. Bearer inválido inclui `WWW-Authenticate: Bearer`.
+- Rate limiting local por IP (**30 tentativas/15 minutos**, partilhadas por registo/login) e por email normalizado no login (**10/15 minutos**). Sucesso não reinicia quotas. `Retry-After` acompanha 429. Chaves de conta usam HMAC com chave aleatória do processo; armazenamento limitado a 10 000 entradas, esgotamento falha fechado.
+- Os limites são por processo e reiniciam no restart; não substituem um limite partilhado no gateway para várias instâncias. A quota por conta pode causar indisponibilidade temporária se um terceiro insistir nesse endereço. Não se promete proteção contra DoS distribuído.
+- CORS aceita apenas origens exatas em `CORS_ORIGINS`, sem wildcard ou cookies credenciados. Preflight permite GET/POST e Authorization/Content-Type. Sem Origin, clientes não browser continuam sujeitos à autenticação; CORS não é uma permissão de acesso.
+- Produção recusa HTTP e origens de browser sem HTTPS. Só confia nos IPs exatos de proxies em `TRUSTED_PROXY_IPS`; por omissão não confia em cabeçalhos encaminhados. Exige terminação TLS num proxy confiável, acesso de rede restrito ao proxy e encaminhamento de headers controlado. Respostas HTTPS de produção incluem HSTS.
+- Corpos JSON mantêm o limite de 100 KiB e rejeitam compressão. Acrescentam-se nosniff, DENY e no-referrer. O alerta preexistente de DoS do `body-parser` 2.3.0 foi corrigido por atualização transitiva compatível para 2.4.0; não se atualizou Express.
+
+Não existe logger de pedidos com bodies/headers. Não registar credenciais, tokens, hashes, moradas ou URI privadas no deployment. O cliente demonstrativo permanece independente; a escolha de papel não autentica.
+
+## Validação da fase
+
+Os novos testes [unitários](../../apps/api/tests/unit/auth.spec.ts), [HTTP](../../apps/api/tests/http/auth.spec.ts) e [MongoDB real](../../apps/api/tests/integration/auth.spec.ts) cobrem entradas, hashing, JWT/expiração/assinatura/claims, contas antigas/desativadas/removidas, papéis atuais, propriedade, escalada, logout, limites/CORS/HTTPS, registos simultâneos e compatibilidade concorrente com checkout. Usam exclusivamente bases efémeras `docampo_test_*` e segredos/passwords fictícios de teste. O arranque real é exercitado com HTTP e índice único preparado; importar módulos não abre portas.
+
+O construtor `createApp()` sem dependências continua disponível para os testes históricos de diagnóstico isolado; **o executável `server.ts` exige configuração JWT e liga a autenticação real**. Não existe um modo de produção que substitua JWT por papéis demonstrativos. A suite completa e as verificações de TypeScript/ESLint/Prettier/build são executadas no fecho, preservando Fase 0, frontend e checkout.
+
+---
+
+## Registo histórico da matriz e preparação anteriores
+
 # Segurança e matriz de permissões — proposta
 
 > Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.

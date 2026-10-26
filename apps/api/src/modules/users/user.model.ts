@@ -3,6 +3,7 @@ import type { Connection, Model, Types } from 'mongoose';
 import { z } from 'zod';
 import { requireDocumentValidation, textField } from '../shared/model-validation.js';
 import { protectDocumentRevision } from '../concurrency/document-revision.js';
+import { isArgonPasswordHash, bcryptHashPattern } from '../auth/passwords.js';
 
 export const userRoles = ['comprador', 'produtor', 'administrador'] as const;
 export type UserRole = (typeof userRoles)[number];
@@ -13,14 +14,14 @@ export interface UserRecord {
   emailNormalizado: string;
   passwordHash: string;
   papeis: UserRole[];
+  /** Ausente no legado equivale a ativo; nunca editável no registo público. */
+  ativo?: boolean;
   revisaoOperacional?: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const emailSchema = z.email().max(254);
-// Apenas reconhece a representação bcrypt; não calcula nem verifica passwords.
-const bcryptRepresentation = /^\$2[aby]\$(?:0[4-9]|[12]\d|3[01])\$[./A-Za-z0-9]{53}$/;
 
 export function createUserModel(connection: Connection): Model<UserRecord> {
   const existing = connection.models.User as Model<UserRecord> | undefined;
@@ -43,8 +44,8 @@ export function createUserModel(connection: Connection): Model<UserRecord> {
         select: false,
         cast: false,
         validate: {
-          validator: (value: string) => bcryptRepresentation.test(value),
-          message: 'É necessária uma representação bcrypt válida, nunca uma password em claro.',
+          validator: (value: string) => bcryptHashPattern.test(value) || isArgonPasswordHash(value),
+          message: 'É necessária uma representação de hash válida, nunca uma password em claro.',
         },
       },
       papeis: {
@@ -58,6 +59,7 @@ export function createUserModel(connection: Connection): Model<UserRecord> {
           message: 'A lista de papéis deve ser não vazia e não conter repetições.',
         },
       },
+      ativo: { type: Boolean, cast: false, default: true, required: true },
       revisaoOperacional: {
         type: Number,
         cast: false,
