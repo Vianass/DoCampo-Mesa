@@ -49,6 +49,11 @@ export function validateProducerCommercial(value: unknown): readonly ProducerCom
       },
     ];
   const modes = value.modalidades;
+  if (
+    value.localLevantamento !== undefined &&
+    (!text(value.localLevantamento, 4096) || /[\p{Cc}\p{Cs}]/u.test(value.localLevantamento))
+  )
+    fail('localLevantamento', 'Local de levantamento inválido.');
   const modesValid =
     object(modes) && typeof modes.levantamento === 'boolean' && typeof modes.entrega === 'boolean';
   if (!modesValid) fail('modalidades', 'Indicar explicitamente as duas modalidades.');

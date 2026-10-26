@@ -27,6 +27,8 @@ export interface ProducerPrivatePayment {
 
 /** Configuração completa opcional no perfil; não é uma ativação de vendas ou DTO HTTP. */
 export interface ProducerCommercialSettings {
+  /** Origem interna do snapshot; opcional no legado, necessária para comprar com levantamento. */
+  readonly localLevantamento?: string;
   readonly modalidades: { readonly levantamento: boolean; readonly entrega: boolean };
   readonly taxaEntregaCent?: number;
   readonly concelhosEntregaIds: readonly string[];

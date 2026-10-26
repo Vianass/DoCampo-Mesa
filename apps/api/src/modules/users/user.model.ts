@@ -2,6 +2,7 @@ import { Schema } from 'mongoose';
 import type { Connection, Model, Types } from 'mongoose';
 import { z } from 'zod';
 import { requireDocumentValidation, textField } from '../shared/model-validation.js';
+import { protectDocumentRevision } from '../concurrency/document-revision.js';
 
 export const userRoles = ['comprador', 'produtor', 'administrador'] as const;
 export type UserRole = (typeof userRoles)[number];
@@ -12,6 +13,7 @@ export interface UserRecord {
   emailNormalizado: string;
   passwordHash: string;
   papeis: UserRole[];
+  revisaoOperacional?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +58,17 @@ export function createUserModel(connection: Connection): Model<UserRecord> {
           message: 'A lista de papéis deve ser não vazia e não conter repetições.',
         },
       },
+      revisaoOperacional: {
+        type: Number,
+        cast: false,
+        required: true,
+        default: 0,
+        min: 0,
+        validate: {
+          validator: Number.isSafeInteger,
+          message: 'Revisão inteira segura obrigatória.',
+        },
+      },
     },
     {
       collection: 'users',
@@ -67,12 +80,14 @@ export function createUserModel(connection: Connection): Model<UserRecord> {
       toJSON: {
         transform(_document, value) {
           Reflect.deleteProperty(value, 'passwordHash');
+          Reflect.deleteProperty(value, 'revisaoOperacional');
           return value;
         },
       },
       toObject: {
         transform(_document, value) {
           Reflect.deleteProperty(value, 'passwordHash');
+          Reflect.deleteProperty(value, 'revisaoOperacional');
           return value;
         },
       },
@@ -80,5 +95,6 @@ export function createUserModel(connection: Connection): Model<UserRecord> {
   );
   schema.index({ emailNormalizado: 1 }, { unique: true });
   requireDocumentValidation(schema);
+  protectDocumentRevision(schema);
   return connection.model<UserRecord>('User', schema);
 }

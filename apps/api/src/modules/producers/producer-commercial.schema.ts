@@ -79,6 +79,7 @@ export function createProducerCommercialSchema(): Schema<ProducerCommercialSetti
   return new Schema<ProducerCommercialSettings>(
     {
       modalidades: { type: modes, required: true },
+      localLevantamento: textField('localLevantamento', 4096, false),
       taxaEntregaCent: {
         type: Number,
         cast: false,

@@ -149,6 +149,7 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
     if (this.isNew || !this.isModified('comercial')) return;
     const fields = [
       'comercial',
+      'comercial.localLevantamento',
       'comercial.modalidades.levantamento',
       'comercial.modalidades.entrega',
       'comercial.taxaEntregaCent',
