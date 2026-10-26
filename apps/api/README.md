@@ -1,3 +1,13 @@
+# API — catálogo e gestão de produtos da Fase 5A
+
+Disponíveis localmente: GET `/api/products`, `/api/products/:id`, `/api/producers`, `/api/producers/:id`; GET próprios `/api/me/products` e `/api/me/products/:id`; POST/PUT/DELETE de produtos com JWT e propriedade. O DELETE arquiva. PUT é completo e PUT/DELETE exigem If-Match obtido na representação própria. Rascunhos não são públicos.
+
+Ver [contratos e adaptação React](../../docs/api/frontend-integration.md) e [OpenAPI](../../docs/api/openapi.yaml). O arranque continua a exigir JWT_SECRET/MongoDB conforme os comandos abaixo; prepara também os índices existentes de products/producers. Não há novo modelo, dependência, frontend modificado, checkout HTTP ou leilão.
+
+---
+
+## Autenticação e configuração anteriores, preservadas
+
 # API — autenticação local da Fase 4
 
 Além do diagnóstico `GET /api/health`, estão implementados `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` e `POST /api/auth/logout`. Checkout continua interno e os endpoints comerciais não existem. Ver [segurança e limitações](../../docs/api/security.md) e [OpenAPI](../../docs/api/openapi.yaml).

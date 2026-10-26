@@ -2,9 +2,9 @@
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.2.0-local-auth
+  version: 0.3.0-local-catalog
   description:
-    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health e os quatro endpoints de autenticação da Fase 4 estão implementados localmente. O checkout permanece interno; não existem endpoints comerciais nem publicação de produção. Métodos/códigos
+    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. Checkout permanece interno e não existe publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
     essas operações não podem ser disponibilizadas antes de aprovação e segurança real. Papéis nas extensões
     são propostas da matriz, não permissões concedidas. Ver README.md, decisions.md e security.md.'
@@ -85,7 +85,7 @@ x-pending-technical-decisions:
   - C03
   - C05
 x-approval-scope: decisions.md
-x-private-api-availability: Autenticação local implementada na Fase 4; operações comerciais permanecem ausentes.
+x-private-api-availability: Autenticação e gestão própria de produtos implementadas localmente; checkout HTTP, leilões e restantes operações propostas permanecem ausentes.
 x-technical-decisions:
   - C01
   - C02
@@ -298,78 +298,127 @@ paths:
       tags:
         - Produtores
       summary: Consultar produtores públicos
-      description: Consultar produtores públicos. Operação proposta; não implementada.
+      description:
+        Só perfis aprovados de contas ativas com capacidade produtor. Não expõe conta, telefone, banco,
+        decisor, local privado de levantamento ou revisões.
       security: []
       x-authorized-roles:
         - visitante
         - comprador
         - produtor
         - administrador
-      x-decision-dependencies:
-        - Q04
-        - Q11
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.3'
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5A
       parameters:
-        - &id002
-          $ref: '#/components/parameters/Q'
-        - &id003
-          $ref: '#/components/parameters/Page'
-        - &id004
-          $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/CatalogSearch'
+        - $ref: '#/components/parameters/CatalogLocality'
+        - $ref: '#/components/parameters/CatalogProducerOrder'
+        - $ref: '#/components/parameters/CatalogPage'
+        - $ref: '#/components/parameters/CatalogPageSize'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Resultado da operação.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ProducerPublic'
+                $ref: '#/components/schemas/CatalogProducerPage'
+              example:
+                itens:
+                  - id: '000000000000000000000201'
+                    nomePublico: Horta fictícia
+                    localidade: Évora
+                    concelho: Évora
+                    descricao: Perfil fictício para documentação.
+                pagina: 1
+                porPagina: 12
+                total: 1
+                totalPaginas: 1
         '400':
           $ref: '#/components/responses/Error400'
         '500':
           $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
   /producers/{id}:
     get:
       operationId: getProducer
       tags:
         - Produtores
-      summary: Consultar perfil público
-      description: Consultar perfil público. Operação proposta; não implementada.
+      summary: Consultar perfil público e produtos publicados paginados
+      description:
+        ID do perfil produtor, diferente de users._id. A paginação/ordem aplica-se aos produtos publicados
+        embebidos. Não inventa avaliações, certificação, coordenadas ou história editorial.
       security: []
       x-authorized-roles:
         - visitante
         - comprador
         - produtor
         - administrador
-      x-decision-dependencies:
-        - Q04
-        - Q11
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.3'
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5A
       parameters:
-        - &id005
-          $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CatalogId'
+        - $ref: '#/components/parameters/CatalogOrder'
+        - $ref: '#/components/parameters/CatalogPage'
+        - $ref: '#/components/parameters/CatalogPageSize'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Resultado da operação.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProducerPublic'
+                $ref: '#/components/schemas/CatalogProducerDetail'
+              example:
+                id: '000000000000000000000201'
+                nomePublico: Horta fictícia
+                localidade: Évora
+                concelho: Évora
+                descricao: Perfil fictício para documentação.
+                produtos:
+                  itens:
+                    - id: '000000000000000000000101'
+                      nome: Tomate fictício
+                      descricao: Produto de exemplo documental.
+                      precoCent: 150
+                      moeda: EUR
+                      unidadeVenda:
+                        modalidade: peso
+                        unidadeBase: g
+                        quantidadeReferencia: 1000
+                        quantidadeMinima: 250
+                        incrementoCompra: 50
+                      categoria:
+                        id: cat-001
+                        nome: Hortícolas
+                      stockDisponivel: 1000
+                      disponivel: true
+                      ingredientesAplicaveis: false
+                      ingredientes: []
+                      etiquetas:
+                        - local
+                      epocaMeses:
+                        - 6
+                        - 7
+                      modoProducao: Biológico
+                      imagens:
+                        - url: https://example.invalid/tomate.jpg
+                          alt: Imagem fictícia
+                          principal: true
+                      produtor:
+                        id: '000000000000000000000201'
+                        nomePublico: Horta fictícia
+                        localidade: Évora
+                        concelho: Évora
+                      createdAt: '2026-10-26T10:00:00.000Z'
+                      updatedAt: '2026-10-26T10:00:00.000Z'
+                  pagina: 1
+                  porPagina: 12
+                  total: 1
+                  totalPaginas: 1
         '400':
           $ref: '#/components/responses/Error400'
         '404':
           $ref: '#/components/responses/Error404'
         '500':
           $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
   /me/producer:
     get:
       operationId: getOwnProducer
@@ -482,126 +531,134 @@ paths:
       operationId: listProducts
       tags:
         - Produtos
-      summary: Pesquisar e filtrar catálogo público
-      description: Pesquisar e filtrar catálogo público. Operação proposta; não implementada.
+      summary: Consultar catálogo público
+      description:
+        Apenas publicados de perfis aprovados e contas ativas com capacidade produtor. Stock zero permanece
+        público. Pesquisa literal por termos, insensível a acentos portugueses; todas as condições combinam por AND.
+        Sem dados privados, revisões ou certificações inferidas.
       security: []
       x-authorized-roles:
         - visitante
         - comprador
         - produtor
         - administrador
-      x-decision-dependencies:
-        - Q03
-        - Q04
-        - Q06
-        - Q12
-        - Q14
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.3'
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5A
       parameters:
-        - *id002
-        - *id003
-        - *id004
-        - name: categoria
-          in: query
-          schema:
-            type: string
-          description: Taxonomia Q14.
-        - name: produtor
-          in: query
-          schema:
-            $ref: '#/components/schemas/Id'
-          description: ID do perfil produtor, resolvido para referência interna.
-        - name: localidade
-          in: query
-          schema:
-            type: string
-          description: Localidade pública normalizada.
-        - name: epoca
-          in: query
-          schema:
-            type: string
-          description: Semântica/taxonomia Q14; não inferir a partir de createdAt.
-        - name: bio
-          in: query
-          schema:
-            type: boolean
-          description: Mapeamento para modo de produção Q14.
-        - name: precoMax
-          in: query
-          schema:
-            type: number
-            minimum: 0
-          description:
-            'Proposta C03: valor em EUR na pesquisa, convertido para cêntimos após Q06; não reutilizar
-            como preço de escrita.'
-        - name: ordem
-          in: query
-          schema:
-            type: string
-          description: Ordenações/valores permitidos a fechar em C03.
+        - $ref: '#/components/parameters/CatalogSearch'
+        - $ref: '#/components/parameters/CatalogCategory'
+        - $ref: '#/components/parameters/CatalogProducer'
+        - $ref: '#/components/parameters/CatalogLocality'
+        - $ref: '#/components/parameters/CatalogSeason'
+        - $ref: '#/components/parameters/CatalogMonth'
+        - $ref: '#/components/parameters/CatalogMode'
+        - $ref: '#/components/parameters/CatalogBio'
+        - $ref: '#/components/parameters/CatalogMaxPrice'
+        - $ref: '#/components/parameters/CatalogOrder'
+        - $ref: '#/components/parameters/CatalogPage'
+        - $ref: '#/components/parameters/CatalogPageSize'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Resultado da operação.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/CatalogProductPage'
+              example:
+                itens:
+                  - id: '000000000000000000000101'
+                    nome: Tomate fictício
+                    descricao: Produto de exemplo documental.
+                    precoCent: 150
+                    moeda: EUR
+                    unidadeVenda:
+                      modalidade: peso
+                      unidadeBase: g
+                      quantidadeReferencia: 1000
+                      quantidadeMinima: 250
+                      incrementoCompra: 50
+                    categoria:
+                      id: cat-001
+                      nome: Hortícolas
+                    stockDisponivel: 1000
+                    disponivel: true
+                    ingredientesAplicaveis: false
+                    ingredientes: []
+                    etiquetas:
+                      - local
+                    epocaMeses:
+                      - 6
+                      - 7
+                    modoProducao: Biológico
+                    imagens:
+                      - url: https://example.invalid/tomate.jpg
+                        alt: Imagem fictícia
+                        principal: true
+                    produtor:
+                      id: '000000000000000000000201'
+                      nomePublico: Horta fictícia
+                      localidade: Évora
+                      concelho: Évora
+                    createdAt: '2026-10-26T10:00:00.000Z'
+                    updatedAt: '2026-10-26T10:00:00.000Z'
+                pagina: 1
+                porPagina: 12
+                total: 1
+                totalPaginas: 1
         '400':
           $ref: '#/components/responses/Error400'
         '500':
           $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
     post:
       operationId: createProduct
       tags:
         - Produtos
-      summary: Criar produto próprio
-      description: >-
-        Operação futura: pendente cria rascunhos próprios; aprovado gere/publica por ação explícita. Não publicar por guardar ou aprovar candidatura. DTO de rascunho/publicação e campos mínimos T32-05 por aprovar; esta rota continua indisponível.
+      summary: Criar rascunho próprio
+      description:
+        Cria sempre rascunho, com owner e EUR atribuídos pelo servidor. Perfil pendente ou aprovado; conta
+        produtora ativa. Não aceita estado, ID, owner ou revisão. Publicação só por PUT explícito.
       security:
         - bearerAuth: []
-      x-authorized-roles: *id001
-      x-decision-dependencies:
-        - Q03
-        - Q04
-        - Q06
-        - Q14
-        - Q15
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.3'
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5A
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProductWrite'
+              $ref: '#/components/schemas/CatalogProductCreate'
+            example:
+              nome: Rascunho fictício
       responses:
         '201':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Resultado da operação.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/CatalogProductOwn'
           headers:
-            Location:
-              description:
-                'Obrigatório: URI do produto criado, por exemplo /api/products/{id}. Exigência E
-                p. 17.'
+            ETag:
+              description: ETag forte opaco do produto próprio; enviar em If-Match ao editar/arquivar.
               schema:
                 type: string
+            Location:
+              description: URI do produto criado; rascunho não é público. Consultar /api/me/products/{id} para gestão.
               required: true
+              schema:
+                type: string
+              example: /api/products/000000000000000000000101
         '400':
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
-        '409':
-          $ref: '#/components/responses/Error409'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '415':
+          $ref: '#/components/responses/Error415'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -612,72 +669,129 @@ paths:
       tags:
         - Produtos
       summary: Consultar produto público
-      description: Consultar produto público. Operação proposta; não implementada.
+      description:
+        O mesmo critério público da listagem; rascunho, arquivo ou produtor não elegível devolvem 404.
+        O ETag de edição obtém-se apenas na consulta própria ou resposta de escrita.
       security: []
       x-authorized-roles:
         - visitante
         - comprador
         - produtor
         - administrador
-      x-decision-dependencies:
-        - Q03
-        - Q04
-        - Q06
-        - Q12
-        - Q14
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.3'
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5A
       parameters:
-        - *id005
+        - $ref: '#/components/parameters/CatalogId'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Resultado da operação.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/CatalogProductPublic'
+              example:
+                id: '000000000000000000000101'
+                nome: Tomate fictício
+                descricao: Produto de exemplo documental.
+                precoCent: 150
+                moeda: EUR
+                unidadeVenda:
+                  modalidade: peso
+                  unidadeBase: g
+                  quantidadeReferencia: 1000
+                  quantidadeMinima: 250
+                  incrementoCompra: 50
+                categoria:
+                  id: cat-001
+                  nome: Hortícolas
+                stockDisponivel: 1000
+                disponivel: true
+                ingredientesAplicaveis: false
+                ingredientes: []
+                etiquetas:
+                  - local
+                epocaMeses:
+                  - 6
+                  - 7
+                modoProducao: Biológico
+                imagens:
+                  - url: https://example.invalid/tomate.jpg
+                    alt: Imagem fictícia
+                    principal: true
+                produtor:
+                  id: '000000000000000000000201'
+                  nomePublico: Horta fictícia
+                  localidade: Évora
+                  concelho: Évora
+                createdAt: '2026-10-26T10:00:00.000Z'
+                updatedAt: '2026-10-26T10:00:00.000Z'
         '400':
           $ref: '#/components/responses/Error400'
         '404':
           $ref: '#/components/responses/Error404'
         '500':
           $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
     put:
       operationId: replaceProduct
       tags:
         - Produtos
-      summary: Alterar produto próprio
-      description: >-
-        PUT completo conforme C01; pendente edita apenas rascunhos próprios, aprovado gere segundo validações. Guardar não publica. Preservar snapshots/stock; estados T32-05 aprovados; campos, limites e restauro/DELETE Q12 residuais por aprovar. Nenhuma operação privada disponível agora.
+      summary: Substituir campos editáveis de produto próprio
+      description:
+        'PUT completo: campos opcionais omitidos são removidos e listas omitidas ficam vazias. Estado é
+        obrigatório; publicar exige aprovação e todos os campos comerciais válidos. Preserva identidade, owner, moeda
+        e datas de criação; contadores internos nunca são editáveis. Não permite restauro de arquivo.'
       security:
         - bearerAuth: []
-      x-authorized-roles: *id001
-      x-decision-dependencies:
-        - Q03
-        - Q04
-        - Q06
-        - Q12
-        - Q14
-        - Q15
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.3'
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5A
       parameters:
-        - *id005
+        - $ref: '#/components/parameters/CatalogId'
+        - $ref: '#/components/parameters/CatalogIfMatch'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProductReplace'
+              $ref: '#/components/schemas/CatalogProductReplace'
+            example:
+              nome: Tomate fictício
+              descricao: Produto de exemplo documental.
+              precoCent: 150
+              unidadeVenda:
+                modalidade: peso
+                unidadeBase: g
+                quantidadeReferencia: 1000
+                quantidadeMinima: 250
+                incrementoCompra: 50
+              stockDisponivel: 1000
+              ingredientesAplicaveis: false
+              ingredientes: []
+              etiquetas:
+                - local
+              epocaMeses:
+                - 6
+                - 7
+              modoProducao: Biológico
+              imagens:
+                - url: https://example.invalid/tomate.jpg
+                  alt: Imagem fictícia
+                  principal: true
+              categoriaId: cat-001
+              estadoPublicacao: publicado
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Resultado da operação.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/CatalogProductOwn'
+          headers:
+            ETag:
+              description: ETag forte opaco do produto próprio; enviar em If-Match ao editar/arquivar.
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -688,6 +802,14 @@ paths:
           $ref: '#/components/responses/Error404'
         '409':
           $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '415':
+          $ref: '#/components/responses/Error415'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -696,24 +818,22 @@ paths:
       operationId: deleteProduct
       tags:
         - Produtos
-      summary: Remover produto próprio do catálogo
+      summary: Arquivar produto próprio
       description:
-        204 sem corpo. Arquivo vs remoção física e proteção de referências dependem de Q12. Nunca
-        apagar implicitamente histórico ou bids.
+        Sem eliminação física ou reposição de stock. Preserva encomendas/snapshots. Perfil pendente só
+        arquiva rascunho; aprovado gere o catálogo. Sem restauro nesta etapa.
       security:
         - bearerAuth: []
-      x-authorized-roles: *id001
-      x-decision-dependencies:
-        - Q04
-        - Q07
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.3'
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5A
       parameters:
-        - *id005
+        - $ref: '#/components/parameters/CatalogId'
+        - $ref: '#/components/parameters/CatalogIfMatch'
       responses:
         '204':
-          description: Sem conteúdo.
+          description: Sem conteúdo. Arquivo lógico; o documento e as referências históricas permanecem.
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -724,6 +844,10 @@ paths:
           $ref: '#/components/responses/Error404'
         '409':
           $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '428':
+          $ref: '#/components/responses/Error428'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -733,33 +857,29 @@ paths:
       operationId: listOwnProducts
       tags:
         - Produtos
-      summary: Consultar produtos próprios e disponibilidade
-      description: >-
-        Consulta privada futura de produtos/rascunhos próprios, conforme estado/capacidades Q04; não divulgar no catálogo público. DTO de rascunho parcial e direitos adicionais do rejeitado por detalhar T32-05.
+      summary: Consultar produtos próprios, incluindo rascunhos e arquivos
+      description:
+        Owner vem da identidade autenticada. Perfil pendente/aprovado; não permite selecionar conta alheia.
+        Cada item inclui etag opaco para gestão.
       security:
         - bearerAuth: []
-      x-authorized-roles: *id001
-      x-decision-dependencies:
-        - Q03
-        - Q04
-        - Q12
-        - Q14
-        - Q15
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.3'
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5A
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - $ref: '#/components/parameters/CatalogSearch'
+        - $ref: '#/components/parameters/CatalogOwnState'
+        - $ref: '#/components/parameters/CatalogOrder'
+        - $ref: '#/components/parameters/CatalogPage'
+        - $ref: '#/components/parameters/CatalogPageSize'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Resultado da operação.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/CatalogOwnProductPage'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -768,8 +888,45 @@ paths:
           $ref: '#/components/responses/Error403'
         '500':
           $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
+  /me/products/{id}:
+    get:
+      operationId: getOwnProduct
+      tags:
+        - Produtos
+      summary: Consultar detalhe privado de produto próprio
+      description:
+        Inclui estado e ETag forte para editar/arquivar. Owner diferente devolve 403; inexistente 404.
+        Sem revisão operacional ou dados privados de contas.
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5A
+      parameters:
+        - $ref: '#/components/parameters/CatalogId'
+      responses:
+        '200':
+          description: Resultado da operação.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogProductOwn'
+          headers:
+            ETag:
+              description: ETag forte opaco do produto próprio; enviar em If-Match ao editar/arquivar.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
   /orders:
     get:
       operationId: listOwnOrders
@@ -791,9 +948,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.4'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
         - $ref: '#/components/parameters/State'
       responses:
         '200':
@@ -899,7 +1056,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.4'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
       responses:
         '200':
           description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
@@ -938,7 +1095,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.4'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
       requestBody:
         required: true
         content:
@@ -985,7 +1142,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
@@ -1024,7 +1181,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
@@ -1060,9 +1217,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
       responses:
         '200':
           description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
@@ -1147,7 +1304,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
       requestBody:
         required: true
         content:
@@ -1203,9 +1360,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.6'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
         - $ref: '#/components/parameters/State'
       responses:
         '200':
@@ -1287,7 +1444,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.6'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
       responses:
         '200':
           description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
@@ -1325,7 +1482,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.6'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
@@ -1366,9 +1523,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.6'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
         - $ref: '#/components/parameters/State'
       responses:
         '200':
@@ -1405,9 +1562,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.6'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
       responses:
         '200':
           description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
@@ -1490,9 +1647,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
         - name: papel
           in: query
           schema:
@@ -1533,7 +1690,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
       responses:
         '200':
           description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
@@ -1569,9 +1726,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
         - $ref: '#/components/parameters/State'
       responses:
         '200':
@@ -1607,9 +1764,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
         - $ref: '#/components/parameters/State'
       responses:
         '200':
@@ -1645,7 +1802,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
       responses:
         '200':
           description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
@@ -1681,7 +1838,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
       requestBody:
         required: true
         content:
@@ -1726,9 +1883,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
         - $ref: '#/components/parameters/State'
       responses:
         '200':
@@ -1768,7 +1925,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
       responses:
         '200':
           description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
@@ -1804,9 +1961,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
         - $ref: '#/components/parameters/State'
       responses:
         '200':
@@ -1845,7 +2002,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
       responses:
         '200':
           description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
@@ -1884,7 +2041,7 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.5'
       parameters:
-        - *id005
+        - { $ref: '#/components/parameters/Id' }
       requestBody:
         required: true
         content:
@@ -1929,9 +2086,9 @@ paths:
       x-contract-status: proposta-bloqueada
       x-implementation-stage: '3.6'
       parameters:
-        - *id002
-        - *id003
-        - *id004
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
         - $ref: '#/components/parameters/State'
       responses:
         '200':
@@ -2031,6 +2188,183 @@ components:
         JWT com expiração exigido pelo enunciado; papéis/propriedade/aprovação são verificados no
         servidor, não pelo Swagger.
   parameters:
+    CatalogId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^[a-fA-F0-9]{24}$
+      description: ID MongoDB estável; perfil produtor não é users._id. Inválido 400, inexistente/não público 404.
+    CatalogSearch:
+      name: pesquisa
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+      description:
+        Texto literal, máximo 10 termos. Em products procura nome, descrição, produtor e localidade; em producers
+        nome, descrição, localidade e concelho; em produtos próprios procura nome. Omitir valores vazios.
+    CatalogPage:
+      name: pagina
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 1
+      description: Página pedida; além da última devolve itens vazios, preservando total e paginação pedida.
+    CatalogPageSize:
+      name: porPagina
+      in: query
+      required: false
+      schema:
+        type: integer
+        enum:
+          - 12
+          - 24
+          - 36
+        default: 12
+      description: Mesmas dimensões do catálogo React.
+    CatalogOrder:
+      name: ordem
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - relevancia
+          - preco-asc
+          - preco-desc
+          - nome-asc
+          - nome-desc
+          - recentes
+        default: relevancia
+      description:
+        Desempate estável por ID; relevância privilegia nome exato/prefixo/conteúdo, sem campo fictício destaque.
+        Produtos próprios usam nome para relevância.
+    CatalogProducerOrder:
+      name: ordem
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - relevancia
+          - nome-asc
+          - nome-desc
+          - recentes
+        default: relevancia
+      description: Ordenação dos perfis; sem preço de produtor.
+    CatalogCategory:
+      name: categoria
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - cat-001
+          - cat-002
+          - cat-003
+          - cat-004
+          - cat-005
+          - cat-006
+          - cat-007
+          - cat-008
+          - cat-009
+          - cat-010
+          - cat-011
+          - cat-012
+      description: ID estável da categoria, não o rótulo demonstrativo.
+    CatalogProducer:
+      name: produtor
+      in: query
+      required: false
+      schema:
+        type: string
+        pattern: ^[a-fA-F0-9]{24}$
+      description: ID do perfil público produtor, nunca users._id ou slug demonstrativo.
+    CatalogLocality:
+      name: localidade
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 120
+      description: Correspondência exata sem distinção de maiúsculas/acentos portugueses.
+    CatalogSeason:
+      name: epoca
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - Primavera
+          - Verão
+          - Outono
+          - Inverno
+      description:
+        'Meses informativos: primavera 3–5, verão 6–8, outono 9–11, inverno 12/1/2. Não combinar com mes;
+        ausência não significa todo o ano.'
+    CatalogMonth:
+      name: mes
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 12
+      description: Filtra epocaMeses declarados; não controla compra/publicação.
+    CatalogMode:
+      name: modoProducao
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 100
+      description: Texto declarado pelo produtor, correspondência exata; sem enum de certificação.
+    CatalogBio:
+      name: bio
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: true filtra modo declarado Biológico; false não aplica filtro. Não representa certificação verificada.
+    CatalogMaxPrice:
+      name: precoMax
+      in: query
+      required: false
+      schema:
+        type: string
+        pattern: ^\d{1,5}(?:[.,]\d{1,2})?$
+        example: 12,34
+      description:
+        Máximo em EUR, até 10000; conversão exata para cêntimos. Compara preços de referência, sem converter
+        modalidades.
+    CatalogOwnState:
+      name: estado
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - rascunho
+          - publicado
+          - arquivado
+      description: Apenas nos produtos próprios.
+    CatalogIfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: ^"[A-Za-z0-9_-]{43}"$
+      description:
+        ETag opaco atual recebido do endpoint próprio ou escrita. Não aceita wildcard, ETag fraco ou revisão
+        escolhida. Ausente 428, formato inválido 400, desatualizado 412.
     Id:
       name: id
       in: path
@@ -2074,6 +2408,18 @@ components:
         Proposta D08, ainda não obrigatória. Após adoção, mesma chave/payload devolve o grupo persistido;
         payload diferente gera conflito. Não adotar sem aprovação.
   responses:
+    Error412:
+      description: ETag desatualizado; consulta novamente o recurso antes de repetir.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error428:
+      description: If-Match obrigatório para PUT/DELETE.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     Error415:
       description: Content-Type/codificação não suportados; corpos comprimidos não são aceites.
       content:
@@ -2141,6 +2487,713 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    CatalogUnit:
+      type: object
+      additionalProperties: false
+      properties:
+        modalidade:
+          type: string
+          enum:
+            - peso
+            - volume
+            - unidade
+            - embalagem
+        unidadeBase:
+          type: string
+          enum:
+            - g
+            - ml
+            - un
+        quantidadeReferencia:
+          type: integer
+          minimum: 1
+        quantidadeMinima:
+          type: integer
+          minimum: 1
+        incrementoCompra:
+          type: integer
+          minimum: 1
+        rotulo:
+          type: string
+          maxLength: 120
+        conteudoPorUnidade:
+          type: object
+          additionalProperties: false
+          required:
+            - quantidade
+            - unidade
+          properties:
+            quantidade:
+              type: integer
+              minimum: 1
+            unidade:
+              type: string
+              enum:
+                - g
+                - ml
+                - un
+      description:
+        Base e referência derivadas da modalidade quando omitidas. Publicação exige unidade completa/coerente;
+        preço por kg/L/unidade/embalagem. Modelo existente valida grelha e compatibilidade.
+    CatalogImage:
+      type: object
+      additionalProperties: false
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          maxLength: 4096
+        alt:
+          type: string
+          maxLength: 500
+        principal:
+          type: boolean
+      description:
+        URL HTTP(S) sem credenciais; até duas imagens e no máximo uma principal. Sem upload de bytes nesta
+        etapa.
+    CatalogCommercialPublic:
+      type: object
+      additionalProperties: false
+      properties:
+        modalidades:
+          type: object
+          additionalProperties: false
+          properties:
+            levantamento:
+              type: boolean
+            entrega:
+              type: boolean
+        taxaEntregaCent:
+          type: integer
+          minimum: 0
+        concelhosEntregaIds:
+          type: array
+          items:
+            type: string
+        metodosPagamento:
+          type: array
+          items:
+            type: string
+            enum:
+              - dinheiro
+              - mb_way
+              - transferencia_bancaria
+        disponibilidade:
+          type: object
+          description: Agenda semanal pública declarada; não é reserva ou confirmação de checkout.
+          properties:
+            fusoHorario:
+              type: string
+            levantamento:
+              type: array
+              items:
+                type: object
+                properties:
+                  diaSemana:
+                    type: integer
+                    minimum: 1
+                    maximum: 7
+                  inicio:
+                    type: string
+                  fim:
+                    type: string
+            entrega:
+              type: array
+              items:
+                type: object
+                properties:
+                  diaSemana:
+                    type: integer
+                    minimum: 1
+                    maximum: 7
+                  inicio:
+                    type: string
+                  fim:
+                    type: string
+    CatalogProductCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 200
+        descricao:
+          type: string
+          maxLength: 5000
+        categoriaId:
+          type: string
+          enum:
+            - cat-001
+            - cat-002
+            - cat-003
+            - cat-004
+            - cat-005
+            - cat-006
+            - cat-007
+            - cat-008
+            - cat-009
+            - cat-010
+            - cat-011
+            - cat-012
+        precoCent:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        unidadeVenda:
+          $ref: '#/components/schemas/CatalogUnit'
+        stockDisponivel:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          description: 'Teto do modelo: 10 000 000 em g/ml, 100 000 em unidades/embalagens; sem conversão.'
+        ingredientesAplicaveis:
+          type: boolean
+        ingredientes:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            minLength: 1
+            maxLength: 500
+        etiquetas:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        epocaMeses:
+          type: array
+          maxItems: 12
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+            maximum: 12
+        modoProducao:
+          type: string
+          maxLength: 100
+        imagens:
+          type: array
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/CatalogImage'
+      required:
+        - nome
+    CatalogProductReplace:
+      type: object
+      additionalProperties: false
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 200
+        descricao:
+          type: string
+          maxLength: 5000
+        categoriaId:
+          type: string
+          enum:
+            - cat-001
+            - cat-002
+            - cat-003
+            - cat-004
+            - cat-005
+            - cat-006
+            - cat-007
+            - cat-008
+            - cat-009
+            - cat-010
+            - cat-011
+            - cat-012
+        precoCent:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        unidadeVenda:
+          $ref: '#/components/schemas/CatalogUnit'
+        stockDisponivel:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          description: 'Teto do modelo: 10 000 000 em g/ml, 100 000 em unidades/embalagens; sem conversão.'
+        ingredientesAplicaveis:
+          type: boolean
+        ingredientes:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            minLength: 1
+            maxLength: 500
+        etiquetas:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        epocaMeses:
+          type: array
+          maxItems: 12
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+            maximum: 12
+        modoProducao:
+          type: string
+          maxLength: 100
+        imagens:
+          type: array
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/CatalogImage'
+        estadoPublicacao:
+          type: string
+          enum:
+            - rascunho
+            - publicado
+            - arquivado
+      required:
+        - nome
+        - estadoPublicacao
+      description:
+        Substituição completa. Publicação exige descricao, categoriaId, precoCent, unidadeVenda, stockDisponivel,
+        ingredientesAplicaveis e pelo menos uma imagem; regras cruzadas são do modelo existente. Listas omitidas ficam
+        vazias; campos opcionais omitidos são removidos.
+    CatalogProductOwn:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+          minLength: 1
+        descricao:
+          type: string
+        categoriaId:
+          type: string
+          enum:
+            - cat-001
+            - cat-002
+            - cat-003
+            - cat-004
+            - cat-005
+            - cat-006
+            - cat-007
+            - cat-008
+            - cat-009
+            - cat-010
+            - cat-011
+            - cat-012
+        precoCent:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        unidadeVenda:
+          $ref: '#/components/schemas/CatalogUnitRead'
+        stockDisponivel:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          description: 'Teto do modelo: 10 000 000 em g/ml, 100 000 em unidades/embalagens; sem conversão.'
+        ingredientesAplicaveis:
+          type: boolean
+        ingredientes:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        etiquetas:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        epocaMeses:
+          type: array
+          maxItems: 12
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+            maximum: 12
+        modoProducao:
+          type: string
+        imagens:
+          type: array
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/CatalogImageRead'
+        estadoPublicacao:
+          type: string
+          enum:
+            - rascunho
+            - publicado
+            - arquivado
+        moeda:
+          type: string
+          enum:
+            - EUR
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        etag:
+          type: string
+          pattern: ^"[A-Za-z0-9_-]{43}"$
+      required:
+        - id
+        - nome
+        - estadoPublicacao
+        - moeda
+        - ingredientes
+        - etiquetas
+        - imagens
+        - createdAt
+        - updatedAt
+        - etag
+    CatalogProducerSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nomePublico:
+          type: string
+        localidade:
+          type: string
+        concelho:
+          type: string
+        imagem:
+          type: object
+          properties:
+            url:
+              type: string
+              format: uri
+            alt:
+              type: string
+      required:
+        - id
+        - nomePublico
+        - localidade
+        - concelho
+    CatalogProducerPublic:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nomePublico:
+          type: string
+        localidade:
+          type: string
+        concelho:
+          type: string
+        descricao:
+          type: string
+        imagem:
+          type: object
+          properties:
+            url:
+              type: string
+              format: uri
+            alt:
+              type: string
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        comercial:
+          $ref: '#/components/schemas/CatalogCommercialPublic'
+      required:
+        - id
+        - nomePublico
+        - localidade
+        - concelho
+        - descricao
+    CatalogProductPublic:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+          minLength: 1
+        descricao:
+          type: string
+        precoCent:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        unidadeVenda:
+          $ref: '#/components/schemas/CatalogUnitRead'
+        stockDisponivel:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          description: 'Teto do modelo: 10 000 000 em g/ml, 100 000 em unidades/embalagens; sem conversão.'
+        ingredientesAplicaveis:
+          type: boolean
+        ingredientes:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        etiquetas:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        epocaMeses:
+          type: array
+          maxItems: 12
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+            maximum: 12
+        modoProducao:
+          type: string
+        imagens:
+          type: array
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/CatalogImageRead'
+        moeda:
+          type: string
+          enum:
+            - EUR
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        categoria:
+          type: object
+          additionalProperties: false
+          properties:
+            id:
+              type: string
+            nome:
+              type: string
+          required:
+            - id
+            - nome
+        disponivel:
+          type: boolean
+        produtor:
+          $ref: '#/components/schemas/CatalogProducerSummary'
+        comercial:
+          $ref: '#/components/schemas/CatalogCommercialPublic'
+      required:
+        - id
+        - nome
+        - descricao
+        - precoCent
+        - moeda
+        - unidadeVenda
+        - categoria
+        - stockDisponivel
+        - disponivel
+        - imagens
+        - produtor
+        - createdAt
+        - updatedAt
+    CatalogProductPage:
+      type: object
+      additionalProperties: false
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogProductPublic'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+        totalPaginas:
+          type: integer
+          minimum: 0
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+    CatalogProducerPage:
+      type: object
+      additionalProperties: false
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogProducerPublic'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+        totalPaginas:
+          type: integer
+          minimum: 0
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+    CatalogOwnProductPage:
+      type: object
+      additionalProperties: false
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogProductOwn'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+        totalPaginas:
+          type: integer
+          minimum: 0
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+    CatalogProducerDetail:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nomePublico:
+          type: string
+        localidade:
+          type: string
+        concelho:
+          type: string
+        descricao:
+          type: string
+        imagem:
+          type: object
+          properties:
+            url:
+              type: string
+              format: uri
+            alt:
+              type: string
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        comercial:
+          $ref: '#/components/schemas/CatalogCommercialPublic'
+        produtos:
+          $ref: '#/components/schemas/CatalogProductPage'
+      required:
+        - id
+        - nomePublico
+        - localidade
+        - concelho
+        - descricao
+        - produtos
+    CatalogUnitRead:
+      type: object
+      additionalProperties: false
+      properties:
+        modalidade:
+          type: string
+          enum:
+            - peso
+            - volume
+            - unidade
+            - embalagem
+        unidadeBase:
+          type: string
+          enum:
+            - g
+            - ml
+            - un
+        quantidadeReferencia:
+          type: integer
+          minimum: 1
+        quantidadeMinima:
+          type: integer
+          minimum: 1
+        incrementoCompra:
+          type: integer
+          minimum: 1
+        rotulo:
+          type: string
+        conteudoPorUnidade:
+          type: object
+          additionalProperties: false
+          required:
+            - quantidade
+            - unidade
+          properties:
+            quantidade:
+              type: integer
+              minimum: 1
+            unidade:
+              type: string
+              enum:
+                - g
+                - ml
+                - un
+      description:
+        Base e referência derivadas da modalidade quando omitidas. Publicação exige unidade completa/coerente;
+        preço por kg/L/unidade/embalagem. Modelo existente valida grelha e compatibilidade.
+    CatalogImageRead:
+      type: object
+      additionalProperties: false
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+        alt:
+          type: string
+        principal:
+          type: boolean
+      description:
+        URL HTTP(S) sem credenciais; até duas imagens e no máximo uma principal. Sem upload de bytes nesta
+        etapa.
     OrderConditionSelection:
       type: object
       properties:

@@ -5,6 +5,7 @@ import { connectDatabase } from './database/connection.js';
 import type { Connection } from 'mongoose';
 import type { AuthConfiguration } from './config/auth-environment.js';
 import { createAuthService } from './modules/auth/auth.service.js';
+import { createCatalogService } from './modules/catalog/catalog.service.js';
 
 interface DatabaseHandle {
   connection?: Connection;
@@ -27,8 +28,12 @@ export async function startApi(
     throw new Error('Ligação de autenticação indisponível.');
   }
   const auth = authentication ? createAuthService(database.connection!, authentication) : undefined;
+  const catalog = authentication
+    ? createCatalogService(database.connection!, authentication.secret)
+    : undefined;
   try {
     if (auth) await auth.prepare();
+    if (catalog) await catalog.prepare();
   } catch {
     await database.close();
     throw new Error('Não foi possível preparar a autenticação.');
@@ -38,6 +43,7 @@ export async function startApi(
       authentication
         ? {
             auth,
+            catalog,
             security: authentication,
           }
         : undefined,

@@ -1,3 +1,5 @@
+> **Fase 5A:** catálogo público restrito a publicados/aprovados/contas ativas; gestão própria de produtos protegida por JWT, capacidade, owner, If-Match e guardas transacionais. DELETE arquiva; consultas próprias não tornam rascunhos públicos. Ver [contrato de integração](frontend-integration.md). Não há checkout HTTP ou operações de leilão.
+
 # Fase 4 — autenticação JWT e controlo de acessos
 
 Implementação local de **26 de outubro de 2026**, em `feat/api-foundation`, base `745402983b0393e3ef64906860d6d627044a7207`. O pedido da Fase 4 autoriza autenticação real e estes quatro endpoints; não ativa as operações comerciais da matriz histórica abaixo, não altera frontend e não autoriza publicação Git.
@@ -37,7 +39,7 @@ Os middlewares [access-control.ts](../../apps/api/src/modules/auth/access-contro
 - Respostas de autenticação com `Cache-Control: no-store`; erros 400/401/403/413/415/429/500 sem stack, payload, chave, JWT ou valores privados. Bearer inválido inclui `WWW-Authenticate: Bearer`.
 - Rate limiting local por IP (**30 tentativas/15 minutos**, partilhadas por registo/login) e por email normalizado no login (**10/15 minutos**). Sucesso não reinicia quotas. `Retry-After` acompanha 429. Chaves de conta usam HMAC com chave aleatória do processo; armazenamento limitado a 10 000 entradas, esgotamento falha fechado.
 - Os limites são por processo e reiniciam no restart; não substituem um limite partilhado no gateway para várias instâncias. A quota por conta pode causar indisponibilidade temporária se um terceiro insistir nesse endereço. Não se promete proteção contra DoS distribuído.
-- CORS aceita apenas origens exatas em `CORS_ORIGINS`, sem wildcard ou cookies credenciados. Preflight permite GET/POST e Authorization/Content-Type. Sem Origin, clientes não browser continuam sujeitos à autenticação; CORS não é uma permissão de acesso.
+- CORS aceita apenas origens exatas em `CORS_ORIGINS`, sem wildcard ou cookies credenciados. Preflight permite GET/POST/PUT/DELETE e Authorization/Content-Type/If-Match; expõe ETag/Location para gestão de produtos. Sem Origin, clientes não browser continuam sujeitos à autenticação; CORS não é uma permissão de acesso.
 - Produção recusa HTTP e origens de browser sem HTTPS. Só confia nos IPs exatos de proxies em `TRUSTED_PROXY_IPS`; por omissão não confia em cabeçalhos encaminhados. Exige terminação TLS num proxy confiável, acesso de rede restrito ao proxy e encaminhamento de headers controlado. Respostas HTTPS de produção incluem HSTS.
 - Corpos JSON mantêm o limite de 100 KiB e rejeitam compressão. Acrescentam-se nosniff, DENY e no-referrer. O alerta preexistente de DoS do `body-parser` 2.3.0 foi corrigido por atualização transitiva compatível para 2.4.0; não se atualizou Express.
 

@@ -1,3 +1,68 @@
+# Fase 5A — contrato utilizável pelo catálogo React
+
+Implementação local de **26 de outubro de 2026**, em `feat/api-foundation`, base `c810f0f`. Não se altera React, design system, carrinho ou navegação. Os modelos e regras de persistência anteriores permanecem intactos. O [OpenAPI](openapi.yaml) é o contrato dos endpoints agora disponíveis; as notas históricas seguintes conservam o seu contexto.
+
+## Endpoints implementados
+
+| Endpoint                   | Resposta e acesso                                                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/products`        | Catálogo público paginado; só publicados de perfis aprovados e contas ativas com capacidade produtor. Stock zero permanece visível, com `disponivel: false`. |
+| `GET /api/products/:id`    | Detalhe público; rascunho, arquivo ou produtor não elegível devolvem 404.                                                                                    |
+| `GET /api/producers`       | Perfis públicos paginados, com pesquisa/localidade/ordenação.                                                                                                |
+| `GET /api/producers/:id`   | Perfil público e `produtos` publicados, paginados.                                                                                                           |
+| `GET /api/me/products`     | Produtos próprios, incluindo rascunhos e arquivos; JWT, papel produtor e perfil pendente/aprovado.                                                           |
+| `GET /api/me/products/:id` | Consulta própria com ETag forte para gestão; nunca expõe outro owner.                                                                                        |
+| `POST /api/products`       | Cria rascunho próprio; 201 com Location, DTO próprio e ETag. O estado inicial não é editável.                                                                |
+| `PUT /api/products/:id`    | Substitui os campos editáveis completos; 200, DTO próprio e novo ETag. Estado explícito; publicar exige aprovação e dados completos.                         |
+| `DELETE /api/products/:id` | Arquiva, 204 sem corpo; nunca elimina fisicamente ou repõe stock.                                                                                            |
+
+As duas consultas próprias são necessárias para recuperar rascunhos/ETags na gestão; não se usa o GET público para revelar dados privados. Não existem endpoints de gestão de perfis, aprovação administrativa, upload, checkout ou leilões nesta etapa.
+
+## Filtros e paginação
+
+O catálogo aceita `pesquisa`, `categoria`, `produtor`, `localidade`, `epoca`, `mes`, `modoProducao`, `bio`, `precoMax`, `ordem`, `pagina` e `porPagina`. Desconhecidos, campos repetidos/arrays e operadores MongoDB livres são recusados. Omitir filtros vazios. Pesquisa limitada a 100 pontos de código/10 termos, combinados por AND entre nome, descrição, produtor e localidade; regex é construída como texto literal e trata os acentos portugueses em dados NFC. Não é um motor linguístico/fuzzy nem aceita regex do cliente.
+
+`categoria` recebe o ID estável `cat-001`–`cat-012`; `produtor` recebe **ID do perfil**, não `users._id` nem slug. `localidade` e `modoProducao` usam correspondência textual exata, sem distinguir maiúsculas/acentos portugueses. Modo é uma declaração, não certificação. `bio=true` seleciona a declaração Biológico; false não acrescenta filtro.
+
+`precoMax` mantém EUR no URL (`12.34` ou `12,34`), convertido exatamente para cêntimos; máximo 10000. Compara os preços de referência publicados, sem converter preço/kg e preço/unidade. `epoca` aceita Primavera/Verão/Outono/Inverno: meses 3–5/6–8/9–11/12–1–2. `mes` aceita 1–12 e não pode coexistir com `epoca`. Meses ausentes significam informação não declarada, não todo o ano; não controlam venda ou reserva.
+
+As seis ordenações React são aceites: `relevancia`, `preco-asc`, `preco-desc`, `nome-asc`, `nome-desc`, `recentes`. Relevância privilegia nome exato/prefixo/conteúdo; não atribui destaque fictício. Desempate por ID e collation portuguesa. Perfis aceitam as ordenações sem preço; produtos próprios usam nome para relevância.
+
+Envelope estável: `{itens, pagina, porPagina, total, totalPaginas}`. Defaults: página 1 e 12 itens; tamanhos permitidos 12/24/36, página máxima 1000. Além da última página devolve itens vazios, sem mudar silenciosamente a página pedida; catálogo vazio tem zero páginas. React deverá ajustar o comportamento atual de clamp. Não derivar o universo completo de filtros a partir de uma única página: usar taxonomia estável e as consultas paginadas/pesquisáveis de produtores, sem inventar facetas globais. Não há endpoint de facetas nesta etapa.
+
+## Adaptações de apresentação
+
+- `id`, `nome`, `descricao`, `precoCent` correspondem a `id`, `name`, `description`, `priceCents`; `imagens[].url` passa a `images[].src`. O preço continua inteiro em cêntimos.
+- A unidade é estruturada: preço por 1 kg/1 L/unidade/embalagem, stock e quantidades em g/ml/unidades/embalagens. Formatar o rótulo sem transformar silenciosamente as quantidades ou a grelha de compra do carrinho.
+- `categoria: {id, nome}` substitui os oito rótulos mock por doze IDs estáveis. Será necessário adaptar os tipos/opções, sem colapsar categorias diferentes ou usar nomes como identidade.
+- `produtor: {id, nomePublico, localidade, concelho, imagem?}` usa ID do perfil. As referências antigas de mocks/carrinho não podem ser convertidas por comparação de nome.
+- `epocaMeses` é informativo. Ausência não cria um selo Todo o ano. `modoProducao` não comprova certificação biológica. Não existem campos persistidos `featured`, avaliações, pontuação, coordenadas, métodos editoriais, história ou capa; a UI deverá omitir essas secções ou usar placeholders de apresentação explícitos. Não anexar avaliações fictícias a produtores reais.
+- Informação comercial pública inclui modalidades, métodos, taxa, concelhos e agenda declarados. Excluem-se telefone, contactos bancários, decisor, contas internas, revisão, versão técnica de catálogo e local privado de levantamento. Um perfil antigo sem configuração não recebe condições inventadas.
+
+## Gestão, permissões e concorrência
+
+Usar JWT real de `/api/auth/login`, nunca o papel demonstrativo do frontend. Só a conta proprietária gere o produto; administrador sem capacidade produtor não recebe bypass. Perfil pendente prepara/edita rascunhos e pode arquivá-los; perfil aprovado gere/publica; rejeitado não recebe novos direitos. Rascunhos incompletos são válidos quando os campos fornecidos o forem.
+
+POST recebe campos editáveis, pelo menos `nome`, e força owner/EUR/rascunho. PUT exige `nome` e `estadoPublicacao`; todos os campos editáveis devem ser enviados na substituição. Campos opcionais omitidos são removidos e listas omitidas ficam vazias. Publicar exige os obrigatórios do modelo existente, preço/unidade/stock/categoria válidos e imagens/ingredientes coerentes. Não publicar implicitamente por guardar. Os comprimentos/cardinalidades HTTP são proteções de transporte e não migram ou truncam documentos antigos válidos.
+
+O DTO próprio contém `etag` opaco, também devolvido no header ETag em consulta individual/criação/edição. PUT e DELETE exigem **If-Match**, incluindo aspas, recebido dessa representação própria. Não enviar `id`, owner, `moeda`, datas, `etag` ou revisão no corpo. Ausência do header dá 428, formato inválido 400 e versão antiga 412. Um ETag anterior a compra/débito de stock não pode sobrepor o stock atual. O ETag público de cache, quando gerado pelo Express, não é o token de edição.
+
+As escritas compõem `save` validado/CAS do produto, guarda da conta e guarda limitada da revisão/estado do perfil numa transação única (snapshot/primary/majority), com três tentativas e orçamento de 10 segundos. A guarda de perfil incrementa apenas a revisão; não altera aprovação, configuração ou updatedAt comercial. Uma alteração concorrente de capacidades/aprovação gera conflito/rollback; não há bypass genérico de query updates. As guardas anteriores de stock/checkout são reutilizadas e permanecem intactas.
+
+DELETE guarda estado arquivado, preserva IDs/referências e não reescreve snapshots de orders. Não há restauro por PUT nesta fase. Escritores nativos externos que ignorem o protocolo continuam fora das garantias. POST de produtos não tem uma chave de idempotência comercial: perante 503/resultado indeterminado, consultar produtos próprios antes de repetir; não se promete evitar duplicação entre pedidos novos após resposta perdida.
+
+CORS passa a permitir PUT/DELETE e If-Match, expondo apenas ETag/Location além dos headers normais. Cache-Control no-store evita cache de dados privados e de disponibilidade nesta composição. Preparação explícita dos índices existentes ocorre antes do listen; não há novas coleções, modelos, índices, dependências ou alteração ao frontend. Limites de queries de leitura: maxTimeMS de 5 segundos; pesquisa regex limitada não é garantia de desempenho em produção.
+
+## Validação e próximo âmbito
+
+Novos testes unitários, HTTP e MongoDB real cobrem filtros/ordens/paginação, visibilidade, dados privados, rascunhos/publicação, owner, If-Match, substituição completa, arquivo, stock concorrente, revogação de papel/aprovação, rollback/retry e preservação de uma encomenda criada pelo checkout real. Os testes usam apenas bases efémeras `docampo_test_*`. Resultado final: **84 testes novos aprovados** (24 unitários, 52 HTTP e oito de integração MongoDB), **1 116 backend aprovados**, incluindo os 1 032 anteriores. TypeScript, ESLint, Prettier, build API e OpenAPI aprovados. Um rascunho legado com unidade `null`, válido no modelo anterior, omite `unidadeVenda` no DTO sem alterar a persistência.
+
+Integração React requer adaptador de DTOs, pesquisa/paginação no servidor, fontes de opções de filtros, JWT real e tratamento de If-Match/erros. Não existe checkout HTTP, avaliação real, leilão, geocodificação, upload ou certificação verificada. Recomenda-se rever este contrato antes de autorizar a integração da Fase 5B; não a iniciar automaticamente nem executar operações Git de publicação.
+
+---
+
+## Registo histórico de integração anterior
+
 # Integração futura com o frontend aprovado
 
 > Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.

@@ -1,3 +1,5 @@
+> **Fase 5A — catálogo local implementado:** consultas públicas de produtos/produtores e gestão própria de produtos com JWT, If-Match e arquivo lógico. Ver [contratos React](frontend-integration.md) e [OpenAPI](openapi.yaml). Checkout permanece interno; não se iniciou 5B nem se alterou o frontend.
+
 > **Atualização da Fase 4 — 26/10/2026:** autenticação JWT real implementada localmente, com os quatro endpoints pedidos, Argon2id/bcrypt legado e controlo de acesso atual. Ver [segurança](security.md), [OpenAPI](openapi.yaml) e [arranque da API](../../apps/api/README.md). Operações comerciais continuam sem endpoints; frontend e Fase 0 preservados. Os registos seguintes descrevem as suas datas históricas.
 
 # Fase 3.0 — contrato da API e decisões de entrada

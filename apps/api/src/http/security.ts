@@ -24,6 +24,7 @@ export function httpSecurity(settings: HttpSecurityConfiguration): RequestHandle
       if (!settings.allowedOrigins.includes(origin))
         throw new ApiError(403, 'ORIGEM_NAO_PERMITIDA', 'Origem não permitida.');
       response.setHeader('Access-Control-Allow-Origin', origin);
+      response.setHeader('Access-Control-Expose-Headers', 'ETag, Location');
       if (request.method === 'OPTIONS') {
         const method = request.headers['access-control-request-method'];
         const headers = String(request.headers['access-control-request-headers'] ?? '')
@@ -32,14 +33,14 @@ export function httpSecurity(settings: HttpSecurityConfiguration): RequestHandle
           .map((v) => v.trim())
           .filter(Boolean);
         if (
-          !['GET', 'POST'].includes(String(method)) ||
-          headers.some((h) => !['authorization', 'content-type'].includes(h))
+          !['GET', 'POST', 'PUT', 'DELETE'].includes(String(method)) ||
+          headers.some((h) => !['authorization', 'content-type', 'if-match'].includes(h))
         )
           throw new ApiError(403, 'ORIGEM_NAO_PERMITIDA', 'Pedido de origem não permitido.');
         response.vary('Access-Control-Request-Method');
         response.vary('Access-Control-Request-Headers');
-        response.setHeader('Access-Control-Allow-Methods', 'GET, POST');
-        response.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+        response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+        response.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, If-Match');
         response.status(204).end();
         return;
       }
