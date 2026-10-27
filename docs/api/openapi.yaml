@@ -1,10 +1,10 @@
-# Contrato comercial proposto; diagnóstico e quatro endpoints de autenticação implementados localmente.
+# Contrato misto: autenticação, catálogo e checkout/leitura de encomendas implementados; restantes operações assinaladas como propostas.
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.3.0-local-catalog
+  version: 0.4.0-local-orders
   description:
-    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. Checkout permanece interno e não existe publicação de produção. Métodos/códigos
+    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. A Fase 5D expõe checkout e consultas de encomendas próprias por HTTP autenticado; não existe publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
     essas operações não podem ser disponibilizadas antes de aprovação e segurança real. Papéis nas extensões
     são propostas da matriz, não permissões concedidas. Ver README.md, decisions.md e security.md.'
@@ -38,20 +38,20 @@ x-approved-order-decisions:
   [O01, O02, O03, O04, O05, O06, O07, O08, O09, O10, O11, O12, O13, O14, O15, O16]
 x-orders-review-base: 15c85e95395d9421ef3f65d909c29406f2633032
 x-orders-readiness: phase-3.2-orders-readiness.md
-x-orders-implementation: nao-implementado
+x-orders-implementation: modelo-e-checkout-http-implementados-localmente
 x-approved-order-review-decisions:
   [OR01, OR02, OR03, OR04, OR05, OR06, OR07, OR08, OR09, OR10, OR11, OR12]
-x-orders-model-readiness: pronto-para-bloco-isolado-aguarda-autorizacao
+x-orders-model-readiness: persistencia-e-checkout-http-implementados
 x-approved-order-states: [pendente, confirmada, em_preparacao, pronta, concluida, cancelada]
-x-order-contract-status: alinhado-aprovacoes-implementacao-futura
+x-order-contract-status: checkout-e-leitura-comprador-implementados-demais-comandos-futuros
 x-order-contract-gaps:
-  - DTOs de comandos específicos e projeções complementares ficam na fase HTTP/segurança.
-  - Configuração aditiva de producers e repositório condicionado/versionado ainda não existem.
+  - Checkout e leitura do comprador implementados; comandos posteriores e consultas do produtor/admin permanecem futuros.
+  - Configuração comercial e guardas implementadas; preparação dos metadados para o carrinho React ainda não exposta.
   - OR01–OR12 aprovadas; diferença literal Entregue/concluida deve ser justificada academicamente.
 x-residual-functional-details:
   Q01: Aquisição/provisionamento por aprovar; A01/A02 aprovadas no bloco local de identidade.
   Q03: Product usa Number inteiro seguro e limites P02/P05, referência fixa aprovada; grelha de compras, entrada e outros modelos mantêm detalhes futuros.
-  Q02: O01 aprova grupo por produtor e atomicidade; OR05 aprova idempotência global/transação; campos físicos/índices documentados, ainda sem implementação.
+  Q02: O01/OR05 implementadas no modelo, idempotência global/transação e checkout HTTP; comandos posteriores continuam futuros.
   Q04: Recandidatura e direitos adicionais do rejeitado por aprovar.
   Q06: P02 e O05–O12 aprovam preços, entrega/taxa/zonas/agenda, métodos/estado de pagamento e snapshots; formatos, limites e protocolo residual em orders-readiness.
   Q14: Doze categorias P01 aprovadas; limites adicionais de etiquetas/ingredientes, modo de produção e filtros C03 continuam futuros; meses informativos opcionais.
@@ -929,38 +929,59 @@ paths:
           $ref: '#/components/responses/Error500'
   /orders:
     get:
-      operationId: listOwnOrders
       tags:
         - Encomendas
-      summary: Consultar encomendas de que é interveniente
-      description:
-        'Comprador: suas compras. Produtor: encomendas da sua produção. Admin usa rota própria;
-        sem IDs de proprietário livres do cliente.'
       security:
         - bearerAuth: []
       x-authorized-roles:
         - comprador
-        - produtor
-      x-decision-dependencies:
-        - Q01
-        - Q02
-        - Q05
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.4'
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5D
+      operationId: listOwnOrders
+      summary: Listar exclusivamente as compras do comprador autenticado
+      description:
+        Paginação e cronologia por criação, desempate por ID. Query estrita; sem owner, papéis, pesquisa
+        ou filtros livres. Total corresponde apenas ao comprador. Página além do fim mantém a página e itens vazios;
+        vazio tem totalPaginas zero. Cache-Control no-store. Não inclui moradas/contactos; detalhes disponíveis por
+        ID próprio.
       parameters:
-        - { $ref: '#/components/parameters/Q' }
-        - { $ref: '#/components/parameters/Page' }
-        - { $ref: '#/components/parameters/PageSize' }
-        - $ref: '#/components/parameters/State'
+        - name: pagina
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: porPagina
+          in: query
+          schema:
+            type: integer
+            enum:
+              - 12
+              - 24
+              - 36
+            default: 12
+        - name: ordem
+          in: query
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Página das encomendas próprias.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Order'
+                $ref: '#/components/schemas/BuyerOrderPage'
+              example:
+                itens: []
+                pagina: 1
+                porPagina: 12
+                total: 0
+                totalPaginas: 0
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -972,56 +993,99 @@ paths:
         '503':
           $ref: '#/components/responses/Error503'
     post:
-      operationId: createOrders
       tags:
         - Encomendas
-      summary: Submeter compra por produtor — contrato por rever
-      description:
-        O01 e OR03–OR05/OR12 aprovadas; grupo atómico por produtor e recibo original único. Chave global obrigatória,
-        opções por produtor, aritmética exata e stock/elegibilidade condicionados. Schema é proposta documental, nenhum
-        endpoint comercial existe; C04 mantém operação inacessível.
       security:
         - bearerAuth: []
       x-authorized-roles: &id006
         - comprador
-      x-decision-dependencies:
-        - Q02
-        - Q03
-        - Q04
-        - Q05
-        - Q06
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.4'
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5D
+      operationId: createOrders
+      summary: Criar uma compra transacional por produtor
+      description:
+        'Usa exclusivamente a identidade JWT atual e o serviço 4B.3. Conta ativa com capacidade comprador
+        obrigatória inclusive no replay. Revalida capacidades produtoras e todas as condições comerciais na transação.
+        Produtos inexistentes/indisponíveis, stock, preço, elegibilidade, taxas, agenda ou revisões incompatíveis
+        dão 409 genérico sem detalhes administrativos privados. Uma falha aborta o grupo integral. O browser deve
+        preservar chave e pedido em falhas de rede/503; só confirma sucesso após 200/201. 500 é reservado a falhas
+        inesperadas, sem prova de sucesso: conservar a tentativa para recuperação. Métodos de pagamento apenas registados,
+        sem processamento bancário.'
       parameters:
-        - name: Idempotency-Key
-          in: header
-          required: true
-          schema:
-            type: string
-            minLength: 1
-            maxLength: 128
-            pattern: ^[!-~]+$
-          description:
-            'OR05: chave opaca global; mesmo comprador/dados recupera recibo original, diferente pedido conflita;
-            chave alheia nunca revela o resultado.'
+        - $ref: '#/components/parameters/CheckoutIdempotency'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateOrder'
+            example:
+              linhas:
+                - produtoId: '222222222222222222222222'
+                  produtorContaId: '111111111111111111111111'
+                  quantidade: 500
+                  ofertaAceite:
+                    precoReferenciaCent: 150
+                    unidadeVenda:
+                      modalidade: peso
+                      unidadeBase: g
+                      quantidadeReferencia: 1000
+                      quantidadeMinima: 250
+                      incrementoCompra: 50
+                    revisaoProdutoObservada: 0
+              condicoesPorProdutor:
+                - produtorContaId: '111111111111111111111111'
+                  modalidade: levantamento
+                  periodo:
+                    inicioEm: '2026-11-02T09:00:00.000Z'
+                    fimEm: '2026-11-02T10:00:00.000Z'
+                    fusoHorario: Europe/Lisbon
+                  metodoPagamento: dinheiro
+                  taxaEntregaAceiteCent: 0
+                  revisaoProdutorObservada: 0
       responses:
         '201':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Nova compra integralmente confirmada.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CheckoutGroup'
+              example:
+                operacaoCompraId: 12345678-1234-4234-8234-123456789abc
+                criadaEm: '2026-11-01T08:00:00.000Z'
+                encomendas:
+                  - orderId: '333333333333333333333333'
+                    produtorContaId: '111111111111111111111111'
+                    estadoInicial: pendente
+                    totalCent: 75
+                totalCent: 75
+                moeda: EUR
+                origem: nova
           headers:
             Location:
-              description:
-                URI da order âncora proposta; operacaoCompraId no recibo identifica o grupo. Não cria endpoint adicional
-                de operações.
+              description: Detalhe da primeira encomenda do recibo; operacaoCompraId identifica a compra global.
+              schema:
+                type: string
+        '200':
+          description: Recibo original recuperado; não volta a debitar stock.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutGroup'
+              example:
+                operacaoCompraId: 12345678-1234-4234-8234-123456789abc
+                criadaEm: '2026-11-01T08:00:00.000Z'
+                encomendas:
+                  - orderId: '333333333333333333333333'
+                    produtorContaId: '111111111111111111111111'
+                    estadoInicial: pendente
+                    totalCent: 75
+                totalCent: 75
+                moeda: EUR
+                origem: replay
+          headers:
+            Location:
+              description: Detalhe da primeira encomenda do recibo; operacaoCompraId identifica a compra global.
               schema:
                 type: string
         '400':
@@ -1031,39 +1095,69 @@ paths:
         '403':
           $ref: '#/components/responses/Error403'
         '409':
-          $ref: '#/components/responses/Error409'
+          description: CONFLITO_IDEMPOTENCIA, CONFLITO_REVISAO ou RECONFIRMACAO_NECESSARIA; sem criar uma compra parcial.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                codigo: RECONFIRMACAO_NECESSARIA
+                mensagem: Consulta as condições atuais e confirma novamente a compra.
+                campos:
+                  - campo: pedido
+                    mensagem:
+                      As condições da compra deixaram de ser válidas. Consulta os dados atuais antes de confirmar
+                      novamente.
+        '413':
+          $ref: '#/components/responses/Error413'
         '500':
           $ref: '#/components/responses/Error500'
+        '415':
+          description: Content-Type ou codificação não suportados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '503':
-          $ref: '#/components/responses/Error503'
+          description: Resultado ainda indeterminado; não mudar chave ou pedido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutUncertain'
+              example:
+                codigo: RESULTADO_DESCONHECIDO
+                mensagem: Não foi possível confirmar o resultado. Repete o mesmo pedido com a mesma chave.
+                repetirComMesmaChave: true
   /orders/{id}:
     get:
-      operationId: getOwnOrder
       tags:
         - Encomendas
-      summary: Consultar encomenda própria
-      description: Consultar encomenda própria. Operação proposta; não implementada.
       security:
         - bearerAuth: []
       x-authorized-roles:
         - comprador
-        - produtor
-      x-decision-dependencies:
-        - Q01
-        - Q02
-        - Q05
-        - Q06
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.4'
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5D
+      operationId: getOwnOrder
+      summary: Consultar uma encomenda do comprador autenticado
+      description:
+        Filtro obrigatório por comprador na própria consulta MongoDB. Terceiros e inexistentes devolvem
+        a mesma resposta 404. Totais, linhas, entrega e pagamento provêm da encomenda persistida; não se recalculam
+        com o catálogo atual. Produtores/admin sem capacidade comprador não têm bypass. Cache-Control no-store.
       parameters:
-        - { $ref: '#/components/parameters/Id' }
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-fA-F0-9]{24}$
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Detalhe próprio com snapshots e histórico minimizado.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'
+                $ref: '#/components/schemas/BuyerOrderDetail'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -2407,6 +2501,19 @@ components:
       description:
         Proposta D08, ainda não obrigatória. Após adoção, mesma chave/payload devolve o grupo persistido;
         payload diferente gera conflito. Não adotar sem aprovação.
+    CheckoutIdempotency:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: ^[!-~]{1,128}$
+      description:
+        Chave opaca global existente, ASCII visível, 1–128 caracteres. Uma por tentativa lógica; mesmo comprador/payload
+        recupera o recibo. Reutilização diferente ou alheia dá conflito genérico. Headers duplicados são inválidos.
+        O servidor não gera ou substitui a chave.
   responses:
     Error412:
       description: ETag desatualizado; consulta novamente o recurso antes de repetir.
@@ -3196,22 +3303,18 @@ components:
         etapa.
     OrderConditionSelection:
       type: object
+      additionalProperties: false
       properties:
-        produtorId:
-          $ref: '#/components/schemas/Id'
+        produtorContaId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
         modalidade:
           type: string
           enum:
             - levantamento
             - entrega
-        concelhoId:
-          $ref: '#/components/schemas/Id'
-        morada:
-          type: string
-          minLength: 1
-          maxLength: 500
         periodo:
-          $ref: '#/components/schemas/OrderPeriod'
+          $ref: '#/components/schemas/CheckoutPeriod'
         metodoPagamento:
           type: string
           enum:
@@ -3219,86 +3322,120 @@ components:
             - mb_way
             - transferencia_bancaria
         taxaEntregaAceiteCent:
-          $ref: '#/components/schemas/OrderMoney'
-        versaoConfiguracaoAceite:
           type: integer
           minimum: 0
           maximum: 9007199254740991
+        revisaoProdutorObservada:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        concelhoId:
+          type: string
+          minLength: 1
+          maxLength: 120
+        morada:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        contacto:
+          type: string
+          minLength: 1
+          maxLength: 4096
       required:
-        - produtorId
+        - produtorContaId
         - modalidade
         - periodo
         - metodoPagamento
         - taxaEntregaAceiteCent
-        - versaoConfiguracaoAceite
-      additionalProperties: false
-      description:
-        Seleção por produtor; ID público de perfil é resolvido a userId do owner real dos produtos, não atribuído
-        pelo browser. Morada/concelho obrigatórios no domicílio; levantamento exige taxa zero. Servidor revalida agenda,
-        zona, método, tarifa e aprovação.
+        - revisaoProdutorObservada
       oneOf:
         - properties:
             modalidade:
-              enum:
-                - entrega
-          required:
-            - morada
-            - concelhoId
-        - properties:
-            modalidade:
+              type: string
               enum:
                 - levantamento
             taxaEntregaAceiteCent:
+              type: integer
               enum:
                 - 0
+          not:
+            anyOf:
+              - required:
+                  - concelhoId
+              - required:
+                  - morada
+              - required:
+                  - contacto
+        - properties:
+            modalidade:
+              type: string
+              enum:
+                - entrega
+          required:
+            - concelhoId
+            - morada
+            - contacto
+      description:
+        Referência opaca da conta produtora do contrato transacional; não é o ID público do perfil. O backend
+        verifica a associação produto/conta e elegibilidade; não concede permissões através deste campo.
     OrderLineInput:
       type: object
+      additionalProperties: false
       properties:
         produtoId:
-          $ref: '#/components/schemas/Id'
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        produtorContaId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
         quantidade:
           type: integer
           minimum: 1
           maximum: 10000000
         ofertaAceite:
           type: object
+          additionalProperties: false
           properties:
             precoReferenciaCent:
               $ref: '#/components/schemas/ProductPrice'
-            unidadeSnapshot:
-              $ref: '#/components/schemas/ProductSaleUnit'
+            unidadeVenda:
+              $ref: '#/components/schemas/CheckoutSaleUnit'
+            revisaoProdutoObservada:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
           required:
             - precoReferenciaCent
-            - unidadeSnapshot
-          additionalProperties: false
+            - unidadeVenda
+            - revisaoProdutoObservada
       required:
         - produtoId
+        - produtorContaId
         - quantidade
         - ofertaAceite
-      additionalProperties: false
-      description:
-        Oferta aceite é expectativa do comprador, não autoridade de preço. Agregar por produtoId; aceitação
-        contraditória em duplicados exige reconfirmação. Servidor valida condições atuais na transação.
     CheckoutReceiptItem:
       type: object
+      additionalProperties: false
       properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        produtorId:
-          $ref: '#/components/schemas/Id'
+        orderId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        produtorContaId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
         estadoInicial:
           type: string
           enum:
             - pendente
         totalCent:
-          $ref: '#/components/schemas/OrderPositiveMoney'
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
       required:
-        - id
-        - produtorId
+        - orderId
+        - produtorContaId
         - estadoInicial
         - totalCent
-      additionalProperties: false
-      description: Item do recibo original imutável; estadoInicial não pretende representar estado atual da order.
     OrderComplaintSummary:
       type: object
       properties:
@@ -4333,11 +4470,14 @@ components:
       x-base-audit-reserve-bytes: 131072
     CheckoutGroup:
       type: object
+      additionalProperties: false
       properties:
         operacaoCompraId:
-          $ref: '#/components/schemas/Id'
-        createdAt:
-          $ref: '#/components/schemas/Timestamp'
+          type: string
+          format: uuid
+        criadaEm:
+          type: string
+          format: date-time
         encomendas:
           type: array
           items:
@@ -4345,22 +4485,28 @@ components:
           minItems: 1
           maxItems: 10
         totalCent:
-          $ref: '#/components/schemas/OrderPositiveMoney'
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
         moeda:
           type: string
           enum:
             - EUR
+        origem:
+          type: string
+          enum:
+            - nova
+            - replay
       required:
         - operacaoCompraId
-        - createdAt
+        - criadaEm
         - encomendas
         - totalCent
         - moeda
-      additionalProperties: false
+        - origem
       description:
-        'O01/OR05: recibo original do grupo, inclusive um produtor; replay mesma chave/dados devolve este
-        recibo, não estados atuais recalculados. Total soma orders sem novo arredondamento. Sem chave, hash ou manifesto
-        interno.'
+        Recibo original persistido. Replay conserva referência, IDs, estados iniciais e totais; apenas origem
+        muda. Sem chave, hash, manifesto, contacto ou auditoria interna.
     Review:
       type: object
       properties:
@@ -4726,12 +4872,14 @@ components:
       additionalProperties: false
     CreateOrder:
       type: object
+      additionalProperties: false
       properties:
         linhas:
           type: array
           items:
             $ref: '#/components/schemas/OrderLineInput'
           minItems: 1
+          maxItems: 1000
         condicoesPorProdutor:
           type: array
           items:
@@ -4741,12 +4889,11 @@ components:
       required:
         - linhas
         - condicoesPorProdutor
-      additionalProperties: false
       description:
-        'O01/OR03–OR05/OR12: pedido global privado futuro; até 100 produtos distintos após agregar, 10 produtores
-        e 100 KiB JSON. Chave global obrigatória em Idempotency-Key. Uma seleção exata por produtor real, sem comprador/totais/owner
-        autoritativos do cliente. Tudo validado/debitado/criado na mesma transação.'
-      x-contract-status: proposta-bloqueada
+        Contrato 4B.1 executável em 5D. Até 100 produtos distintos após agregação e 10 produtores; 100 KiB
+        JSON. Exige uma seleção por produtor e oferta completa coerente. Sem buyerId, contexto, totais autoritativos,
+        papéis ou limites técnicos no corpo. Duplicados coerentes são agregados antes de mínimos, incrementos, stock
+        e arredondamento.
     OrderStateWrite:
       type: object
       properties:
@@ -5036,3 +5183,436 @@ components:
       x-contract-status: proposta-bloqueada
       x-residual-model-decisions: [T32-02, T32-03, T32-04, T32-05]
       x-revision-required: true
+    CheckoutPeriod:
+      type: object
+      additionalProperties: false
+      properties:
+        inicioEm:
+          type: string
+          format: date-time
+        fimEm:
+          type: string
+          format: date-time
+        fusoHorario:
+          type: string
+          example: Europe/Lisbon
+      required:
+        - inicioEm
+        - fimEm
+        - fusoHorario
+      description:
+        Instantes UTC explícitos com Z e fuso IANA; fim posterior ao início e período compatível com a agenda
+        declarada. Não interpreta horas locais.
+    CheckoutSaleUnit:
+      type: object
+      additionalProperties: false
+      properties:
+        modalidade:
+          type: string
+          enum:
+            - peso
+            - volume
+            - unidade
+            - embalagem
+        unidadeBase:
+          type: string
+          enum:
+            - g
+            - ml
+            - un
+        quantidadeReferencia:
+          type: integer
+          minimum: 1
+        quantidadeMinima:
+          type: integer
+          minimum: 1
+        incrementoCompra:
+          type: integer
+          minimum: 1
+        rotulo:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        conteudoPorUnidade:
+          type: object
+          additionalProperties: false
+          required:
+            - quantidade
+            - unidade
+          properties:
+            quantidade:
+              type: integer
+              minimum: 1
+            unidade:
+              type: string
+              enum:
+                - g
+                - ml
+                - un
+      description:
+        Unidade completa aceite; preço por kg/L/unidade/embalagem e quantidade inteira na base g/ml/un. Mínimo,
+        incremento, limites e conteúdo coerentes com as regras existentes, revalidados no servidor.
+      required:
+        - modalidade
+        - unidadeBase
+        - quantidadeReferencia
+        - quantidadeMinima
+        - incrementoCompra
+      oneOf:
+        - properties:
+            modalidade:
+              type: string
+              enum:
+                - peso
+            unidadeBase:
+              type: string
+              enum:
+                - g
+            quantidadeReferencia:
+              type: integer
+              enum:
+                - 1000
+          not:
+            required:
+              - conteudoPorUnidade
+        - properties:
+            modalidade:
+              type: string
+              enum:
+                - volume
+            unidadeBase:
+              type: string
+              enum:
+                - ml
+            quantidadeReferencia:
+              type: integer
+              enum:
+                - 1000
+          not:
+            required:
+              - conteudoPorUnidade
+        - properties:
+            modalidade:
+              type: string
+              enum:
+                - unidade
+            unidadeBase:
+              type: string
+              enum:
+                - un
+            quantidadeReferencia:
+              type: integer
+              enum:
+                - 1
+        - properties:
+            modalidade:
+              type: string
+              enum:
+                - embalagem
+            unidadeBase:
+              type: string
+              enum:
+                - un
+            quantidadeReferencia:
+              type: integer
+              enum:
+                - 1
+    BuyerOrderLine:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        produtoId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        nome:
+          type: string
+        quantidade:
+          type: integer
+          minimum: 1
+          maximum: 10000000
+        precoReferenciaCent:
+          $ref: '#/components/schemas/ProductPrice'
+        unidadeVenda:
+          $ref: '#/components/schemas/CheckoutSaleUnit'
+        subtotalCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+      required:
+        - id
+        - produtoId
+        - nome
+        - quantidade
+        - precoReferenciaCent
+        - unidadeVenda
+        - subtotalCent
+    BuyerOrderSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        operacaoCompraId:
+          type: string
+          format: uuid
+        produtorContaId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        estado:
+          $ref: '#/components/schemas/OrderStatus'
+        linhas:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuyerOrderLine'
+          minItems: 1
+        subtotalProdutosCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        taxaEntregaCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        moeda:
+          type: string
+          enum:
+            - EUR
+        pagamento:
+          type: object
+          additionalProperties: false
+          properties:
+            metodo:
+              type: string
+              enum:
+                - dinheiro
+                - mb_way
+                - transferencia_bancaria
+            estado:
+              type: string
+              enum:
+                - por_pagar
+                - pagamento_comunicado
+                - pago
+          required:
+            - metodo
+            - estado
+        criadaEm:
+          type: string
+          format: date-time
+        atualizadaEm:
+          type: string
+          format: date-time
+      required:
+        - id
+        - operacaoCompraId
+        - produtorContaId
+        - estado
+        - linhas
+        - subtotalProdutosCent
+        - taxaEntregaCent
+        - totalCent
+        - moeda
+        - pagamento
+        - criadaEm
+        - atualizadaEm
+      description:
+        Projeção privada do comprador, baseada exclusivamente nos snapshots. Exclui idempotência, comprador,
+        versões técnicas, contactos e auditoria interna; produtorContaId não é um perfil público.
+    BuyerOrderDetail:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        operacaoCompraId:
+          type: string
+          format: uuid
+        produtorContaId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        estado:
+          $ref: '#/components/schemas/OrderStatus'
+        linhas:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuyerOrderLine'
+          minItems: 1
+        subtotalProdutosCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        taxaEntregaCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        moeda:
+          type: string
+          enum:
+            - EUR
+        pagamento:
+          type: object
+          additionalProperties: false
+          properties:
+            metodo:
+              type: string
+              enum:
+                - dinheiro
+                - mb_way
+                - transferencia_bancaria
+            estado:
+              type: string
+              enum:
+                - por_pagar
+                - pagamento_comunicado
+                - pago
+          required:
+            - metodo
+            - estado
+        criadaEm:
+          type: string
+          format: date-time
+        atualizadaEm:
+          type: string
+          format: date-time
+        entrega:
+          type: object
+          additionalProperties: false
+          properties:
+            modalidade:
+              type: string
+              enum:
+                - levantamento
+                - entrega
+            periodoInicial:
+              $ref: '#/components/schemas/CheckoutPeriod'
+            taxaEntregaCent:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            localLevantamento:
+              type: string
+            concelhoId:
+              type: string
+            morada:
+              type: string
+            contacto:
+              type: string
+          required:
+            - modalidade
+            - periodoInicial
+            - taxaEntregaCent
+          oneOf:
+            - properties:
+                modalidade:
+                  type: string
+                  enum:
+                    - levantamento
+              required:
+                - localLevantamento
+            - properties:
+                modalidade:
+                  type: string
+                  enum:
+                    - entrega
+              required:
+                - concelhoId
+                - morada
+                - contacto
+        historicoEstado:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              tipo:
+                type: string
+              de:
+                $ref: '#/components/schemas/OrderStatus'
+              para:
+                $ref: '#/components/schemas/OrderStatus'
+              ocorridoEm:
+                type: string
+                format: date-time
+            required:
+              - tipo
+              - ocorridoEm
+      required:
+        - id
+        - operacaoCompraId
+        - produtorContaId
+        - estado
+        - linhas
+        - subtotalProdutosCent
+        - taxaEntregaCent
+        - totalCent
+        - moeda
+        - pagamento
+        - criadaEm
+        - atualizadaEm
+        - entrega
+        - historicoEstado
+      description:
+        'Detalhe autorizado: inclui snapshot de levantamento ou morada/contacto da própria encomenda, período
+        inicial e histórico minimizado; nunca reconsulta preços atuais ou expõe atores/auditoria privada.'
+    BuyerOrderPage:
+      type: object
+      additionalProperties: false
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuyerOrderSummary'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalPaginas:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+    CheckoutUncertain:
+      type: object
+      additionalProperties: false
+      properties:
+        codigo:
+          type: string
+          enum:
+            - RESULTADO_DESCONHECIDO
+        mensagem:
+          type: string
+        repetirComMesmaChave:
+          type: boolean
+          enum:
+            - true
+      required:
+        - codigo
+        - mensagem
+        - repetirComMesmaChave

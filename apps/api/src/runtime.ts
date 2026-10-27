@@ -6,6 +6,7 @@ import type { Connection } from 'mongoose';
 import type { AuthConfiguration } from './config/auth-environment.js';
 import { createAuthService } from './modules/auth/auth.service.js';
 import { createCatalogService } from './modules/catalog/catalog.service.js';
+import { createOrdersService } from './modules/orders/orders.service.js';
 
 interface DatabaseHandle {
   connection?: Connection;
@@ -31,9 +32,11 @@ export async function startApi(
   const catalog = authentication
     ? createCatalogService(database.connection!, authentication.secret)
     : undefined;
+  const orders = authentication ? createOrdersService(database.connection!) : undefined;
   try {
     if (auth) await auth.prepare();
     if (catalog) await catalog.prepare();
+    if (orders) await orders.prepare();
   } catch {
     await database.close();
     throw new Error('Não foi possível preparar a autenticação.');
@@ -44,6 +47,7 @@ export async function startApi(
         ? {
             auth,
             catalog,
+            orders,
             security: authentication,
           }
         : undefined,

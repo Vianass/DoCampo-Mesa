@@ -1,3 +1,43 @@
+# Fase 5D — checkout HTTP e encomendas próprias
+
+Implementação local sobre `445365d`, sem alterações ao frontend. `POST /api/orders` compõe o contexto JWT atual com o serviço transacional existente de 4B.3, o contrato/validação/fingerprint de 4B.1 e a recuperação de 4B.2. Não se reescrevem cálculos, modelos, guardas, débitos, snapshots, índice global ou política de tentativas. `GET /api/orders` e `GET /api/orders/:id` consultam exclusivamente o comprador autenticado. O [OpenAPI](openapi.yaml) contém o contrato e os exemplos executáveis; os outros comandos propostos continuam futuros.
+
+## Identidade, respostas e privacidade
+
+Os três endpoints exigem JWT válido, conta ativa e capacidade atual `comprador`, inclusive para recuperar o próprio recibo. Produtor/admin sem essa capacidade não tem bypass. O contexto é criado por pedido a partir da identidade verificada; `buyerId`, `contexto`, papéis e totais livres são rejeitados pelo validador existente. O próprio checkout mantém guardas reais contra alterações concorrentes de conta e elegibilidade.
+
+Uma criação devolve 201; replay devolve 200 com o mesmo recibo original e `origem:replay`. `Location` aponta para a primeira encomenda; `operacaoCompraId` identifica o grupo, sem endpoint adicional. `criadaEm`, `orderId`, `produtorContaId`, `estadoInicial`, totais em cêntimos e EUR preservam o contrato interno atual, substituindo nomes da proposta OpenAPI antiga. Referências de contas produtoras aqui são privadas do comprador interveniente e não são IDs de perfis públicos.
+
+Os dados históricos vêm das encomendas, sem procurar preços/nomes atuais no catálogo. A listagem omite moradas/contactos; o detalhe próprio inclui o snapshot de entrega/levantamento, pagamento e histórico de estados minimizado. Nenhuma resposta inclui chave/hash/manifesto, conta compradora, versões operacionais, atores/comandos internos, telefone privado do perfil ou instruções bancárias. Ausente e terceiro devolvem o mesmo 404. Consultas limitadas a 5 segundos, com leitura majority/primary; paginação em uma agregação com contagem e desempate por ID. `Cache-Control:no-store` em todas as rotas.
+
+## Tentativas e erros
+
+`Idempotency-Key` é obrigatório, ASCII visível de 1–128 caracteres; headers duplicados são rejeitados. Uma chave por tentativa lógica, ligada ao comprador e ao fingerprint do pedido. Repetir exatamente chave/payload recupera o recibo sem novo débito, inclusive após alteração posterior de preço/stock. Payload diferente ou chave alheia dá 409 genérico sem revelar recibo/identidade. O CORS existente permite o novo header apenas nas origens explicitamente autorizadas; não se ativam cookies.
+
+400 identifica campos/estrutura inválidos; 401 é sessão ausente/inválida/expirada ou conta inativa; 403 é capacidade indisponível. Produtos inexistentes, stock, preços, aprovação, condições comerciais ou revisões incompatíveis seguem o resultado conservador já existente: 409 `RECONFIRMACAO_NECESSARIA` ou `CONFLITO_REVISAO`, sem motivos administrativos privados. Conflito de chave usa `CONFLITO_IDEMPOTENCIA`. Não se removem linhas nem se aceitam novas condições silenciosamente. 413/415 mantêm o limite JSON de 100 KiB e o transporte suportado.
+
+503 `RESULTADO_DESCONHECIDO` inclui `repetirComMesmaChave:true` e não prova rollback ou sucesso: o cliente conserva o pedido e a chave para recuperar o resultado. Nunca gerar automaticamente outra chave após timeout/rede. Falha de consulta dá 503 `SERVICO_INDISPONIVEL`, sem lista vazia fictícia. Erros inesperados continuam 500 sanitizados; conservar a tentativa original para recuperação, sem afirmar que a compra foi concluída. Não existe uma segunda estratégia de idempotência.
+
+## Preparação necessária no React
+
+O carrinho atual conserva `productId`, `producerId` de **perfil público**, quantidade inteira, preço de referência e unidade. Quantidades em g/ml/contagens e preço por kg/L/unidade/embalagem são compatíveis com o contrato; o servidor continua a agregar, validar e calcular half-up por linha. A cesta não reserva stock e os seus totais são apenas estimativas.
+
+Antes de autorizar o checkout visual, é necessário definir a obtenção autenticada de metadados de preparação: associação ao `produtorContaId` real e revisões de produto/configuração observadas. Os DTOs públicos não os expõem e o ETag de edição é opaco, não um contador. Não inferir conta por nome/slug, não reutilizar ID de perfil como conta e não inventar revisão zero. **A cesta atual, por si só, ainda não consegue construir o pedido completo.** Esta fase identifica essa dependência; não alarga os DTOs públicos nem inventa uma rota adicional de preparação.
+
+A interface futura terá de recolher, por produtor, modalidade, período UTC/fuso IANA, método de pagamento aceite, taxa confirmada e, em entrega, concelho, morada e contacto. Deverá guardar a chave junto da tentativa exata sem JWT, impedir submissões concorrentes acidentais, tratar 200/201 como confirmação e consultar as encomendas próprias; não limpar a cesta perante 409/503/rede. Uma oferta alterada exige apresentação e aceitação explícitas antes de uma nova tentativa lógica. A política de conservação de dados pessoais dessa tentativa deverá ser aprovada antes de persistir moradas/contactos no browser. As novas chamadas autenticadas terão de integrar o controlador de sessão, preservando o JWT privado em memória e a proteção contra respostas de uma sessão anterior.
+
+## Validação desta etapa
+
+**81 testes novos aprovados:** 22 unitários, 15 de fronteira HTTP e 44 de integração MongoDB real. A suite backend completa passou nos **1 209 testes** (830 unitários, 124 HTTP e 255 de integração), incluindo os 1 128 anteriores. As transações foram verificadas num replica set real isolado, incluindo último stock concorrente, chave concorrente, rollback da última encomenda, alteração de capacidades durante a compra, esgotamento de tentativas e recuperação após commit real com resposta perdida injetada. A injeção não é apresentada como falha física de rede.
+
+A regressão frontend foi reexecutada sem modificar os seus ficheiros: **344 testes habituais e 25 reais React/API/MongoDB**, total **369**, sem falhas, skips ou flaky. TypeScript API/frontend, ESLint, Prettier, ambos os builds, `git diff --check`, referências e exemplos OpenAPI/DTOs, ligações documentais, segredos e integridade da Fase 0 aprovados. Não se acrescentam dependências nem se executam staging, commits ou push.
+
+Não há UI de checkout, migração de operações privadas, pagamentos online, comandos posteriores de encomenda, notificações, reservas, leilões ou novos modelos nesta etapa. O frontend, dependências e nove documentos originais da Fase 0 ficam preservados.
+
+---
+
+## Registo da Fase 5C preservado
+
 # Fase 5C — sessão real e áreas pessoais
 
 Implementação local a partir de `1168252`, em `feat/api-foundation`. Integra os quatro contratos existentes `POST /auth/register`, `POST /auth/login`, `GET /auth/me` e `POST /auth/logout` (base `/api`). API, modelos, autorização no servidor, checkout interno e catálogo público não são alterados.

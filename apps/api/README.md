@@ -1,3 +1,17 @@
+# API — checkout e encomendas próprias da Fase 5D
+
+Disponíveis localmente, além do catálogo/autenticação existentes: `POST /api/orders`, `GET /api/orders` e `GET /api/orders/:id`. Exigem JWT válido, conta ativa e capacidade atual `comprador`. O arranque prepara os índices existentes de orders antes de abrir HTTP; não há novo modelo ou migração.
+
+O POST exige `Content-Type: application/json` e `Idempotency-Key` opaco (ASCII visível, 1–128 caracteres). O corpo é o contrato transacional existente, sem comprador, papel ou totais arbitrários. A identidade vem exclusivamente do JWT confirmado. Respostas: 201 para compra nova; 200 para replay do recibo; 400 para pedido inválido; 401/403 para acesso recusado; 409 para conflito/reconfirmação; 413/415 para transporte inválido; 503 indeterminado com `repetirComMesmaChave:true`. Em falha de rede ou resultado indeterminado, conservar exatamente a chave e o pedido. Uma nova chave não é uma recuperação e pode criar outra compra. Erros 500 são genéricos e não permitem assumir sucesso: conservar a tentativa original para recuperação.
+
+GET lista apenas compras próprias, com `pagina` (1–1000), `porPagina` (12/24/36) e `ordem` (`recentes`/`antigas`). O detalhe próprio inclui snapshots e histórico minimizado; terceiros e inexistentes devolvem o mesmo 404. Não existem comandos de estados, cancelamento, pagamento ou leilão nesta etapa. Sem processamento bancário, reservas ou checkout visual.
+
+Ver exemplos completos no [OpenAPI](../../docs/api/openapi.yaml) e [compatibilidade com React](../../docs/api/frontend-integration.md). O seed público não fornece metadados privados suficientes para construir automaticamente um checkout; não adivinhar IDs/revisões nem reutilizar ETags como contadores.
+
+---
+
+## Registos anteriores preservados
+
 > **Integração local da Fase 5B:** React consulta o catálogo público. O [README da raiz](../../README.md) descreve o arranque conjunto, a base dedicada `docampo_dev_catalog`, o seed manual protegido e a suite real separada. Não há alteração aos contratos ou autenticação desta API. Os registos de validação das fases anteriores abaixo conservam o seu contexto.
 
 # API — catálogo e gestão de produtos da Fase 5A

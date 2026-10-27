@@ -34,13 +34,18 @@ export function httpSecurity(settings: HttpSecurityConfiguration): RequestHandle
           .filter(Boolean);
         if (
           !['GET', 'POST', 'PUT', 'DELETE'].includes(String(method)) ||
-          headers.some((h) => !['authorization', 'content-type', 'if-match'].includes(h))
+          headers.some(
+            (h) => !['authorization', 'content-type', 'if-match', 'idempotency-key'].includes(h),
+          )
         )
           throw new ApiError(403, 'ORIGEM_NAO_PERMITIDA', 'Pedido de origem não permitido.');
         response.vary('Access-Control-Request-Method');
         response.vary('Access-Control-Request-Headers');
         response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-        response.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, If-Match');
+        response.setHeader(
+          'Access-Control-Allow-Headers',
+          'Authorization, Content-Type, If-Match, Idempotency-Key',
+        );
         response.status(204).end();
         return;
       }

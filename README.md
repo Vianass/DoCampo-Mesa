@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 5D — checkout HTTP e encomendas reais, implementação local.** A API disponibiliza `POST /api/orders`, `GET /api/orders` e `GET /api/orders/:id` para compradores autenticados. Reutiliza o checkout transacional existente, com idempotência global, stock atómico e snapshots persistidos. O frontend mantém a Fase 5C; ainda não existe checkout visual. Ver [contrato HTTP, compatibilidade e limitações](docs/api/frontend-integration.md).
+
 **Fase 5C — autenticação JWT no React, implementação local.** Registo comprador, login, identidade confirmada por `/auth/me`, áreas pessoais por capacidades e logout usam a API existente. O catálogo público da Fase 5B permanece integrado. A sessão fica apenas em memória: atualizar a página ou abrir outro separador exige novo login. Não há refresh tokens nem revogação imediata no logout.
 
 Os dashboards fictícios continuam disponíveis exclusivamente em `/demonstracao/entrar`, num espaço visual separado e sem conceder permissões reais. As áreas autenticadas apresentam a identidade da conta e indicam as funcionalidades privadas ainda não integradas; não lhes associam encomendas, avaliações ou indicadores fictícios. A cesta da demonstração tem armazenamento separado da cesta pública.
