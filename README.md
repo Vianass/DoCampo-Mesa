@@ -1,6 +1,8 @@
 # Do Campo à Mesa
 
-**Fase 5B — integração pública React + API REST, implementação local.** Catálogo, detalhes de produtos, diretório e perfis públicos consultam MongoDB através dos quatro endpoints públicos da Fase 5A. A homepage usa a mesma API para as suas seleções. O design, as áreas privadas demonstrativas e os documentos originais da Fase 0 são preservados. Não existe checkout HTTP; a autenticação visual e as áreas privadas continuam demonstrativas, separadas da autenticação JWT já existente no backend.
+**Fase 5C — autenticação JWT no React, implementação local.** Registo comprador, login, identidade confirmada por `/auth/me`, áreas pessoais por capacidades e logout usam a API existente. O catálogo público da Fase 5B permanece integrado. A sessão fica apenas em memória: atualizar a página ou abrir outro separador exige novo login. Não há refresh tokens nem revogação imediata no logout.
+
+Os dashboards fictícios continuam disponíveis exclusivamente em `/demonstracao/entrar`, num espaço visual separado e sem conceder permissões reais. As áreas autenticadas apresentam a identidade da conta e indicam as funcionalidades privadas ainda não integradas; não lhes associam encomendas, avaliações ou indicadores fictícios. A cesta da demonstração tem armazenamento separado da cesta pública.
 
 ## Arranque integrado local
 
@@ -27,6 +29,15 @@ npm run dev
 
 Abrir `http://127.0.0.1:5173/produtos`. O Vite encaminha `/api` para `http://127.0.0.1:3001`. A variável pública `VITE_API_URL`, documentada em [apps/web/.env.example](apps/web/.env.example), permite outra origem/base. Nunca contém JWT, passwords ou segredos. No build de produção, usar `/api` com reverse proxy ou uma URL HTTPS da API e configurar a origem exata no CORS. Reiniciar Vite/recriar o build depois de alterar a variável. `vite preview` não fornece o proxy de desenvolvimento.
 
+## Rever a autenticação
+
+1. Preparar API e React conforme o arranque acima e abrir `/registo`. O registo público recebe apenas nome, email e password (15–128 caracteres; sem composição artificial) e cria exclusivamente uma conta compradora. A confirmação 202 é genérica, inclusive para emails duplicados, e não inicia sessão.
+2. Em `/entrar`, usar as credenciais da conta fictícia criada localmente. O React confirma `/auth/me` antes de apresentar a identidade em `/area`. Os papéis vêm da API; não existe seletor de produtor ou administrador no registo real.
+3. Percorrer a área pessoal, voltar ao catálogo e à cesta. A atividade privada ainda não integrada está explicitamente indisponível. A prévia visual dos três dashboards abre num separador separado em `/demonstracao/entrar`, sem partilhar a sessão real.
+4. Atualizar uma página privada exige novo login, mantendo a cesta. Terminar sessão descarta o token no cliente e chama `/auth/logout`; não revoga imediatamente tokens emitidos. Expiração/401 limpam a sessão; 403 e falhas temporárias bloqueiam a apresentação privada e permitem nova confirmação.
+
+JWT e passwords não são guardados em localStorage, sessionStorage, cookies ou variáveis Vite. Memória reduz a persistência de um token roubado, mas não elimina o risco de XSS no separador ativo. Não existe sincronização ou renovação de sessões entre separadores. Ver [segurança](docs/api/security.md) e [integração](docs/api/frontend-integration.md).
+
 ## Testar a integração
 
 ```sh
@@ -41,7 +52,7 @@ npm run build
 npm run build --workspace @docampo/api
 ```
 
-A suite habitual mantém os percursos anteriores com fixtures HTTP; a suite separada inicia a API real na porta 3011 e React na 5183, popula duas vezes uma base aleatória `docampo_test_web_*` no replica set de teste 27019, verifica idempotência e elimina apenas essa base no final. Não lê `.env`, não usa a base de desenvolvimento e falha se MongoDB não estiver disponível. Executar as suites sequencialmente para conservar os respetivos artefactos em `test-results/`.
+A suite habitual mantém os percursos anteriores com fixtures HTTP (os dashboards fictícios são testados no espaço `/demonstracao`); a suite separada inicia a API real na porta 3011 e React na 5183, popula duas vezes uma base aleatória `docampo_test_web_*` no replica set de teste 27019, verifica idempotência e elimina apenas essa base no final. Não lê `.env`, não usa a base de desenvolvimento e falha se MongoDB não estiver disponível. Executar as suites sequencialmente para conservar os respetivos artefactos em `test-results/`.
 
 A revisão visual pode começar em `/produtos`, seguindo um cartão para o detalhe, a ligação de origem para o perfil e a cesta. Pesquisa, filtros, seis ordenações e paginação são executados no servidor. A cesta respeita g/ml/unidades/embalagens e mínimo/incremento; guarda apenas escolhas locais, sem reservar stock ou criar encomendas. Falhas da API não substituem dados por mocks nem apagam as escolhas guardadas.
 

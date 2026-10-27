@@ -1,3 +1,47 @@
+# Fase 5C — sessão real e áreas pessoais
+
+Implementação local a partir de `1168252`, em `feat/api-foundation`. Integra os quatro contratos existentes `POST /auth/register`, `POST /auth/login`, `GET /auth/me` e `POST /auth/logout` (base `/api`). API, modelos, autorização no servidor, checkout interno e catálogo público não são alterados.
+
+## Contratos e formulários
+
+O registo envia exclusivamente `{nome,email,password}` e só aceita HTTP 202 com a confirmação genérica. Não envia confirmação da password, papéis, dados de produtor ou propriedades arbitrárias recolhidas no formulário. Um email já registado recebe a mesma apresentação; não se afirma que uma nova conta foi criada. O login é separado. `?perfil=produtor` ou `?perfil=administrador` não concede capacidades no registo real.
+
+A validação real usa nome normalizado (1–120 pontos de código), email e política de password da API: 15–128 pontos de código no registo, até 512 bytes UTF-8, sem caracteres nulos ou substitutos isolados. Não impõe maiúsculas/símbolos; login aceita passwords legadas curtas. O servidor continua a validar e autorizar. Corpos HTTP e credenciais não são usados em mensagens de erro ou logs. Os campos de password são limpos ao submeter; submissões duplicadas são bloqueadas e pedidos abandonados são cancelados.
+
+O cliente tipado reutiliza o transporte da Fase 5B e a base pública `VITE_API_URL`. Valida estados HTTP, JSON, projeção própria, capacidades, datas e forma do token; não atribui papéis descodificando o JWT. Após login, consulta `/me` com Bearer e confirma que a identidade coincide antes de estabelecer a sessão.
+
+## Ciclo de vida e proteção contra respostas antigas
+
+`account-session.ts` centraliza o token privado em memória, o estado observável e os pedidos ativos. O contexto React expõe a projeção da conta e ações de sessão, não o JWT. Não existe token em localStorage/sessionStorage/cookies, URL, mensagens de erro ou configuração pública. O storage anterior da cesta permanece apenas para metadados públicos das escolhas.
+
+Expiração usa `expiresAt` do servidor. Ao atingir o prazo, limpar a sessão e pedir novo login; revalidação também verifica o prazo antes de enviar pedidos. Não existe refresh token. `/me` é consultado ao entrar/navegar numa área privada, ao voltar ao separador e ao recuperar o foco; pedidos concorrentes partilham a mesma consulta. Alterações de papel/inativação são observadas na próxima confirmação e o backend continua a consultar a conta atual em cada pedido protegido.
+
+Uma geração de sessão, AbortController e comparação da identidade impedem que login ou `/me` antigos restaurem uma sessão após logout, troca de conta ou abandono do formulário. O logout limpa o estado local imediatamente, incluindo quando o serviço falha, e tenta o endpoint existente. A resposta `revogado:false` é respeitada: o acesso anterior pode continuar válido até expirar, sujeito ao estado atual da conta. Nenhuma denylist/revogação fictícia é criada.
+
+401 invalida a sessão. 403 mantém a área bloqueada sem inventar novas permissões. Rede/timeout/5xx não se tornam atividade vazia; bloqueiam a apresentação privada até confirmação bem-sucedida ou saída. Recarregar ou abrir um novo separador não recupera o JWT; a entrada explica o comportamento e conserva apenas um destino privado conhecido, sem redirecionamentos externos ou parâmetros de credenciais.
+
+## Áreas reais e demonstração isolada
+
+`/area` e os seus percursos exigem sessão real confirmada. A navegação usa todas as capacidades devolvidas pela API, sem assumir um papel único ou um papel escolhido no cliente. O destino inicial é a primeira capacidade na projeção do serviço; a pessoa pode alternar apenas entre áreas autorizadas. Uma alteração de URL ou estado visual não substitui a autorização do backend.
+
+As áreas autenticadas reutilizam o layout, a navegação e os componentes editoriais existentes. Mostram nome/email/capacidades próprios e estados de disponibilidade; não apresentam dados fictícios como atividade da conta. As funcionalidades privadas de encomendas, avaliações, leilões, candidatura e gestão ainda não ligadas à API ficam indisponíveis na interface nesta etapa, sem inventar endpoints ou preencher indicadores com zero fictício.
+
+O protótipo aprovado continua acessível em `/demonstracao/entrar`, com o mesmo router/componentes sob um basename separado. O seletor de papel só funciona nesse espaço e altera exclusivamente a demonstração; nunca cria um JWT nem abre `/area` real. Abre num separador sem opener, sem a sessão autenticada. Sair para o mercado real requer navegação completa. A cesta demonstrativa usa `docampo.cart.demo.v1`; não altera `docampo.cart.v1`. Dados privados demonstrativos não recebem IDs de contas reais.
+
+## Testes e limites
+
+A cobertura histórica de formulários/dashboards é mantida no espaço de demonstração e não é apresentada como autenticação real. Novos testes cobrem contratos, validação real, gerações de sessão, deduplicação de `/me`, expiração, 401/403, logout, revalidação, cancelamento, ausência de tokens nos armazenamentos e seis larguras responsivas.
+
+A suite real usa a API e MongoDB efémero da Fase 5B: regista contas fictícias únicas, altera papéis/ativo através dos modelos existentes apenas na base isolada e verifica as consequências no browser. Testa token realmente adulterado, expiração natural de um JWT de 60 segundos e ausência de revogação após logout. O TTL de 60 segundos e limites de tentativas mais altos são exclusivos do servidor de testes para permitir a suite acumulada; a configuração da aplicação não é alterada. Não há contas administrativas com passwords fixas nem novos endpoints de preparação/segurança. O seed manual anterior continua sem credenciais utilizáveis.
+
+Validação desta implementação: **344 testes frontend habituais e 25 de integração real aprovados**, total de **369**, incluindo os 314 anteriores e 55 novos. A regressão backend completa passou nos **1 128 testes**. TypeScript de ambas as aplicações, ESLint, Prettier, os dois builds e `git diff --check` aprovados. As seis larguras (320, 430, 768, 1024, 1280 e 1440 px) foram verificadas sem overflow; as capturas de telemóvel, tablet e desktop foram inspecionadas. Os testes reais incluem a expiração natural, não apenas um relógio simulado no browser.
+
+Memória evita persistência por conveniência, mas não torna tokens imunes a XSS. A sessão não sobrevive a reload, não se renova nem sincroniza entre separadores. Ainda não se migram as operações privadas, compras, leilões, recuperação de password ou uploads. As instruções de arranque permanecem no [README](../../README.md). Os nove documentos originais da Fase 0 ficam intactos.
+
+---
+
+## Registos anteriores preservados
+
 # Fase 5B — integração pública implementada localmente
 
 Base `2fa007d`, branch `feat/api-foundation`. Esta etapa integra React com `GET /api/products`, `GET /api/products/:id`, `GET /api/producers` e `GET /api/producers/:id`, sem modificar os seus contratos, os modelos, a autenticação ou as escritas de negócio existentes. São abrangidos `/produtos`, `/produtos/:id`, `/produtores`, `/produtores/:id` e as seleções públicas da homepage.

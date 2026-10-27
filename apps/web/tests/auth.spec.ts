@@ -1,3 +1,4 @@
+// Cobertura histórica da interface demonstrativa isolada em /demonstracao. JWT real em jwt-auth.spec.ts.
 import { expect, test, type Page } from './support/test';
 import { roles, roleLabels, type Role } from '../src/features/auth/types';
 import { privateSections } from '../src/features/private-area/navigation';
@@ -32,9 +33,7 @@ test('entrada apresenta formulário separado dos três papéis de demonstração
     'type',
     'password',
   );
-  await expect(page.locator('.auth-prototype-note')).toContainText(
-    'autenticação ainda não está disponível',
-  );
+  await expect(page.locator('.auth-prototype-note')).toContainText('sem autenticação real');
   await expect(page.locator('.demo-access button')).toHaveCount(3);
   await expect(page.locator('form .demo-access')).toHaveCount(0);
   await page.getByRole('link', { name: 'Conhecer o registo' }).click();

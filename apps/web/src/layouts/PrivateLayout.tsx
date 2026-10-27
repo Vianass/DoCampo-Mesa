@@ -4,11 +4,15 @@ import { Brand } from '../components/Brand';
 import { Container } from '../components/Container';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../features/auth/useAuth';
+import { isRole } from '../features/auth/types';
+import { demonstrationSite } from '../features/auth/demo-mode';
+import { AccountArea } from '../features/private-area/AccountArea';
 import { roleLabels } from '../features/auth/types';
 import { privateSections, roleHome } from '../features/private-area/navigation';
 
 export function PrivateLayout() {
-  const { session, endDemonstration } = useAuth();
+  const { session: account, demonstration, endDemonstration, logout } = useAuth();
+  const session = demonstrationSite ? demonstration : account;
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const main = useRef<HTMLElement>(null);
@@ -29,8 +33,14 @@ export function PrivateLayout() {
     document.addEventListener('keydown', close);
     return () => document.removeEventListener('keydown', close);
   }, [open]);
-  if (session.kind !== 'demonstration') return null;
-  const { role } = session;
+  if (session.kind === 'visitor') return null;
+  const requested = location.pathname.split('/')[2];
+  const role =
+    session.kind === 'demonstration'
+      ? session.role
+      : isRole(requested) && session.user.papeis.includes(requested)
+        ? requested
+        : session.user.papeis[0]!;
   const home = roleHome(role);
   return (
     <div className="private-shell">
@@ -38,7 +48,9 @@ export function PrivateLayout() {
         Saltar para o conteúdo
       </a>
       <div className="private-edition">
-        Área de demonstração <span aria-hidden="true">✳</span> Sem autenticação real
+        {demonstrationSite ? 'Área de demonstração' : 'Área pessoal'}{' '}
+        <span aria-hidden="true">✳</span>{' '}
+        {demonstrationSite ? 'Sem autenticação real' : 'Identidade confirmada pelo serviço'}
       </div>
       <Container>
         <header className="private-header">
@@ -52,18 +64,25 @@ export function PrivateLayout() {
               className="private-exit"
               onClick={() => {
                 startTransition(() => {
-                  endDemonstration();
+                  if (demonstrationSite) endDemonstration();
+                  else void logout();
                   navigate('/entrar', { replace: true });
                 });
               }}
             >
-              Sair da demonstração
+              {demonstrationSite ? 'Sair da demonstração' : 'Terminar sessão'}
             </button>
           </div>
         </header>
         <div className="private-role-line">
           <p>
-            <span>Papel de demonstração</span>
+            <span>
+              {demonstrationSite
+                ? 'Papel de demonstração'
+                : session.kind === 'authenticated'
+                  ? session.user.nome
+                  : 'Área pessoal'}
+            </span>
             <strong>{roleLabels[role]}</strong>
           </p>
           <button
@@ -82,9 +101,20 @@ export function PrivateLayout() {
           <nav
             id="private-navigation"
             className={`private-navigation ${open ? 'private-navigation--open' : ''}`}
-            aria-label="Navegação da área de demonstração"
+            aria-label={
+              demonstrationSite ? 'Navegação da área de demonstração' : 'Navegação da área pessoal'
+            }
           >
             <p className="eyebrow">O teu espaço</p>
+            {session.kind === 'authenticated' && session.user.papeis.length > 1 && (
+              <div className="account-role-links" aria-label="Áreas autorizadas">
+                {session.user.papeis.map((p) => (
+                  <Link key={p} to={roleHome(p)} onClick={() => setOpen(false)}>
+                    Área de {roleLabels[p]}
+                  </Link>
+                ))}
+              </div>
+            )}
             <NavLink to={home} end onClick={() => setOpen(false)}>
               <span aria-hidden="true">00</span>Visão geral
             </NavLink>
@@ -104,24 +134,33 @@ export function PrivateLayout() {
               </Link>
             )}
             <p className="private-navigation__note">
-              {role === 'comprador'
-                ? 'Atividade fictícia para explorar. Sem compras, pagamentos ou ofertas reais.'
-                : role === 'produtor'
-                  ? 'Gestão local demonstrativa. Sem publicação, aprovação ou vendas reais.'
-                  : 'Supervisão demonstrativa. Decisões apenas nesta sessão; sem efeitos administrativos reais.'}
+              {!demonstrationSite
+                ? 'Dados próprios ainda por integrar. Os exemplos não pertencem à tua conta.'
+                : role === 'comprador'
+                  ? 'Atividade fictícia para explorar. Sem compras, pagamentos ou ofertas reais.'
+                  : role === 'produtor'
+                    ? 'Gestão local demonstrativa. Sem publicação, aprovação ou vendas reais.'
+                    : 'Supervisão demonstrativa. Decisões apenas nesta sessão; sem efeitos administrativos reais.'}
             </p>
           </nav>
           <main id="area-conteudo" ref={main} tabIndex={-1}>
-            <Outlet />
+            {demonstrationSite ? <Outlet /> : <AccountArea />}
           </main>
         </div>
         <footer className="private-footer">
           Do Campo à Mesa · Protótipo académico{' '}
-          <Link to="/entrar#demonstracao">Explorar outro papel</Link>
+          {demonstrationSite ? (
+            <>
+              <Link to="/entrar#demonstracao">Explorar outro papel</Link> ·{' '}
+              <a href="/produtos">Sair do espaço demonstrativo</a>
+            </>
+          ) : (
+            <Link to="/produtos">Explorar o mercado</Link>
+          )}
         </footer>
       </Container>
       <div className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
-        Área de demonstração: {roleLabels[role]}. Página:{' '}
+        {demonstrationSite ? 'Área de demonstração' : 'Área pessoal'}: {roleLabels[role]}. Página:{' '}
         {location.pathname.split('/').filter(Boolean).join(', ')}.
       </div>
     </div>

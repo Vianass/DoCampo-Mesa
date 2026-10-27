@@ -1,3 +1,4 @@
+import { demonstrationSite } from '../../features/auth/demo-mode';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { Button } from '../../components/Button';
@@ -27,7 +28,7 @@ function RegistrationForm({ role }: { role: RegistrationRole }) {
         required
         error={form.errors.email}
       />
-      {role === 'produtor' && (
+      {demonstrationSite && role === 'produtor' && (
         <fieldset className="auth-producer-fields">
           <legend>A tua produção</legend>
           <FormField
@@ -53,7 +54,11 @@ function RegistrationForm({ role }: { role: RegistrationRole }) {
       <PasswordField
         registration
         error={form.errors.password}
-        hint="Pelo menos 8 caracteres, regra provisória desta demonstração."
+        hint={
+          demonstrationSite
+            ? 'Pelo menos 8 caracteres, regra provisória desta demonstração.'
+            : 'Entre 15 e 128 caracteres. Usa uma frase longa; não são exigidas combinações de símbolos.'
+        }
       />
       <PasswordField
         registration
@@ -64,9 +69,11 @@ function RegistrationForm({ role }: { role: RegistrationRole }) {
       <Button type="submit" disabled={form.status === 'checking'}>
         {form.status === 'checking'
           ? 'A verificar…'
-          : role === 'produtor'
-            ? 'Verificar candidatura demonstrativa'
-            : 'Verificar registo demonstrativo'}
+          : !demonstrationSite
+            ? 'Criar conta'
+            : role === 'produtor'
+              ? 'Verificar candidatura demonstrativa'
+              : 'Verificar registo demonstrativo'}
       </Button>
     </form>
   );
@@ -74,7 +81,7 @@ function RegistrationForm({ role }: { role: RegistrationRole }) {
 export default function RegistrationPage() {
   const [params, setParams] = useSearchParams();
   const requestedRole: RegistrationRole =
-    params.get('perfil') === 'produtor' ? 'produtor' : 'comprador';
+    demonstrationSite && params.get('perfil') === 'produtor' ? 'produtor' : 'comprador';
   const [selection, setSelection] = useState({ source: requestedRole, role: requestedRole });
   // Radio feedback is immediate; URL transitions and browser history remain authoritative.
   if (selection.source !== requestedRole)
@@ -94,27 +101,30 @@ export default function RegistrationPage() {
         <p className="eyebrow">Começar pela proximidade</p>
         <h2 id="registration-title">Fazer parte do mercado.</h2>
         <p className="auth-prototype-note">
-          Prévia do registo. Usa apenas dados fictícios; não são enviados nem guardados e nenhuma
-          conta será criada.
+          {demonstrationSite
+            ? 'Prévia do registo. Usa apenas dados fictícios; não são enviados nem guardados e nenhuma conta será criada.'
+            : 'O registo público cria uma conta compradora. A candidatura de produtor é um percurso separado, ainda não disponível neste formulário. Não são atribuídos outros papéis pelo registo.'}
         </p>
-        <fieldset className="auth-role-choice">
-          <legend>Como queres participar?</legend>
-          {(['comprador', 'produtor'] as const).map((value) => (
-            <label key={value}>
-              <input
-                type="radio"
-                name="registration-role"
-                value={value}
-                checked={role === value}
-                onChange={() => {
-                  setSelection({ source: requestedRole, role: value });
-                  setParams(value === 'produtor' ? { perfil: value } : {});
-                }}
-              />
-              <span>{value === 'comprador' ? 'Quero comprar' : 'Sou produtor'}</span>
-            </label>
-          ))}
-        </fieldset>
+        {demonstrationSite && (
+          <fieldset className="auth-role-choice">
+            <legend>Como queres participar?</legend>
+            {(['comprador', 'produtor'] as const).map((value) => (
+              <label key={value}>
+                <input
+                  type="radio"
+                  name="registration-role"
+                  value={value}
+                  checked={role === value}
+                  onChange={() => {
+                    setSelection({ source: requestedRole, role: value });
+                    setParams(value === 'produtor' ? { perfil: value } : {});
+                  }}
+                />
+                <span>{value === 'comprador' ? 'Quero comprar' : 'Sou produtor'}</span>
+              </label>
+            ))}
+          </fieldset>
+        )}
         <RegistrationForm key={role} role={role} />
         <p className="auth-alternative">
           Já conheces o mercado? <Link to="/entrar">Voltar à entrada</Link>

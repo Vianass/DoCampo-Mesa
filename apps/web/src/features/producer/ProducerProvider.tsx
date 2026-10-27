@@ -40,7 +40,7 @@ export function ProducerProvider({
   children: ReactNode;
   source?: ProducerDataSource;
 }) {
-  const { session } = useAuth();
+  const { demonstration: session } = useAuth();
   const activeRole = session.kind === 'demonstration' && session.role === 'produtor';
   const location = useLocation();
   const [state, dispatch] = useReducer(reducer, {

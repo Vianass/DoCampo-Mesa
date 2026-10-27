@@ -35,6 +35,7 @@ try {
     throw Error('Replica set de teste necessário.');
   const authConfig = parseAuthEnvironment({
     NODE_ENV: 'test',
+    JWT_TTL_SECONDS: '60',
     JWT_SECRET: randomBytes(48).toString('base64url'),
     CORS_ORIGINS: 'http://127.0.0.1:5183',
   });
@@ -45,7 +46,12 @@ try {
   const result = await seedCatalog(connection, { products, producers }, 'http://127.0.0.1:5183');
   const second = await seedCatalog(connection, { products, producers }, 'http://127.0.0.1:5183');
   if (second.inserted !== 0) throw Error('Seed não idempotente.');
-  server = createApp({ auth, catalog, security: authConfig }).listen(3011, '127.0.0.1', () =>
+  server = createApp({
+    auth,
+    catalog,
+    security: authConfig,
+    rateLimit: { ipLimit: 1000, accountLimit: 1000 },
+  }).listen(3011, '127.0.0.1', () =>
     console.log(
       'API real isolada pronta; MongoDB ' +
         hello.setName +

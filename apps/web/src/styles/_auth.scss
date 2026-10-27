@@ -268,3 +268,30 @@
 .auth-loading {
   padding-block: 48px;
 }
+
+.account-identity {
+  overflow-wrap: anywhere;
+}
+.account-role-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-block-end: 1rem;
+}
+
+.account-area,
+.account-area .private-prototype {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.account-area .private-unavailable {
+  display: block;
+}
+.account-area .buyer-dashboard-grid {
+  margin-block: 1.5rem;
+}
+.private-role-line p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

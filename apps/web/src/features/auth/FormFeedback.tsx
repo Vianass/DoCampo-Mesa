@@ -16,7 +16,7 @@ export function FormFeedback({
   kind,
 }: {
   errors: FormErrors;
-  status: 'idle' | 'checking' | 'unavailable';
+  status: 'idle' | 'checking' | 'unavailable' | 'success';
   summaryRef: RefObject<HTMLDivElement | null>;
   kind: AuthFormKind;
 }) {
@@ -33,7 +33,13 @@ export function FormFeedback({
         </div>
       )}
       <div className="auth-form-status" role="status" aria-live="polite" aria-atomic="true">
-        {status === 'checking' && <p>A verificar o formulário neste ecrã…</p>}
+        {status === 'checking' && <p>A verificar…</p>}
+        {status === 'success' && kind === 'registration' && (
+          <p>
+            Pedido de registo recebido. Tenta iniciar sessão com os dados indicados. O registo não
+            inicia sessão automaticamente.
+          </p>
+        )}
         {status === 'unavailable' && <p>{unavailable[kind]}</p>}
       </div>
     </>

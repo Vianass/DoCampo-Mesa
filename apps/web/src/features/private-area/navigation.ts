@@ -141,3 +141,9 @@ export function demoDestination(raw: string | null, role: Role) {
     return raw;
   return raw && allowed.includes(raw) ? raw : home;
 }
+
+export function accountDestination(raw: string | null, papeis: readonly Role[]) {
+  const requested = raw?.split('/')[2];
+  const role = papeis.find((value) => value === requested) ?? papeis[0];
+  return role ? demoDestination(raw, role) : '/entrar';
+}

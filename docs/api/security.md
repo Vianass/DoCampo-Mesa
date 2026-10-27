@@ -1,3 +1,5 @@
+> **Fase 5C — integração React local:** login real seguido de `/auth/me`, JWT exclusivamente em memória e áreas pessoais com capacidades confirmadas pelo serviço. Registo público só comprador, HTTP 202 genérico e login separado. Expiração/401 descartam a sessão; 403/rede bloqueiam a apresentação privada até revalidar. Logout limpa o cliente sem afirmar revogação. O protótipo por papéis fica isolado em `/demonstracao`, sem autenticar contas; a cesta demo tem chave separada. Ver [ciclo de vida e limites](frontend-integration.md). Não são alterados os contratos, hashes, modelos ou políticas do backend descritos abaixo.
+
 > **Fase 5A:** catálogo público restrito a publicados/aprovados/contas ativas; gestão própria de produtos protegida por JWT, capacidade, owner, If-Match e guardas transacionais. DELETE arquiva; consultas próprias não tornam rascunhos públicos. Ver [contrato de integração](frontend-integration.md). Não há checkout HTTP ou operações de leilão.
 
 # Fase 4 — autenticação JWT e controlo de acessos

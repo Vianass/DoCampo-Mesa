@@ -1,3 +1,4 @@
+import { demonstrationSite } from '../features/auth/demo-mode';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { Brand } from '../components/Brand';
@@ -12,7 +13,8 @@ import { roleHome } from '../features/private-area/navigation';
 
 export function Header() {
   const { itemCount, countByLine } = useCart();
-  const { session } = useAuth();
+  const { session: account, demonstration } = useAuth();
+  const session = demonstrationSite ? demonstration : account;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -59,7 +61,11 @@ export function Header() {
                 {itemCount}
               </span>
             </Link>
-            {session.kind === 'demonstration' ? (
+            {session.kind === 'authenticated' ? (
+              <Button to="/area" size="small" className="header-actions__register">
+                A minha área <Icon name="arrow" />
+              </Button>
+            ) : session.kind === 'demonstration' ? (
               <Button to={roleHome(session.role)} size="small" className="header-actions__register">
                 Área de demonstração <Icon name="arrow" />
               </Button>

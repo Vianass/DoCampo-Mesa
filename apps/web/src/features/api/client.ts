@@ -33,11 +33,18 @@ export function apiBase(value: string = import.meta.env?.VITE_API_URL || '/api')
     throw new ApiFailure('configuration');
   }
 }
-export async function getJson<T>(
+export async function requestJson<T>(
   path: string,
   parse: (v: unknown) => T,
   signal?: AbortSignal,
-  options: { base?: string; timeoutMs?: number } = {},
+  options: {
+    base?: string;
+    timeoutMs?: number;
+    method?: 'GET' | 'POST';
+    body?: unknown;
+    bearer?: string;
+    expectedStatus?: number;
+  } = {},
 ): Promise<T> {
   const controller = new AbortController();
   let timeout = false;
@@ -50,14 +57,19 @@ export async function getJson<T>(
   }, options.timeoutMs ?? 10000);
   try {
     const response = await fetch(apiBase(options.base) + path, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
+      method: options.method ?? 'GET',
+      headers: {
+        Accept: 'application/json',
+        ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.bearer ? { Authorization: 'Bearer ' + options.bearer } : {}),
+      },
+      ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
       credentials: 'omit',
       signal: controller.signal,
     });
     if (!response.ok) throw new ApiFailure('http', response.status);
     if (
-      response.status !== 200 ||
+      response.status !== (options.expectedStatus ?? 200) ||
       !response.headers.get('content-type')?.toLowerCase().includes('application/json')
     )
       throw new InvalidResponse();
@@ -82,4 +94,13 @@ export async function getJson<T>(
     clearTimeout(timer);
     signal?.removeEventListener('abort', abort);
   }
+}
+
+export function getJson<T>(
+  path: string,
+  parse: (value: unknown) => T,
+  signal?: AbortSignal,
+  options: { base?: string; timeoutMs?: number } = {},
+) {
+  return requestJson(path, parse, signal, options);
 }

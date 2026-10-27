@@ -1,9 +1,10 @@
+import { demonstrationSite } from '../auth/demo-mode';
 import { storedProduct, mergeCatalog } from './remote';
 import type { Product } from '../../types/market';
 import type { CartSession, CartState } from './types';
 import { emptyCart, reconcileItems } from './model';
 
-export const CART_STORAGE_KEY = 'docampo.cart.v1';
+export const CART_STORAGE_KEY = demonstrationSite ? 'docampo.cart.demo.v1' : 'docampo.cart.v1';
 export const CART_STORAGE_VERSION = 1;
 export function restoreCart(
   raw: string | null,

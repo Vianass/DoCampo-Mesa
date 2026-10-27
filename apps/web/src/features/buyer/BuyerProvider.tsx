@@ -68,7 +68,7 @@ export function BuyerProvider({
   children: ReactNode;
   source?: BuyerDataSource;
 }) {
-  const { session } = useAuth();
+  const { demonstration: session } = useAuth();
   const isBuyer = session.kind === 'demonstration' && session.role === 'comprador';
   const location = useLocation();
   const [state, dispatch] = useReducer(reducer, {

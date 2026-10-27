@@ -1,3 +1,4 @@
+import { demonstrationSite } from '../features/auth/demo-mode';
 import { NavLink } from 'react-router';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
@@ -6,7 +7,8 @@ import { roleHome } from '../features/private-area/navigation';
 import { roleLabels } from '../features/auth/types';
 
 export function MobileNavigation({ open, onNavigate }: { open: boolean; onNavigate: () => void }) {
-  const { session } = useAuth();
+  const { session: account, demonstration } = useAuth();
+  const session = demonstrationSite ? demonstration : account;
   return (
     <nav
       id="mobile-navigation"
@@ -37,7 +39,11 @@ export function MobileNavigation({ open, onNavigate }: { open: boolean; onNaviga
         ))}
       </div>
       <div className="mobile-navigation__account">
-        {session.kind === 'demonstration' ? (
+        {session.kind === 'authenticated' ? (
+          <Button to="/area" size="small" onClick={onNavigate}>
+            A minha área <Icon name="arrow" />
+          </Button>
+        ) : session.kind === 'demonstration' ? (
           <Button to={roleHome(session.role)} size="small" onClick={onNavigate}>
             Demonstração: {roleLabels[session.role]} <Icon name="arrow" />
           </Button>

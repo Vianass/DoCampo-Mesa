@@ -93,7 +93,9 @@ test('destinos dos cartões e limites de contas/leilões', async ({ page }) => {
     'type',
     'password',
   );
-  await expect(page.locator('.auth-prototype-note')).toContainText('nenhuma conta será criada');
+  await expect(page.locator('.auth-prototype-note')).toContainText(
+    'O registo público cria uma conta compradora',
+  );
   await expect(page.getByRole('radio', { name: /administrador/i })).toHaveCount(0);
   await page.goto('/sistema-visual');
   await expect(page.getByLabel('Nome')).toBeVisible();

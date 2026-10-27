@@ -10,7 +10,7 @@ const captions = {
   administrador: 'Acompanhar e cuidar do mercado.',
 };
 export function DemoAccess() {
-  const { startDemonstration, session } = useAuth();
+  const { startDemonstration, demonstration: session } = useAuth();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   return (

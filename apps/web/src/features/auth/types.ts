@@ -10,3 +10,18 @@ export const roleLabels: Record<Role, string> = {
   produtor: 'Produtor',
   administrador: 'Administrador',
 };
+
+export interface AccountUser {
+  readonly id: string;
+  readonly nome: string;
+  readonly email: string;
+  readonly papeis: readonly Role[];
+}
+export type AccountSession =
+  | { kind: 'visitor' }
+  | {
+      kind: 'authenticated';
+      user: AccountUser;
+      expiresAt: string;
+      status: 'ready' | 'checking' | 'unavailable' | 'forbidden';
+    };

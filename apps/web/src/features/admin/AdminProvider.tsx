@@ -40,7 +40,7 @@ export function AdminProvider({
   children: ReactNode;
   source?: AdminDataSource;
 }) {
-  const { session } = useAuth();
+  const { demonstration: session } = useAuth();
   const activeRole = session.kind === 'demonstration' && session.role === 'administrador';
   const location = useLocation();
   const [state, dispatch] = useReducer(reducer, {
