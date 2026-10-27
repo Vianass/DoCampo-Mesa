@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/produtos');
@@ -12,13 +12,14 @@ test('catálogo: 36 produtos, cartões completos e sem erros no browser', async 
     '36 produtos encontrados',
   );
   await expect(page.locator('.catalog-results-panel .product-card')).toHaveCount(12);
+  await page.getByLabel('Pesquisar produtos ou produtores').fill('Tomate');
   const card = page
     .locator('.product-card')
     .filter({ has: page.getByRole('heading', { name: 'Tomate coração-de-boi', exact: true }) });
   await expect(card).toContainText('Horta da Ribeira');
   await expect(card).toContainText('Ponte de Lima');
   await expect(card).toContainText('Biológico');
-  await expect(card).toContainText('18 em stock');
+  await expect(card).toContainText('18 unidades em stock');
   for (const image of await page.locator('.product-card img').all()) {
     await image.scrollIntoViewIfNeeded();
     await expect
@@ -87,19 +88,19 @@ test('filtro por categoria derivada do dataset', async ({ page }) => {
   await page
     .locator('.catalog-sidebar')
     .getByLabel('Categoria', { exact: true })
-    .selectOption('Pão e cereais');
+    .selectOption('cat-004');
   await expect(page.getByRole('status', { name: 'Resultados do catálogo' })).toHaveText(
     '3 produtos encontrados',
   );
   await expect(page.getByRole('heading', { name: 'Farinha de milho', exact: true })).toBeVisible();
-  await expect(page.getByRole('group', { name: 'Filtros ativos' })).toContainText('Pão e cereais');
+  await expect(page.getByRole('group', { name: 'Filtros ativos' })).toContainText('Pão e padaria');
 });
 
 test('filtros combinados: categoria, produtor, localidade, época e biológico', async ({ page }) => {
   const filters = page.locator('.catalog-sidebar');
-  await filters.getByLabel('Categoria', { exact: true }).selectOption('Hortícolas');
-  await filters.getByLabel('Produtor', { exact: true }).selectOption('horta-ribeira');
-  await filters.getByLabel('Localidade', { exact: true }).selectOption('Ponte de Lima');
+  await filters.getByLabel('Categoria', { exact: true }).selectOption('cat-001');
+  await filters.getByLabel('Produtor', { exact: true }).selectOption('fdbe9e7dd68e7983981d7b7e');
+  await filters.getByLabel('Localidade', { exact: true }).fill('Ponte de Lima');
   await filters.getByLabel('Época', { exact: true }).selectOption('Outono');
   const organic = filters.getByLabel('Só produção biológica', { exact: false });
   await organic.click();
@@ -118,7 +119,7 @@ test('preço máximo combinado com categoria e ausência de preços acima do lim
   await page
     .locator('.catalog-sidebar')
     .getByLabel('Categoria', { exact: true })
-    .selectOption('Hortícolas');
+    .selectOption('cat-001');
   const slider = page.locator('.catalog-sidebar').getByLabel('Preço máximo', { exact: true });
   await slider.fill('200');
   await expect(page.getByRole('status', { name: 'Resultados do catálogo' })).toHaveText(
@@ -164,8 +165,8 @@ test('ordenação A–Z, Z–A e por data recente', async ({ page }) => {
 
 test('remover um filtro individual e limpar todos os filtros', async ({ page }) => {
   const filters = page.locator('.catalog-sidebar');
-  await filters.getByLabel('Categoria', { exact: true }).selectOption('Fruta');
-  await filters.getByLabel('Produtor', { exact: true }).selectOption('pomar-sul');
+  await filters.getByLabel('Categoria', { exact: true }).selectOption('cat-002');
+  await filters.getByLabel('Produtor', { exact: true }).selectOption('14c8208faae2c2d4bf32e15e');
   await expect(page.getByRole('status', { name: 'Resultados do catálogo' })).toHaveText(
     '4 produtos encontrados',
   );
@@ -226,7 +227,7 @@ test('pesquisa, filtros e ordenação repõem a primeira página', async ({ page
   await page
     .locator('.catalog-sidebar')
     .getByLabel('Categoria', { exact: true })
-    .selectOption('Fruta');
+    .selectOption('cat-002');
   await expect(page.getByText('Página 1 de 1', { exact: true })).toBeVisible();
   await page.getByLabel('Pesquisar produtos ou produtores').fill('maca');
   await expect(page.getByRole('status', { name: 'Resultados do catálogo' })).toHaveText(
@@ -237,19 +238,19 @@ test('pesquisa, filtros e ordenação repõem a primeira página', async ({ page
 test('URL: voltar/avançar e recarregar recuperam filtros e controlos', async ({ page }) => {
   const category = page.locator('.catalog-sidebar').getByLabel('Categoria', { exact: true });
   const producer = page.locator('.catalog-sidebar').getByLabel('Produtor', { exact: true });
-  await category.selectOption('Fruta');
-  await producer.selectOption('pomar-sul');
+  await category.selectOption('cat-002');
+  await producer.selectOption('14c8208faae2c2d4bf32e15e');
   await expect(page.getByRole('status', { name: 'Resultados do catálogo' })).toHaveText(
     '4 produtos encontrados',
   );
   await page.goBack();
-  await expect(category).toHaveValue('Fruta');
+  await expect(category).toHaveValue('cat-002');
   await expect(producer).toHaveValue('');
   await expect(page.getByRole('status', { name: 'Resultados do catálogo' })).toHaveText(
     '9 produtos encontrados',
   );
   await page.goForward();
-  await expect(producer).toHaveValue('pomar-sul');
+  await expect(producer).toHaveValue('14c8208faae2c2d4bf32e15e');
   await page.reload();
   await expect(page.getByRole('status', { name: 'Resultados do catálogo' })).toHaveText(
     '4 produtos encontrados',
@@ -263,8 +264,8 @@ test('painel móvel: filtros combinados, foco, Escape e aplicação', async ({ p
   await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog', { name: 'Filtros do catálogo' });
   await expect(dialog).toBeVisible();
-  await dialog.getByLabel('Categoria', { exact: true }).selectOption('Fruta');
-  await dialog.getByLabel('Produtor', { exact: true }).selectOption('pomar-sul');
+  await dialog.getByLabel('Categoria', { exact: true }).selectOption('cat-002');
+  await dialog.getByLabel('Produtor', { exact: true }).selectOption('14c8208faae2c2d4bf32e15e');
   await dialog.getByRole('button', { name: 'Ver 4 produtos', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Os sabores do mercado.' })).toBeFocused();
@@ -278,7 +279,7 @@ test('painel móvel: filtros combinados, foco, Escape e aplicação', async ({ p
 test('o detalhe de produto e browser Back preservam a seleção', async ({ page }) => {
   await page.getByLabel('Pesquisar produtos ou produtores').fill('Kiwi');
   await page.locator('.product-card__link').click();
-  await expect(page).toHaveURL(/\/produtos\/kiwi-hayward$/);
+  await expect(page).toHaveURL(/\/produtos\/fb25216f7b68e491b606c3d9$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Kiwi Hayward' })).toBeVisible();
   await page.goBack();
   await expect(page.getByLabel('Pesquisar produtos ou produtores')).toHaveValue('Kiwi');

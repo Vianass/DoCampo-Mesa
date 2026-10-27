@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 async function enter(page: Page) {
   await page.goto('/entrar');
   await page.getByRole('button', { name: 'Explorar como produtor', exact: true }).click();
@@ -150,7 +150,7 @@ test('edição de preço e stock recalcula alertas sem alterar o catálogo públ
   await navigate(page, '/area/produtor/encomendas/enc-261010');
   await expect(page.locator('.producer-order-total')).toContainText('6,45');
   await expect(page.locator('.producer-order-lines')).toContainText('2,50');
-  await navigate(page, '/produtos/tomate-coracao');
+  await navigate(page, '/produtos/ee685adf80156cb9e1e85c27');
   await expect(page.locator('main')).toContainText('2,80');
   await expect(
     page.getByRole('button', { name: 'Adicionar Tomate coração-de-boi ao carrinho' }),
@@ -188,8 +188,10 @@ test('perfil valida e pré-visualiza apenas dados locais sem alterar a candidatu
     'Horta de demonstração local',
   );
   await expect(page.locator('.producer-map')).toContainText('Viana do Castelo');
-  await page.getByRole('link', { name: 'Consultar o perfil público original' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Horta da Ribeira');
+  await page.getByRole('link', { name: 'Explorar os perfis públicos' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Boas coisas começam com pessoas.',
+  );
   await page.getByRole('link', { name: 'Área de demonstração', exact: true }).click();
   await expect(page.locator('.producer-identity')).toContainText('Horta de demonstração local');
   await navigate(page, '/area/produtor/candidatura');
@@ -261,7 +263,7 @@ test('leilões mostram três estados e término sem ofertas não inventa vencedo
   );
 });
 test('saída e troca de papel repõem edições locais e preservam a cesta', async ({ page }) => {
-  await page.goto('/produtos/tomate-coracao');
+  await page.goto('/produtos/ee685adf80156cb9e1e85c27');
   await page.getByRole('button', { name: 'Adicionar Tomate coração-de-boi ao carrinho' }).click();
   await page.locator('.header-actions__login').click();
   await page.getByRole('button', { name: 'Explorar como produtor', exact: true }).click();

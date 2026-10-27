@@ -5,7 +5,8 @@ import { EmptyState } from '../components/EmptyState';
 import { FormField } from '../components/FormField';
 import { Icon } from '../components/Icon';
 import { ProductCard } from '../components/ProductCard';
-import { products } from '../data/market';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { RemoteError } from '../features/market/RemoteError';
 import { CatalogIntro } from '../features/catalog/CatalogIntro';
 import { CatalogFilters } from '../features/catalog/CatalogFilters';
 import { CatalogFilterDialog } from '../features/catalog/CatalogFilterDialog';
@@ -14,7 +15,7 @@ import { pageSizes, sortOptions } from '../features/catalog/catalog';
 import { useCatalog } from '../features/catalog/useCatalog';
 
 export default function ProductsPage() {
-  const catalog = useCatalog(products);
+  const catalog = useCatalog();
   const { state, options, pagination, activeFilters } = catalog;
   const [mobileOpen, setMobileOpen] = useState(false);
   const filterButton = useRef<HTMLButtonElement>(null);
@@ -38,6 +39,7 @@ export default function ProductsPage() {
     activeCount: activeFilters.length,
     onChange: catalog.setFilter,
     onClear: catalog.clearFilters,
+    producerPicker: catalog,
   };
   return (
     <div className="catalog-page">
@@ -82,8 +84,8 @@ export default function ProductsPage() {
           </button>
         </div>
         <p className="catalog-demo-label">
-          Um mercado demonstrativo. {products.length} produtos, {options.producers.length} origens
-          fictícias e boas ideias para a tua cozinha.
+          Produtos e origens do catálogo público. A cesta guarda escolhas locais; ainda não há
+          compras online.
         </p>
         <div className="catalog-layout">
           <aside className="catalog-sidebar" aria-label="Filtros do catálogo">
@@ -101,8 +103,16 @@ export default function ProductsPage() {
                   aria-label="Resultados do catálogo"
                   aria-live="polite"
                 >
-                  {pagination.total}{' '}
-                  {pagination.total === 1 ? 'produto encontrado' : 'produtos encontrados'}
+                  {catalog.loading ? (
+                    'A consultar o mercado…'
+                  ) : catalog.error ? (
+                    'Consulta indisponível'
+                  ) : (
+                    <>
+                      {pagination.total}{' '}
+                      {pagination.total === 1 ? 'produto encontrado' : 'produtos encontrados'}
+                    </>
+                  )}
                 </p>
               </div>
               <div className="catalog-sort">
@@ -142,7 +152,11 @@ export default function ProductsPage() {
                 </button>
               </div>
             )}
-            {pagination.total ? (
+            {catalog.loading ? (
+              <LoadingSkeleton label="A carregar o catálogo" count={6} />
+            ) : catalog.error ? (
+              <RemoteError error={catalog.error} retry={catalog.retry} />
+            ) : pagination.items.length ? (
               <div className="product-grid">
                 {pagination.items.map((product) => (
                   <ProductCard key={product.id} product={product} />
@@ -150,50 +164,59 @@ export default function ProductsPage() {
               </div>
             ) : (
               <EmptyState
-                title="Ainda não encontrámos esse sabor."
+                title={
+                  pagination.total
+                    ? 'Esta página não tem produtos.'
+                    : 'Ainda não encontrámos esse sabor.'
+                }
                 description="Experimenta outra combinação, alarga o preço máximo ou volta a descobrir o mercado completo."
                 action={
-                  <Button variant="secondary" onClick={catalog.clearFilters}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => (pagination.total ? catalog.setPage(1) : catalog.clearFilters())}
+                  >
                     Ver todos os produtos
                     <Icon name="arrow" />
                   </Button>
                 }
               />
             )}
-            <div className="catalog-results-bottom">
-              {pagination.total > 0 && (
-                <div className="catalog-page-size">
-                  <label htmlFor="catalog-page-size">Produtos por página</label>
-                  <select
-                    id="catalog-page-size"
-                    className="form-select"
-                    value={state.pageSize}
-                    onChange={(event) => {
-                      catalog.setPageSize(Number(event.target.value));
-                    }}
-                  >
-                    {pageSizes.map((size) => (
-                      <option value={size} key={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <CatalogPagination
-                {...pagination}
-                onPageChange={(page) => {
-                  catalog.setPage(page);
-                  focusResults();
-                }}
-              />
-            </div>
+            {!catalog.loading && !catalog.error && (
+              <div className="catalog-results-bottom">
+                {pagination.total > 0 && (
+                  <div className="catalog-page-size">
+                    <label htmlFor="catalog-page-size">Produtos por página</label>
+                    <select
+                      id="catalog-page-size"
+                      className="form-select"
+                      value={state.pageSize}
+                      onChange={(event) => {
+                        catalog.setPageSize(Number(event.target.value));
+                      }}
+                    >
+                      {pageSizes.map((size) => (
+                        <option value={size} key={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <CatalogPagination
+                  {...pagination}
+                  onPageChange={(page) => {
+                    catalog.setPage(page);
+                    focusResults();
+                  }}
+                />
+              </div>
+            )}
           </section>
         </div>
       </Container>
       {mobileOpen && (
         <CatalogFilterDialog
-          total={pagination.total}
+          total={catalog.loading || catalog.error ? null : pagination.total}
           onDismiss={dismissFilters}
           onApply={() => {
             setMobileOpen(false);

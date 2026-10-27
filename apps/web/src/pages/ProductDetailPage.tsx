@@ -8,17 +8,68 @@ import { ProductCard } from '../components/ProductCard';
 import { ProductGallery } from '../components/ProductGallery';
 import { SectionHeading } from '../components/SectionHeading';
 import { StatusBadge } from '../components/StatusBadge';
-import { products, producers } from '../data/market';
 import { EntityNotFound } from '../features/market/EntityNotFound';
-import { relatedProducts } from '../features/market/selectors';
 import { AddToCart } from '../features/cart/AddToCart';
-
+import { adaptProduct, catalogApi, seasonLabel, stockLabel } from '../features/api/catalog';
+import { objectId } from '../features/api/catalog-contract';
+import { ApiFailure } from '../features/api/client';
+import { useRemote } from '../features/api/useRemote';
+import { RemoteError } from '../features/market/RemoteError';
+import { DetailLoadingPage } from '../features/market/DetailLoadingPage';
+import { CommercialInfo } from '../features/market/CommercialInfo';
+import type { Product } from '../types/market';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
+function RelatedProducts({ product }: { product: Product }) {
+  const query = new URLSearchParams({ categoria: product.categoryId!, porPagina: '12' }).toString();
+  const remote = useRemote(query, (signal) => catalogApi.products(query, signal));
+  const items =
+    remote.data?.itens
+      .filter((p) => p.id !== product.id)
+      .slice(0, 4)
+      .map(adaptProduct) ?? [];
+  return (
+    <section className="detail-related" aria-labelledby="related-products-title">
+      <SectionHeading
+        id="related-products-title"
+        eyebrow="À mesma mesa"
+        title="Outros sabores para descobrir."
+        description="Outros produtos publicados na mesma categoria."
+        action={
+          <Link className="editorial-text-link" to={`/produtos?categoria=${product.categoryId}`}>
+            Explorar o mercado <Icon name="arrow" />
+          </Link>
+        }
+      />
+      {remote.loading ? (
+        <LoadingSkeleton label="A carregar outros produtos" count={4} />
+      ) : remote.error ? (
+        <RemoteError error={remote.error} retry={remote.retry} />
+      ) : (
+        <div className="product-grid">
+          {items.map((item) => (
+            <ProductCard key={item.id} product={item} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 export default function ProductDetailPage() {
-  const { id } = useParams();
-  const product = products.find((item) => item.id === id);
-  if (!product) return <EntityNotFound kind="product" />;
-  const producer = producers.find((item) => item.id === product.producerId);
-  const related = relatedProducts(product, products);
+  const { id = '' } = useParams();
+  const remote = useRemote(id, (signal) =>
+    objectId(id) ? catalogApi.product(id, signal) : Promise.reject(new ApiFailure('http', 404)),
+  );
+  if (remote.loading) return <DetailLoadingPage kind="product" />;
+  if (remote.error?.status === 404) return <EntityNotFound kind="product" />;
+  if (remote.error)
+    return (
+      <Container>
+        <RemoteError error={remote.error} retry={remote.retry} />
+      </Container>
+    );
+  const dto = remote.data!;
+  const product = adaptProduct(dto);
+  const producer = dto.produtor;
   return (
     <div className="product-detail-page">
       <Container>
@@ -39,64 +90,77 @@ export default function ProductDetailPage() {
             <h1>{product.name}</h1>
             <p className="product-editorial__lead">{product.description}</p>
             <div className="product-editorial__badges">
-              {product.organic && <StatusBadge tone="organic">Biológico · exemplo</StatusBadge>}
-              <StatusBadge tone="seasonal">
-                {product.season.length === 4 ? 'Todo o ano' : product.season.join(' · ')}
-              </StatusBadge>
+              {product.organic && <StatusBadge tone="organic">Biológico · declarado</StatusBadge>}
+              {!!product.seasonMonths?.length && (
+                <StatusBadge tone="seasonal">
+                  {product.season.length === 4 && product.seasonMonths.length === 12
+                    ? 'Meses declarados: todo o ano'
+                    : product.season.join(' · ')}
+                </StatusBadge>
+              )}
             </div>
             <div className="product-editorial__price">
               <PriceDisplay amountCents={product.priceCents} unit={product.unit} large />
               <span className="product-editorial__price-note">
-                Preço demonstrativo por {product.unit}.
+                Preço por {product.unit}. {product.sale?.rotulo}
               </span>
             </div>
             <p
               className={`product-detail-stock ${product.availableStock ? '' : 'product-detail-stock--empty'}`}
             >
               <span aria-hidden="true" />
-              {product.availableStock
-                ? `Disponível · ${product.availableStock} em stock`
-                : 'Esgotado neste lote demonstrativo'}
+              {product.availableStock ? `Disponível · ${stockLabel(product)} em stock` : 'Esgotado'}
             </p>
             <dl className="product-editorial__facts">
               <div>
                 <dt>Unidade de venda</dt>
-                <dd>{product.unit}</dd>
+                <dd>
+                  {product.unit}
+                  {product.sale?.conteudoPorUnidade &&
+                    ` · conteúdo: ${product.sale.conteudoPorUnidade.quantidade} ${product.sale.conteudoPorUnidade.unidade}`}
+                </dd>
               </div>
               <div>
                 <dt>Época de referência</dt>
-                <dd>{product.season.length === 4 ? 'Todo o ano' : product.season.join(', ')}</dd>
+                <dd>{seasonLabel(product)}</dd>
               </div>
               <div>
-                <dt>Origem da história</dt>
-                <dd>{product.producerLocation}</dd>
+                <dt>Origem</dt>
+                <dd>
+                  {product.producerLocation} · {producer.concelho}
+                </dd>
               </div>
-            </dl>
-            {producer && (
-              <div className="product-origin-card">
-                <MarketImage
-                  src={producer.image}
-                  alt={producer.imageAlt}
-                  width="100"
-                  height="100"
-                />
+              {dto.modoProducao && (
                 <div>
-                  <span>Quem dá vida a esta história</span>
-                  <Link to={`/produtores/${producer.id}`}>
-                    {producer.name}
-                    <Icon name="diagonal" />
-                  </Link>
-                  <p>
-                    <Icon name="location" />
-                    {producer.locality}
-                  </p>
+                  <dt>Modo de produção declarado</dt>
+                  <dd>{dto.modoProducao}</dd>
                 </div>
+              )}
+            </dl>
+            <div className="product-origin-card">
+              <MarketImage
+                src={producer.imagem?.url ?? '/images/product-placeholder.svg'}
+                alt={producer.imagem?.alt ?? 'Imagem do produtor não disponibilizada'}
+                width="100"
+                height="100"
+              />
+              <div>
+                <span>Quem dá vida a esta origem</span>
+                <Link to={`/produtores/${producer.id}`}>
+                  {producer.nomePublico}
+                  <Icon name="diagonal" />
+                </Link>
+                <p>
+                  <Icon name="location" />
+                  {producer.localidade}
+                </p>
               </div>
-            )}
-            <AddToCart product={product} detailed />
+            </div>
+            <AddToCart key={product.id} product={product} detailed />
             <p className="product-detail-demo">
-              Produto e produtor fictícios. Preços, stock e indicação biológica são exemplos; não
-              representam uma certificação verificada. As compras ainda não estão disponíveis.
+              Informação publicada pelo produtor. A indicação biológica é uma declaração do
+              produtor, sem certificação verificada. A cesta é local: não reserva stock nem cria
+              encomendas.
             </p>
           </div>
         </article>
@@ -110,34 +174,16 @@ export default function ProductDetailPage() {
             </h2>
           </div>
           <div>
-            {(product.detailParagraphs ?? [product.description]).map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
+            <p>{product.description}</p>
+            {dto.ingredientesAplicaveis && <p>Ingredientes: {dto.ingredientes.join(', ')}.</p>}
+            {dto.etiquetas.length > 0 && <p>{dto.etiquetas.join(' · ')}</p>}
             <Link className="editorial-text-link" to={`/produtores/${product.producerId}`}>
-              Conhecer a história do produtor <Icon name="arrow" />
+              Conhecer o produtor <Icon name="arrow" />
             </Link>
+            <CommercialInfo value={dto.comercial} />
           </div>
         </section>
-        {related.length > 0 && (
-          <section className="detail-related" aria-labelledby="related-products-title">
-            <SectionHeading
-              id="related-products-title"
-              eyebrow="À mesma mesa"
-              title="Outros sabores para descobrir."
-              description="Uma seleção por categoria, produtor e épocas em comum."
-              action={
-                <Link className="editorial-text-link" to="/produtos">
-                  Explorar o mercado <Icon name="arrow" />
-                </Link>
-              }
-            />
-            <div className="product-grid">
-              {related.map((item) => (
-                <ProductCard key={item.id} product={item} />
-              ))}
-            </div>
-          </section>
-        )}
+        <RelatedProducts product={product} />
       </Container>
     </div>
   );

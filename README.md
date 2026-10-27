@@ -1,5 +1,56 @@
 # Do Campo à Mesa
 
+**Fase 5B — integração pública React + API REST, implementação local.** Catálogo, detalhes de produtos, diretório e perfis públicos consultam MongoDB através dos quatro endpoints públicos da Fase 5A. A homepage usa a mesma API para as suas seleções. O design, as áreas privadas demonstrativas e os documentos originais da Fase 0 são preservados. Não existe checkout HTTP; a autenticação visual e as áreas privadas continuam demonstrativas, separadas da autenticação JWT já existente no backend.
+
+## Arranque integrado local
+
+Usar as dependências já instaladas e Docker em execução. A configuração privada da API é descrita em [apps/api/README.md](apps/api/README.md); se ainda não existir, preparar `apps/api/.env` a partir do exemplo e gerar um JWT_SECRET aleatório, sem o versionar. Não substituir uma configuração privada existente.
+
+Da raiz, preparar os dados fictícios na **base dedicada** `docampo_dev_catalog`:
+
+```sh
+npm run mongo:dev:up --workspace @docampo/api
+NODE_ENV=development node --import tsx scripts/seed-catalog.mjs
+```
+
+O seed é manual e idempotente: insere apenas registos em falta, não atualiza nem apaga existentes. Recusa produção, Atlas, outro servidor/replica set, credenciais no URI e qualquer base diferente da dedicada. Contas de produtor fictícias recebem passwords aleatórias descartadas; não é criada conta administrativa. Ver [dados e limitações](docs/api/frontend-integration.md).
+
+Em dois terminais:
+
+```sh
+MONGODB_DB_NAME=docampo_dev_catalog CORS_ORIGINS=http://127.0.0.1:5173 npm run dev --workspace @docampo/api
+```
+
+```sh
+npm run dev
+```
+
+Abrir `http://127.0.0.1:5173/produtos`. O Vite encaminha `/api` para `http://127.0.0.1:3001`. A variável pública `VITE_API_URL`, documentada em [apps/web/.env.example](apps/web/.env.example), permite outra origem/base. Nunca contém JWT, passwords ou segredos. No build de produção, usar `/api` com reverse proxy ou uma URL HTTPS da API e configurar a origem exata no CORS. Reiniciar Vite/recriar o build depois de alterar a variável. `vite preview` não fornece o proxy de desenvolvimento.
+
+## Testar a integração
+
+```sh
+npm run test:e2e -- --workers=4
+npm run mongo:test:up --workspace @docampo/api
+npx playwright test --config playwright.integration.config.ts
+npm test --workspace @docampo/api
+npm run typecheck
+npm run typecheck --workspace @docampo/api
+npm run lint
+npm run build
+npm run build --workspace @docampo/api
+```
+
+A suite habitual mantém os percursos anteriores com fixtures HTTP; a suite separada inicia a API real na porta 3011 e React na 5183, popula duas vezes uma base aleatória `docampo_test_web_*` no replica set de teste 27019, verifica idempotência e elimina apenas essa base no final. Não lê `.env`, não usa a base de desenvolvimento e falha se MongoDB não estiver disponível. Executar as suites sequencialmente para conservar os respetivos artefactos em `test-results/`.
+
+A revisão visual pode começar em `/produtos`, seguindo um cartão para o detalhe, a ligação de origem para o perfil e a cesta. Pesquisa, filtros, seis ordenações e paginação são executados no servidor. A cesta respeita g/ml/unidades/embalagens e mínimo/incremento; guarda apenas escolhas locais, sem reservar stock ou criar encomendas. Falhas da API não substituem dados por mocks nem apagam as escolhas guardadas.
+
+Os perfis públicos apresentam apenas informação efetivamente devolvida: não se associam avaliações fictícias, coordenadas, histórias ou certificações aos IDs reais. As ligações provenientes de registos privados demonstrativos abrem as listagens públicas; não existe correspondência automática entre slugs demo e IDs MongoDB. As secções seguintes documentam o protótipo anterior e não substituem este estado atual.
+
+---
+
+## Registo histórico do frontend demonstrativo
+
 Mercado digital de produtores agrícolas locais, com encomendas e leilões em tempo real.
 
 **Estado atual: Fase 2.4.4 — Área Privada do Administrador.** O frontend inclui o mercado público, carrinho, autenticação demonstrativa e áreas de comprador, produtor e administrador com atividade fictícia. Edições privadas, decisões de candidatura e moderação funcionam apenas em memória. O monorepo usa npm workspaces. Os nove documentos da Fase 0 estão preservados integralmente.

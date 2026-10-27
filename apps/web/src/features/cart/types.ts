@@ -6,6 +6,7 @@ export interface CartItem {
   readonly quantity: number;
   readonly unitPriceSnapshotCents: number;
   readonly unit: string;
+  readonly productSnapshot?: Product;
 }
 export interface CartState {
   readonly items: readonly CartItem[];
@@ -44,4 +45,5 @@ export type CartOperation =
 export type CartAction =
   | { type: 'operate'; operation: CartOperation; catalog: readonly Product[]; now: string }
   | { type: 'reconcile'; catalog: readonly Product[]; now: string }
-  | { type: 'storage-failure' };
+  | { type: 'storage-failure' }
+  | { type: 'refresh'; catalog: readonly Product[]; now: string };

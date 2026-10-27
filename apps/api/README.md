@@ -1,3 +1,5 @@
+> **Integração local da Fase 5B:** React consulta o catálogo público. O [README da raiz](../../README.md) descreve o arranque conjunto, a base dedicada `docampo_dev_catalog`, o seed manual protegido e a suite real separada. Não há alteração aos contratos ou autenticação desta API. Os registos de validação das fases anteriores abaixo conservam o seu contexto.
+
 # API — catálogo e gestão de produtos da Fase 5A
 
 Disponíveis localmente: GET `/api/products`, `/api/products/:id`, `/api/producers`, `/api/producers/:id`; GET próprios `/api/me/products` e `/api/me/products/:id`; POST/PUT/DELETE de produtos com JWT e propriedade. O DELETE arquiva. PUT é completo e PUT/DELETE exigem If-Match obtido na representação própria. Rascunhos não são públicos.
@@ -121,7 +123,7 @@ Da raiz:
 ```sh
 npm run typecheck --workspace @docampo/api
 npm run lint
-npm run format:check --workspace @docampo/api
+npm run format:check --workspace @docampo/api -- --ignore-path ../../.prettierignore
 npm run build --workspace @docampo/api
 npm run mongo:test:up --workspace @docampo/api
 npm test --workspace @docampo/api

@@ -1,3 +1,4 @@
+import { publicProducerPath } from '../../../features/api/catalog';
 import { Link } from 'react-router';
 import { Button } from '../../../components/Button';
 import { EmptyState } from '../../../components/EmptyState';
@@ -26,7 +27,7 @@ export default function BuyerReviewsPage() {
                   <div className="buyer-review" key={review.id}>
                     <div>
                       <h3>
-                        <Link to={`/produtores/${review.producerId}`}>
+                        <Link to={publicProducerPath(review.producerId)}>
                           {producers.find((producer) => producer.id === review.producerId)?.name ??
                             'Produtor do cenário'}
                         </Link>
@@ -41,8 +42,8 @@ export default function BuyerReviewsPage() {
                       </p>
                     </div>
                     <ReviewCard review={review} />
-                    <Link className="buyer-detail-link" to={`/produtores/${review.producerId}`}>
-                      Conhecer o produtor →
+                    <Link className="buyer-detail-link" to={publicProducerPath(review.producerId)}>
+                      Explorar produtores públicos →
                     </Link>
                   </div>
                 ))

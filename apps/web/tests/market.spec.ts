@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 for (const viewport of [
   { name: 'telemóvel pequeno', width: 320, height: 740 },
@@ -75,7 +75,7 @@ test('menu móvel: teclado, Escape, foco e navegação', async ({ page }) => {
 });
 
 test('destinos dos cartões e limites de contas/leilões', async ({ page }) => {
-  await page.goto('/produtos/tomate-coracao');
+  await page.goto('/produtos/ee685adf80156cb9e1e85c27');
   await expect(
     page.getByRole('heading', { level: 1, name: 'Tomate coração-de-boi' }),
   ).toBeVisible();
@@ -83,7 +83,7 @@ test('destinos dos cartões e limites de contas/leilões', async ({ page }) => {
     .locator('.product-origin-card')
     .getByRole('link', { name: 'Horta da Ribeira', exact: true })
     .click();
-  await expect(page).toHaveURL(/\/produtores\/horta-ribeira$/);
+  await expect(page).toHaveURL(/\/produtores\/fdbe9e7dd68e7983981d7b7e$/);
   await page.goto('/leiloes/cabaz-outono');
   await expect(page.getByRole('button', { name: 'Licitações ainda indisponíveis' })).toBeDisabled();
   await page.goto('/registo');

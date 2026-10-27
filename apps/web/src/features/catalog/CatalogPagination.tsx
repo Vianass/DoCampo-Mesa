@@ -7,7 +7,9 @@ export function CatalogPagination({
   end,
   total,
   onPageChange,
+  entityLabel = 'produtos',
 }: {
+  entityLabel?: string;
   page: number;
   totalPages: number;
   start: number;
@@ -21,7 +23,7 @@ export function CatalogPagination({
   return (
     <div className="catalog-pagination">
       <p>
-        A mostrar {start}–{end} de {total} produtos
+        A mostrar {start}–{end} de {total} {entityLabel}
       </p>
       <nav aria-label="Paginação do catálogo">
         <button

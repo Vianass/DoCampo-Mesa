@@ -1,3 +1,4 @@
+import { storedProduct, mergeCatalog } from './remote';
 import type { Product } from '../../types/market';
 import type { CartSession, CartState } from './types';
 import { emptyCart, reconcileItems } from './model';
@@ -31,7 +32,14 @@ export function restoreCart(
       !Number.isFinite(Date.parse(value.updatedAt))
     )
       throw new Error('Invalid cart schema');
-    const reconciled = reconcileItems(value.items, catalog);
+    const snapshots = value.items.flatMap((item: unknown) => {
+      const v =
+        typeof item === 'object' && item !== null && 'productSnapshot' in item
+          ? storedProduct(item.productSnapshot)
+          : undefined;
+      return v ? [v] : [];
+    });
+    const reconciled = reconcileItems(value.items, mergeCatalog(snapshots, catalog));
     return {
       ...blank,
       cart: {

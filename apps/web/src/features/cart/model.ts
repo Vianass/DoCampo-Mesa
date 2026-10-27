@@ -1,3 +1,4 @@
+import { mergeCatalog } from './remote';
 import type { Product } from '../../types/market';
 import type {
   CartAction,
@@ -40,12 +41,17 @@ function itemFromProduct(product: Product, quantity: number): CartItem {
     quantity,
     unitPriceSnapshotCents: product.priceCents,
     unit: product.unit,
+    ...(product.source === 'api' ? { productSnapshot: product } : {}),
   };
 }
 function safeCartTotal(items: readonly CartItem[]) {
   let total = 0;
   for (const item of items) {
-    const line = item.quantity * item.unitPriceSnapshotCents;
+    const line = lineTotal(
+      item.quantity,
+      item.unitPriceSnapshotCents,
+      item.productSnapshot?.sale?.quantidadeReferencia ?? 1,
+    );
     if (!Number.isSafeInteger(line) || !Number.isSafeInteger(total + line)) return false;
     total += line;
   }
@@ -86,7 +92,15 @@ export function reconcileItems(raw: readonly unknown[], catalog: readonly Produc
     const existingIndex = items.findIndex((item) => item.productId === product.id);
     const previousQuantity = items[existingIndex]?.quantity ?? 0;
     const requested = previousQuantity + value.quantity;
-    const quantity = Math.min(requested, product.availableStock);
+    let quantity = Math.min(requested, product.availableStock);
+    if (product.sale) {
+      const { quantidadeMinima: min, incrementoCompra: step } = product.sale;
+      quantity = quantity < min ? 0 : min + Math.floor((quantity - min) / step) * step;
+      if (!quantity) {
+        messages.push(`${product.name} não tem stock para a quantidade mínima e foi retirado.`);
+        continue;
+      }
+    }
     if (previousQuantity) messages.push(`As linhas repetidas de ${product.name} foram reunidas.`);
     if (requested > product.availableStock)
       messages.push(
@@ -147,6 +161,8 @@ function applyOperation(
     return error(
       `Só existem ${product.availableStock} unidades de ${product.name}; já tens ${existing?.quantity ?? 0} na cesta.`,
     );
+  const commercialError = productQuantityError(quantity, product);
+  if (commercialError) return error(commercialError);
   const next = itemFromProduct(product, quantity);
   const items = existing
     ? cart.items.map((item) => (item.productId === next.productId ? next : item))
@@ -162,6 +178,15 @@ function applyOperation(
 }
 
 export function cartReducer(session: CartSession, action: CartAction): CartSession {
+  if (action.type === 'refresh')
+    return cartReducer(session, {
+      type: 'reconcile',
+      catalog: mergeCatalog(
+        session.cart.items.flatMap((i) => (i.productSnapshot ? [i.productSnapshot] : [])),
+        action.catalog,
+      ),
+      now: action.now,
+    });
   if (action.type === 'storage-failure')
     return session.storageIssue
       ? session
@@ -196,12 +221,19 @@ export function cartReducer(session: CartSession, action: CartAction): CartSessi
 
 export function cartSummary(cart: CartState, catalog: readonly Product[]) {
   const groups = new Map<string, CartProducerGroup>();
+  const countByLine = cart.items.some(
+    (i) => i.productSnapshot?.sale && i.productSnapshot.sale.unidadeBase !== 'un',
+  );
   let subtotalCents = 0;
   let itemCount = 0;
   for (const item of cart.items) {
     const product = catalog.find((product) => product.id === item.productId);
     if (!product) continue;
-    const subtotal = item.quantity * item.unitPriceSnapshotCents;
+    const subtotal = lineTotal(
+      item.quantity,
+      item.unitPriceSnapshotCents,
+      product.sale?.quantidadeReferencia ?? 1,
+    );
     let group = groups.get(product.producerId);
     if (!group) {
       group = {
@@ -216,14 +248,49 @@ export function cartSummary(cart: CartState, catalog: readonly Product[]) {
     }
     group.lines.push({ item, product, subtotalCents: subtotal });
     group.subtotalCents += subtotal;
-    group.quantity += item.quantity;
+    group.quantity += countByLine ? 1 : item.quantity;
     subtotalCents += subtotal;
-    itemCount += item.quantity;
+    itemCount += countByLine ? 1 : item.quantity;
   }
   return {
     producerGroups: [...groups.values()],
     itemCount,
+    countByLine,
     subtotalCents,
     totalCents: subtotalCents,
   };
+}
+
+/** Half-up inteiro por linha; nunca multiplicar preço/kg por gramas como se fossem kg. */
+export function lineTotal(quantity: number, price: number, reference = 1): number {
+  if (
+    !Number.isSafeInteger(quantity) ||
+    !Number.isSafeInteger(price) ||
+    !Number.isSafeInteger(reference) ||
+    reference < 1
+  )
+    return NaN;
+  const numerator = BigInt(quantity) * BigInt(price),
+    denominator = BigInt(reference);
+  const cents = (numerator * 2n + denominator) / (2n * denominator);
+  return cents > BigInt(Number.MAX_SAFE_INTEGER) ? NaN : Number(cents);
+}
+export function productQuantityError(
+  value: string | number,
+  product: Product,
+  allowZero = false,
+): string | null {
+  const basic = quantityError(value, product.availableStock, allowZero);
+  if (basic) return basic;
+  const q = Number(value);
+  if (q === 0 && allowZero) return null;
+  if (product.sale) {
+    const { quantidadeMinima: min, incrementoCompra: step, unidadeBase: unit } = product.sale;
+    if (q < min) return `A quantidade mínima é ${min} ${unit}.`;
+    if ((q - min) % step !== 0)
+      return `Escolhe ${min} ${unit} ou acrescenta múltiplos de ${step} ${unit}.`;
+    if (lineTotal(q, product.priceCents, product.sale.quantidadeReferencia) < 1)
+      return 'A quantidade escolhida não permite calcular um valor válido.';
+  }
+  return null;
 }

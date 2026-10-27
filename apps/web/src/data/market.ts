@@ -574,7 +574,7 @@ const seeds: ProductSeed[] = [
   },
 ];
 
-const categoryDescriptions: Record<Exclude<Category, 'Todos'>, string> = {
+const categoryDescriptions: Partial<Record<Exclude<Category, 'Todos'>, string>> = {
   Hortícolas:
     'Na cozinha, os hortícolas abrem espaço a refeições simples e a receitas que acompanham as estações. A época indicada é uma referência demonstrativa; a disponibilidade de cada colheita pode variar.',
   Fruta:
@@ -605,7 +605,7 @@ export const products: readonly Product[] = seeds.map(
       producerLocation: producer.locality,
       detailParagraphs: seed.detailParagraphs ?? [
         seed.description,
-        categoryDescriptions[seed.category],
+        categoryDescriptions[seed.category] ?? seed.description,
       ],
       images: [
         {

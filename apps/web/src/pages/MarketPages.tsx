@@ -13,7 +13,7 @@ import { ProductCard } from '../components/ProductCard';
 import { ProducerCard } from '../components/ProducerCard';
 import { StatusBadge } from '../components/StatusBadge';
 import { auction, producers, products } from '../data/market';
-import { producerCategories } from '../features/market/selectors';
+export { ProducersPage } from './ProducersPage';
 
 function PageIntro({
   eyebrow,
@@ -30,32 +30,6 @@ function PageIntro({
       <h1>{title}</h1>
       <p>{description}</p>
     </div>
-  );
-}
-
-export function ProducersPage() {
-  return (
-    <Container>
-      <PageIntro
-        eyebrow="Quem cuida da origem"
-        title="Boas coisas começam com pessoas."
-        description="Conhece histórias imaginadas para o nosso mercado demonstrativo. Fotografias ilustrativas, perfis fictícios."
-      />
-      <section className="catalog-results producer-directory" aria-labelledby="producer-list-title">
-        <h2 className="visually-hidden" id="producer-list-title">
-          Histórias dos produtores
-        </h2>
-        <div className="producer-grid">
-          {producers.map((producer) => (
-            <ProducerCard
-              key={producer.id}
-              producer={producer}
-              categories={producerCategories(products, producer.id)}
-            />
-          ))}
-        </div>
-      </section>
-    </Container>
   );
 }
 

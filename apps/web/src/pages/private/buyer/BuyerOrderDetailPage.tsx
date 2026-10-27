@@ -1,3 +1,4 @@
+import { publicProductPath, publicProducerPath } from '../../../features/api/catalog';
 import { Link, useParams } from 'react-router';
 import { Button } from '../../../components/Button';
 import { EmptyState } from '../../../components/EmptyState';
@@ -53,7 +54,7 @@ export default function BuyerOrderDetailPage() {
                   aria-labelledby={`order-producer-${group.producerId}`}
                 >
                   <h3 id={`order-producer-${group.producerId}`}>
-                    <Link to={`/produtores/${group.producerId}`}>{group.producerName}</Link>
+                    <Link to={publicProducerPath(group.producerId)}>{group.producerName}</Link>
                   </h3>
                   <ul>
                     {group.items.map((item) => (
@@ -67,7 +68,7 @@ export default function BuyerOrderDetailPage() {
                         />
                         <div>
                           <h4>
-                            <Link to={`/produtos/${item.productId}`}>{item.productName}</Link>
+                            <Link to={publicProductPath(item.productId)}>{item.productName}</Link>
                           </h4>
                           <p>
                             {item.quantity} {item.quantity === 1 ? 'unidade' : 'unidades'} ·{' '}

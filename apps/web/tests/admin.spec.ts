@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 const home = '/area/administrador';
 async function enter(page: Page, role = 'administrador') {
   await page.goto('/entrar');
@@ -114,8 +114,8 @@ test('decisões sobrevivem a navegação pública e repõem-se ao mudar cenário
   await enter(page);
   await navigate(page, home + '/candidaturas/horta-ribeira');
   await decide(page, 'aprovado');
-  await page.getByRole('link', { name: 'Consultar perfil público de referência' }).click();
-  await expect(page.locator('.producer-story-section')).toBeVisible();
+  await page.getByRole('link', { name: 'Explorar perfis públicos' }).click();
+  await expect(page.locator('.producer-directory')).toBeVisible();
   await page.getByRole('link', { name: 'Área de demonstração', exact: true }).click();
   await expect(page.locator('.admin-metrics dd').nth(2)).toHaveText('1');
   await scenario(page, 'vazio');
@@ -164,7 +164,7 @@ test('moderação oculta e mantém sem mudar texto classificação ou avaliaçõ
   page,
 }) => {
   await enter(page);
-  await navigate(page, '/produtores/horta-ribeira');
+  await navigate(page, '/produtores/fdbe9e7dd68e7983981d7b7e');
   await expect(page.locator('.producer-story-section')).toBeVisible();
   const publicBefore = await page.locator('.review-card').allTextContents();
   await navigate(page, home + '/moderacao/denuncia-1');
@@ -182,7 +182,7 @@ test('moderação oculta e mantém sem mudar texto classificação ou avaliaçõ
   await expect(page.locator('.admin-dashboard-grid')).toContainText(
     '0 pendentes · 3 avaliações denunciadas',
   );
-  await navigate(page, '/produtores/horta-ribeira');
+  await navigate(page, '/produtores/fdbe9e7dd68e7983981d7b7e');
   await expect(page.locator('.producer-story-section')).toBeVisible();
   expect(await page.locator('.review-card').allTextContents()).toEqual(publicBefore);
 });
@@ -282,7 +282,7 @@ test('carrinho e área do produtor ficam isolados das decisões administrativas'
   page,
 }) => {
   await enter(page);
-  await navigate(page, '/produtos/tomate-coracao');
+  await navigate(page, '/produtos/ee685adf80156cb9e1e85c27');
   await page
     .getByRole('button', { name: 'Adicionar Tomate coração-de-boi ao carrinho', exact: true })
     .click();

@@ -14,11 +14,13 @@ export default function CartPage() {
     cart,
     producerGroups,
     itemCount,
+    countByLine,
     subtotalCents,
     totalCents,
     feedback,
     recoveryMessages,
     clearCart,
+    remoteIssue,
   } = useCart();
   const heading = useRef<HTMLHeadingElement>(null);
   function focusHeading() {
@@ -56,6 +58,11 @@ export default function CartPage() {
             </span>
           </div>
         </header>
+        {remoteIssue && (
+          <p role="alert" className="cart-recovery">
+            {remoteIssue}
+          </p>
+        )}
         {recoveryMessages.length > 0 && (
           <section className="cart-recovery" aria-labelledby="cart-recovery-title">
             <h2 id="cart-recovery-title">Ajustes à cesta guardada</h2>
@@ -77,8 +84,15 @@ export default function CartPage() {
           <>
             <div className="cart-toolbar">
               <p>
-                <strong>{itemCount}</strong> {itemCount === 1 ? 'unidade' : 'unidades'} ·{' '}
-                {cart.items.length} {cart.items.length === 1 ? 'produto' : 'produtos'} ·{' '}
+                <strong>{itemCount}</strong>{' '}
+                {countByLine
+                  ? itemCount === 1
+                    ? 'artigo'
+                    : 'artigos'
+                  : itemCount === 1
+                    ? 'unidade'
+                    : 'unidades'}{' '}
+                · {cart.items.length} {cart.items.length === 1 ? 'produto' : 'produtos'} ·{' '}
                 {producerGroups.length} {producerGroups.length === 1 ? 'produtor' : 'produtores'}
               </p>
               <button
@@ -115,7 +129,14 @@ export default function CartPage() {
                         </p>
                       </div>
                       <span>
-                        {group.quantity} {group.quantity === 1 ? 'unidade' : 'unidades'}
+                        {group.quantity}{' '}
+                        {countByLine
+                          ? group.quantity === 1
+                            ? 'artigo'
+                            : 'artigos'
+                          : group.quantity === 1
+                            ? 'unidade'
+                            : 'unidades'}
                       </span>
                     </header>
                     {group.lines.map((line) => (
@@ -139,7 +160,14 @@ export default function CartPage() {
                   <div>
                     <dt>Quantidade total</dt>
                     <dd>
-                      {itemCount} {itemCount === 1 ? 'unidade' : 'unidades'}
+                      {itemCount}{' '}
+                      {countByLine
+                        ? itemCount === 1
+                          ? 'artigo'
+                          : 'artigos'
+                        : itemCount === 1
+                          ? 'unidade'
+                          : 'unidades'}
                     </dd>
                   </div>
                   <div>
@@ -160,8 +188,8 @@ export default function CartPage() {
                   </div>
                 </dl>
                 <p className="cart-summary__note">
-                  O total corresponde aos produtos escolhidos. Sem custos adicionais nesta
-                  demonstração.
+                  O total corresponde aos produtos escolhidos. Os custos de entrega não estão
+                  incluídos; não existe finalização de compra nesta fase.
                 </p>
                 <div className="cart-checkout-note">
                   <Icon name="clock" />
@@ -196,8 +224,9 @@ export default function CartPage() {
           </div>
         )}
         <p className="cart-demo-note">
-          Cesta demonstrativa com dados fictícios. Não reserva stock nem cria encomendas. Preços e
-          disponibilidade terão de ser confirmados antes de uma compra real.
+          Cesta local, com escolhas do catálogo e eventuais exemplos demonstrativos. Não reserva
+          stock nem cria encomendas. Preços e disponibilidade terão de ser confirmados antes de uma
+          compra real.
         </p>
       </Container>
     </div>

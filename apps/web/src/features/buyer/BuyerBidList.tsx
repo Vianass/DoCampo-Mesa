@@ -1,3 +1,4 @@
+import { publicProducerPath } from '../../features/api/catalog';
 import { Link } from 'react-router';
 import { PriceDisplay } from '../../components/PriceDisplay';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -25,7 +26,7 @@ export function BuyerBidList({ bids }: { bids: readonly BuyerBid[] }) {
                 <Link to={`/area/comprador/licitacoes/${bid.auction.id}`}>{bid.auction.title}</Link>
               </h3>
               <p>{bid.auction.lot}</p>
-              <Link to={`/produtores/${bid.auction.producerId}`} className="buyer-producer-link">
+              <Link to={publicProducerPath(bid.auction.producerId)} className="buyer-producer-link">
                 {bid.auction.producerName}
               </Link>
             </div>

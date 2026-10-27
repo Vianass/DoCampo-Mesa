@@ -1,3 +1,4 @@
+import { publicProducerPath } from '../../../features/api/catalog';
 import { Button } from '../../../components/Button';
 import { MarketImage } from '../../../components/MarketImage';
 import { ProducerMap } from '../../../components/ProducerMap';
@@ -37,8 +38,8 @@ export default function ProducerProfilePage({ preview = false }: { preview?: boo
               <Button to="/area/produtor/perfil" variant="secondary">
                 Voltar à edição do perfil
               </Button>
-              <Button to={'/produtores/' + data.producerId} variant="text">
-                Consultar o perfil público original
+              <Button to={publicProducerPath(data.producerId)} variant="text">
+                Explorar os perfis públicos
               </Button>
             </div>
           </section>

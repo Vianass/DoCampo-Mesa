@@ -1,3 +1,4 @@
+import { publicProductPath } from '../../../features/api/catalog';
 import { useParams, useSearchParams } from 'react-router';
 import { Button } from '../../../components/Button';
 import { PriceDisplay } from '../../../components/PriceDisplay';
@@ -80,7 +81,7 @@ export default function AdminAuctionsPage({ detail = false }: { detail?: boolean
               {product ? (
                 <p>
                   Referência ilustrativa:{' '}
-                  <Button to={'/produtos/' + product.id} variant="text">
+                  <Button to={publicProductPath(product.id)} variant="text">
                     {product.name}
                   </Button>{' '}
                   Sem reserva de stock ou decisão sobre Q07.

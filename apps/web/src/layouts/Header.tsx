@@ -11,7 +11,7 @@ import { useAuth } from '../features/auth/useAuth';
 import { roleHome } from '../features/private-area/navigation';
 
 export function Header() {
-  const { itemCount } = useCart();
+  const { itemCount, countByLine } = useCart();
   const { session } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -52,7 +52,7 @@ export function Header() {
             <Link
               to="/carrinho"
               className="icon-button header-cart"
-              aria-label={`Carrinho, ${itemCount} ${itemCount === 1 ? 'unidade' : 'unidades'}`}
+              aria-label={`Carrinho, ${itemCount} ${countByLine ? (itemCount === 1 ? 'artigo' : 'artigos') : itemCount === 1 ? 'unidade' : 'unidades'}`}
             >
               <Icon name="basket" />
               <span className="header-cart__count" aria-hidden="true">

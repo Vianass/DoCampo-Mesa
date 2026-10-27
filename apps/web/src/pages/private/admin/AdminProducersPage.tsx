@@ -1,3 +1,4 @@
+import { publicProducerPath } from '../../../features/api/catalog';
 import { useParams, useSearchParams } from 'react-router';
 import { Button } from '../../../components/Button';
 import { MarketImage } from '../../../components/MarketImage';
@@ -98,8 +99,8 @@ export default function AdminProducersPage({
                     <li>Análise administrativa da candidatura.</li>
                     <li>Decisão e comunicação futura no servidor.</li>
                   </ol>
-                  <Button to={'/produtores/' + producer.id} variant="text">
-                    Consultar perfil público de referência
+                  <Button to={publicProducerPath(producer.id)} variant="text">
+                    Explorar perfis públicos
                   </Button>
                 </div>
                 <ProducerMap locality={profile.locality} region={profile.region} />

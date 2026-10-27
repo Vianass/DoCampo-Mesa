@@ -1,3 +1,4 @@
+import { publicProductPath, publicProducerPath } from '../../features/api/catalog';
 import { Link } from 'react-router';
 import { Button } from '../../components/Button';
 import { PriceDisplay } from '../../components/PriceDisplay';
@@ -28,13 +29,13 @@ export function OrderCard({ order }: { order: BuyerOrder }) {
       </header>
       {orderGroups(order).map((group) => (
         <div key={group.producerId} className="buyer-order-card__group">
-          <Link to={`/produtores/${group.producerId}`} className="buyer-producer-link">
+          <Link to={publicProducerPath(group.producerId)} className="buyer-producer-link">
             {group.producerName}
           </Link>
           <ul>
             {group.items.map((item) => (
               <li key={item.productId}>
-                <Link to={`/produtos/${item.productId}`}>{item.productName}</Link>
+                <Link to={publicProductPath(item.productId)}>{item.productName}</Link>
                 <span>
                   {item.quantity} ×{' '}
                   <PriceDisplay amountCents={item.unitPriceCents} unit={item.unit} />

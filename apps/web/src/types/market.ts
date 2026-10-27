@@ -6,7 +6,14 @@ export type ProductCategory =
   | 'Azeite e azeitonas'
   | 'Pão e cereais'
   | 'Frutos secos'
-  | 'Ervas e aromáticas';
+  | 'Ervas e aromáticas'
+  | 'Leguminosas e cereais'
+  | 'Pão e padaria'
+  | 'Laticínios e queijos'
+  | 'Ovos'
+  | 'Frutos secos e sementes'
+  | 'Bebidas'
+  | 'Outros produtos locais';
 export type Category = 'Todos' | ProductCategory;
 export type Season = 'Primavera' | 'Verão' | 'Outono' | 'Inverno';
 
@@ -31,6 +38,20 @@ export interface Product {
   readonly season: readonly Season[];
   readonly featured: boolean;
   readonly createdAt: string;
+  readonly source?: 'api';
+  readonly categoryId?: string;
+  readonly sale?: SaleUnit;
+  readonly seasonMonths?: readonly number[];
+  readonly productionMode?: string;
+}
+export interface SaleUnit {
+  modalidade: 'peso' | 'volume' | 'unidade' | 'embalagem';
+  unidadeBase: 'g' | 'ml' | 'un';
+  quantidadeReferencia: number;
+  quantidadeMinima: number;
+  incrementoCompra: number;
+  rotulo?: string;
+  conteudoPorUnidade?: { quantidade: number; unidade: 'g' | 'ml' | 'un' };
 }
 export interface Producer {
   id: string;

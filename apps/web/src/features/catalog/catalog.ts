@@ -2,11 +2,12 @@ import type { Product, ProductCategory, Season } from '../../types/market';
 
 export interface CatalogFilters {
   search: string;
-  category: ProductCategory | '';
+  category: ProductCategory | `cat-${string}` | '';
   producerId: string;
   location: string;
   season: Season | '';
   organicOnly: boolean;
+  productionMode?: string;
   maxPriceCents: number | null;
 }
 export const sortOptions = [
@@ -31,6 +32,8 @@ export interface CatalogOptions {
   locations: string[];
   seasons: Season[];
   priceCeilingCents: number;
+  remote?: boolean;
+  categoryIds?: Record<string, string>;
 }
 const collator = new Intl.Collator('pt-PT', { sensitivity: 'base', numeric: true });
 const queryKeys = [
@@ -44,6 +47,7 @@ const queryKeys = [
   'ordem',
   'pagina',
   'porPagina',
+  'modoProducao',
 ];
 
 export function defaultFilters(): CatalogFilters {
@@ -88,23 +92,35 @@ export function readCatalogQuery(params: URLSearchParams, options: CatalogOption
     : null;
   const rawPage = params.get('pagina') ?? '1';
   const parsedPage = /^\d+$/.test(rawPage) ? Number(rawPage) : 1;
-  const category = options.categories.find((item) => item === params.get('categoria')) ?? '';
-  const producerId = options.producers.find((item) => item.id === params.get('produtor'))?.id ?? '';
+  const category = options.remote
+    ? ((Object.values(options.categoryIds ?? {}).find((id) => id === params.get('categoria')) ??
+        '') as CatalogFilters['category'])
+    : (options.categories.find((item) => item === params.get('categoria')) ?? '');
+  const producerId = options.remote
+    ? /^[a-fA-F0-9]{24}$/.test(params.get('produtor') ?? '')
+      ? params.get('produtor')!.toLowerCase()
+      : ''
+    : (options.producers.find((item) => item.id === params.get('produtor'))?.id ?? '');
   return {
     filters: {
       search: (params.get('pesquisa') ?? '').slice(0, 100),
       category,
       producerId,
-      location: options.locations.find((item) => item === params.get('localidade')) ?? '',
+      location: options.remote
+        ? (params.get('localidade') ?? '').slice(0, 120)
+        : (options.locations.find((item) => item === params.get('localidade')) ?? ''),
+      ...(options.remote
+        ? { productionMode: (params.get('modoProducao') ?? '').slice(0, 100) }
+        : {}),
       season: options.seasons.find((item) => item === params.get('epoca')) ?? '',
       organicOnly: params.get('bio') === 'true',
       maxPriceCents:
-        parsedMax !== null && Number.isFinite(parsedMax) && parsedMax < options.priceCeilingCents
+        parsedMax !== null && Number.isFinite(parsedMax) && parsedMax <= options.priceCeilingCents
           ? Math.max(0, parsedMax)
           : null,
     },
     sort: sortOptions.find((item) => item.value === params.get('ordem'))?.value ?? 'relevancia',
-    page: Number.isSafeInteger(parsedPage) ? Math.max(1, parsedPage) : 1,
+    page: Number.isSafeInteger(parsedPage) ? Math.min(1000, Math.max(1, parsedPage)) : 1,
     pageSize: pageSizes.find((item) => item === Number(params.get('porPagina'))) ?? pageSizes[0],
   };
 }
@@ -122,6 +138,7 @@ export function writeCatalogQuery(
   if (f.location) params.set('localidade', f.location);
   if (f.season) params.set('epoca', f.season);
   if (f.organicOnly) params.set('bio', 'true');
+  if (f.productionMode) params.set('modoProducao', f.productionMode);
   if (f.maxPriceCents !== null) params.set('precoMax', (f.maxPriceCents / 100).toFixed(2));
   if (state.sort !== 'relevancia') params.set('ordem', state.sort);
   if (state.page > 1) params.set('pagina', String(state.page));
@@ -213,14 +230,23 @@ export function activeCatalogFilters(
   const active: { key: keyof CatalogFilters; label: string }[] = [];
   if (filters.search.trim())
     active.push({ key: 'search', label: `Pesquisa: ${filters.search.trim()}` });
-  if (filters.category) active.push({ key: 'category', label: filters.category });
+  if (filters.category)
+    active.push({
+      key: 'category',
+      label:
+        options.categories.find((name) => options.categoryIds?.[name] === filters.category) ??
+        filters.category,
+    });
   if (filters.producerId)
     active.push({
       key: 'producerId',
-      label: options.producers.find((item) => item.id === filters.producerId)?.name ?? '',
+      label:
+        options.producers.find((item) => item.id === filters.producerId)?.name ??
+        filters.producerId,
     });
   if (filters.location) active.push({ key: 'location', label: filters.location });
   if (filters.season) active.push({ key: 'season', label: filters.season });
+  if (filters.productionMode) active.push({ key: 'productionMode', label: filters.productionMode });
   if (filters.organicOnly) active.push({ key: 'organicOnly', label: 'Biológico' });
   if (filters.maxPriceCents !== null)
     active.push({

@@ -4,6 +4,7 @@ import { Icon } from './Icon';
 import { MarketImage } from './MarketImage';
 import { PriceDisplay } from './PriceDisplay';
 import { StatusBadge } from './StatusBadge';
+import { stockLabel } from '../features/api/catalog';
 import { AddToCart } from '../features/cart/AddToCart';
 
 export function ProductCard({ product }: { product: Product }) {
@@ -27,7 +28,11 @@ export function ProductCard({ product }: { product: Product }) {
             {product.featured && product.season.length < 4 && (
               <StatusBadge tone="seasonal">Da época</StatusBadge>
             )}
-            {product.organic && <StatusBadge tone="organic">Biológico</StatusBadge>}
+            {product.organic && (
+              <StatusBadge tone="organic">
+                {product.source === 'api' ? 'Biológico · declarado' : 'Biológico'}
+              </StatusBadge>
+            )}
           </div>
           {product.images[0].src.endsWith('product-placeholder.svg') && (
             <span className="product-card__placeholder-note">Fotografia a preparar</span>
@@ -53,9 +58,7 @@ export function ProductCard({ product }: { product: Product }) {
           className={`product-card__stock ${product.availableStock === 0 ? 'product-card__stock--empty' : ''}`}
         >
           <span aria-hidden="true" />
-          {product.availableStock > 0
-            ? `Disponível · ${product.availableStock} em stock`
-            : 'Esgotado'}
+          {product.availableStock > 0 ? `Disponível · ${stockLabel(product)} em stock` : 'Esgotado'}
         </p>
         <AddToCart product={product} />
       </div>

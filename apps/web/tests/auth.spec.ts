@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { roles, roleLabels, type Role } from '../src/features/auth/types';
 import { privateSections } from '../src/features/private-area/navigation';
 
@@ -337,7 +337,7 @@ test('menu privado móvel usa teclado, Escape, foco e fecha após navegação', 
 test('entrar, mudar papel e sair da demonstração preserva o carrinho e o mercado', async ({
   page,
 }) => {
-  await page.goto('/produtos/tomate-coracao');
+  await page.goto('/produtos/ee685adf80156cb9e1e85c27');
   await page.getByRole('button', { name: 'Adicionar Tomate coração-de-boi ao carrinho' }).click();
   await page.locator('.header-actions__login').click();
   await page.getByRole('button', { name: 'Explorar como comprador', exact: true }).click();

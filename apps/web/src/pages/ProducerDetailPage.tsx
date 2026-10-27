@@ -1,31 +1,45 @@
-import { Link, useParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { Container } from '../components/Container';
 import { EmptyState } from '../components/EmptyState';
 import { Icon } from '../components/Icon';
 import { MarketImage } from '../components/MarketImage';
 import { ProductCard } from '../components/ProductCard';
-import { ProducerMap } from '../components/ProducerMap';
-import { ReviewCard } from '../components/ReviewCard';
 import { SectionHeading } from '../components/SectionHeading';
-import { StatusBadge } from '../components/StatusBadge';
-import { producers, products } from '../data/market';
-import { producerReviews } from '../data/reviews';
 import { EntityNotFound } from '../features/market/EntityNotFound';
-import {
-  producerCategories,
-  reviewsForProducer,
-  reviewSummary,
-} from '../features/market/selectors';
-
+import { adaptProduct, catalogApi } from '../features/api/catalog';
+import { objectId } from '../features/api/catalog-contract';
+import { useRemote } from '../features/api/useRemote';
+import { ApiFailure } from '../features/api/client';
+import { RemoteError } from '../features/market/RemoteError';
+import { DetailLoadingPage } from '../features/market/DetailLoadingPage';
+import { CatalogPagination } from '../features/catalog/CatalogPagination';
+import { CommercialInfo } from '../features/market/CommercialInfo';
 export default function ProducerDetailPage() {
-  const { id } = useParams();
-  const producer = producers.find((item) => item.id === id);
-  if (!producer) return <EntityNotFound kind="producer" />;
-  const selection = products.filter((product) => product.producerId === producer.id);
-  const categories = producerCategories(products, producer.id);
-  const reviews = reviewsForProducer(producerReviews, producer.id);
-  const summary = reviewSummary(reviews);
+  const { id = '' } = useParams();
+  const [params, setParams] = useSearchParams();
+  const page = /^[1-9]\d{0,3}$/.test(params.get('pagina') ?? '')
+    ? Math.min(1000, Number(params.get('pagina')))
+    : 1;
+  const query = new URLSearchParams({ pagina: String(page), porPagina: '12' }).toString();
+  const remote = useRemote(id + '?' + query, (signal) =>
+    objectId(id)
+      ? catalogApi.producer(id, query, signal)
+      : Promise.reject(new ApiFailure('http', 404)),
+  );
+  if (remote.loading) return <DetailLoadingPage kind="producer" />;
+  if (remote.error?.status === 404) return <EntityNotFound kind="producer" />;
+  if (remote.error)
+    return (
+      <Container>
+        <RemoteError error={remote.error} retry={remote.retry} />
+      </Container>
+    );
+  const producer = remote.data!;
+  const selection = producer.produtos.itens.map(adaptProduct);
+  const categories = [
+    ...new Map(producer.produtos.itens.map((p) => [p.categoria.id, p.categoria.nome])).entries(),
+  ];
   return (
     <div className="producer-profile-page">
       <Container>
@@ -33,124 +47,74 @@ export default function ProducerDetailPage() {
           items={[
             { label: 'Início', to: '/' },
             { label: 'Produtores', to: '/produtores' },
-            { label: producer.name },
+            { label: producer.nomePublico },
           ]}
         />
         <header className="producer-profile-header">
           <div className="producer-profile-cover">
             <MarketImage
-              src={producer.coverImage.src}
-              alt={producer.coverImage.alt}
+              src={producer.imagem?.url ?? '/images/product-placeholder.svg'}
+              alt={producer.imagem?.alt ?? 'Imagem do produtor não disponibilizada'}
               width="1200"
               height="500"
               fetchPriority="high"
             />
-            <span>Uma história do mercado · perfil fictício</span>
+            <span>Perfil público · informação do produtor</span>
           </div>
           <div className="producer-profile-identity">
             <MarketImage
               className="producer-profile-portrait"
-              src={producer.image}
-              alt={producer.imageAlt}
+              src={producer.imagem?.url ?? '/images/product-placeholder.svg'}
+              alt={producer.imagem?.alt ?? 'Imagem do produtor não disponibilizada'}
               width="200"
               height="200"
             />
             <div className="producer-profile-name">
-              <p className="eyebrow">{producer.specialty}</p>
-              <h1>{producer.name}</h1>
+              <p className="eyebrow">Quem cuida da origem</p>
+              <h1>{producer.nomePublico}</h1>
               <p className="location-label">
                 <Icon name="location" />
-                {producer.locality} · {producer.region}
+                {producer.localidade} · {producer.concelho}
               </p>
             </div>
-            <a className="producer-rating-link" href="#producer-reviews">
-              {summary.average !== null ? (
-                <>
-                  <span className="producer-rating-link__value">
-                    {summary.average.toLocaleString('pt-PT', {
-                      maximumFractionDigits: 1,
-                      minimumFractionDigits: 1,
-                    })}
-                    <span aria-hidden="true"> ★</span>
-                    <span className="visually-hidden"> de 5</span>
-                  </span>
-                  <span>
-                    {summary.count}{' '}
-                    {summary.count === 1 ? 'avaliação fictícia' : 'avaliações fictícias'}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Icon name="sun" />
-                  <span>História por avaliar</span>
-                </>
-              )}
-            </a>
           </div>
-          <p className="producer-profile-intro">{producer.description}</p>
-          <ul className="producer-category-list" aria-label="Categorias deste produtor">
-            {categories.map((category) => (
-              <li key={category}>
+          <p className="producer-profile-intro">{producer.descricao}</p>
+          <ul className="producer-category-list" aria-label="Categorias nesta página de produtos">
+            {categories.map(([categoryId, name]) => (
+              <li key={categoryId}>
                 <Link
-                  to={`/produtos?${new URLSearchParams({ produtor: producer.id, categoria: category })}`}
+                  to={`/produtos?${new URLSearchParams({ produtor: producer.id, categoria: categoryId })}`}
                 >
-                  {category}
+                  {name}
                   <Icon name="diagonal" width="14" height="14" />
                 </Link>
               </li>
             ))}
           </ul>
           <p className="profile-demo-note">
-            Perfil, história, métodos e avaliações fictícios. As fotografias são ilustrativas e não
-            representam esta exploração.
+            Informação publicada pelo produtor. Histórias adicionais, métodos, certificações e
+            avaliações não são disponibilizados nesta fase.
           </p>
         </header>
         <section className="producer-story-section" aria-labelledby="producer-story-title">
           <div>
             <p className="eyebrow">Por trás de cada colheita</p>
-            <h2 id="producer-story-title">{producer.story.title}</h2>
+            <h2 id="producer-story-title">Conhecer a origem.</h2>
             <span className="story-decoration" aria-hidden="true">
               ✳
             </span>
           </div>
           <div>
-            {producer.story.paragraphs.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
-            <span className="story-signature">Da terra, com tempo.</span>
+            <p>{producer.descricao}</p>
+            <CommercialInfo value={producer.comercial} />
           </div>
-        </section>
-        <section className="producer-methods" aria-labelledby="producer-methods-title">
-          <SectionHeading
-            id="producer-methods-title"
-            eyebrow="O cuidado faz parte"
-            title="Como imaginamos a produção."
-          />
-          <div className="producer-methods__grid">
-            {producer.methods.map((method, index) => (
-              <article key={method.title}>
-                <span aria-hidden="true">0{index + 1}</span>
-                <h3>{method.title}</h3>
-                <p>{method.description}</p>
-              </article>
-            ))}
-          </div>
-          {producer.organicCertification && (
-            <div className="producer-certification">
-              <Icon name="leaf" />
-              <div>
-                <StatusBadge tone="organic">{producer.organicCertification.label}</StatusBadge>
-                <p>{producer.organicCertification.note}</p>
-              </div>
-            </div>
-          )}
         </section>
         <section className="producer-selection" aria-labelledby="producer-products-title">
           <SectionHeading
             id="producer-products-title"
             eyebrow="Daqui para a tua cozinha"
             title="Os sabores desta origem."
-            description={`${selection.length} produtos demonstrativos · ${selection.filter((product) => product.availableStock > 0).length} com stock disponível.`}
+            description={`${producer.produtos.total} produtos publicados · ${selection.length} nesta página.`}
             action={
               <Link
                 className="editorial-text-link"
@@ -162,47 +126,49 @@ export default function ProducerDetailPage() {
           />
           {selection.length ? (
             <div className="product-grid">
-              {selection.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {selection.map((p) => (
+                <ProductCard key={p.id} product={p} />
               ))}
             </div>
           ) : (
             <EmptyState
               title="Uma nova colheita está a caminho."
-              description="Este perfil ainda não tem produtos na seleção demonstrativa."
+              description={
+                producer.produtos.total
+                  ? 'Esta página não tem produtos. Escolhe outra página.'
+                  : 'Este perfil ainda não tem produtos publicados.'
+              }
             />
           )}
+          <CatalogPagination
+            page={page}
+            totalPages={producer.produtos.totalPaginas}
+            total={producer.produtos.total}
+            start={selection.length ? (page - 1) * 12 + 1 : 0}
+            end={selection.length ? Math.min(page * 12, producer.produtos.total) : 0}
+            onPageChange={(pagina) => {
+              const next = new URLSearchParams(params);
+              next.set('pagina', String(pagina));
+              setParams(next);
+            }}
+          />
         </section>
         <section className="producer-place" aria-labelledby="producer-place-title">
           <div>
-            <p className="eyebrow">Uma história com lugar</p>
+            <p className="eyebrow">Uma origem com lugar</p>
             <h2 id="producer-place-title">
-              {producer.locality}.<br />
+              {producer.localidade}.<br />
               <em>A origem aproxima.</em>
             </h2>
             <p>
-              {producer.region}, Portugal. A representação é ilustrativa; não indica a localização
-              precisa de uma exploração.
+              {producer.concelho}. Não existem coordenadas ou contactos públicos disponibilizados
+              pela API. Não é apresentada a localização de uma exploração.
             </p>
-            <div className="producer-contact">
-              <h3>Contactos públicos</h3>
-              {producer.publicContact?.email && (
-                <a href={`mailto:${producer.publicContact.email}`}>
-                  {producer.publicContact.email}
-                </a>
-              )}
-              {producer.publicContact?.website && (
-                <a href={producer.publicContact.website} target="_blank" rel="noopener noreferrer">
-                  Website do produtor <span className="visually-hidden">(novo separador)</span>
-                  <Icon name="diagonal" />
-                </a>
-              )}
-              {!producer.publicContact?.email && !producer.publicContact?.website && (
-                <p>Não existem contactos públicos disponíveis para este perfil fictício.</p>
-              )}
-            </div>
           </div>
-          <ProducerMap locality={producer.locality} region={producer.region} />
+          <EmptyState
+            title="Conhecer sem inventar."
+            description="Mapa, certificações e avaliações serão apresentados quando existirem dados públicos verificados e contratos próprios."
+          />
         </section>
         <section
           className="producer-reviews"
@@ -213,33 +179,11 @@ export default function ProducerDetailPage() {
             id="producer-reviews-title"
             eyebrow="A mesa também conta histórias"
             title="Palavras de quem se aproxima."
-            description="Avaliações de demonstração, escritas por personagens fictícias. Não correspondem a compras reais ou verificadas."
           />
-          {reviews.length ? (
-            <>
-              <p className="producer-reviews-summary">
-                Média demonstrativa:{' '}
-                <strong>
-                  {summary.average?.toLocaleString('pt-PT', {
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1,
-                  })}{' '}
-                  de 5
-                </strong>{' '}
-                · {summary.count} {summary.count === 1 ? 'avaliação' : 'avaliações'}
-              </p>
-              <div className="review-grid">
-                {reviews.map((review) => (
-                  <ReviewCard key={review.id} review={review} />
-                ))}
-              </div>
-            </>
-          ) : (
-            <EmptyState
-              title="Esta história ainda não tem avaliações."
-              description="Ainda não existem avaliações demonstrativas associadas a este perfil. A ausência de avaliações não equivale a uma classificação de zero."
-            />
-          )}
+          <EmptyState
+            title="Avaliações ainda não disponíveis."
+            description="As avaliações ainda não estão disponíveis nesta fase. Não se atribuem classificações nem se associam avaliações demonstrativas a este perfil."
+          />
         </section>
       </Container>
     </div>

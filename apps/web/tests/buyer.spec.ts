@@ -1,5 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
-import { producerReviews } from '../src/data/reviews';
+import { expect, test, type Page } from './support/test';
 
 async function enter(page: Page) {
   await page.goto('/entrar');
@@ -128,10 +127,12 @@ test('avaliações identificam origem, classificação e ligação ao perfil pú
   await page
     .locator('.buyer-review')
     .first()
-    .getByRole('link', { name: 'Conhecer o produtor →' })
+    .getByRole('link', { name: 'Explorar produtores públicos →' })
     .click();
-  await expect(page).toHaveURL(/\/produtores\/horta-ribeira$/);
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Horta da Ribeira');
+  await expect(page).toHaveURL(/\/produtores$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(
+    'Boas coisas começam com pessoas.',
+  );
 });
 test('criação demonstrativa exige entrega e classificação, sem alterar reviews públicas', async ({
   page,
@@ -160,12 +161,11 @@ test('criação demonstrativa exige entrega e classificação, sem alterar revie
   await page
     .locator('.buyer-review')
     .first()
-    .getByRole('link', { name: 'Conhecer o produtor →' })
+    .getByRole('link', { name: 'Explorar produtores públicos →' })
     .click();
-  await expect(page).toHaveURL(/\/produtores\/forno-aldeia$/);
-  await expect(page.locator('.review-card')).toHaveCount(
-    producerReviews.filter((review) => review.producerId === 'forno-aldeia').length,
-  );
+  await expect(page).toHaveURL(/\/produtores$/);
+  await expect(page.locator('.review-card')).toHaveCount(0);
+  await expect(page.locator('.producer-directory .producer-card')).toHaveCount(7);
   await page.getByRole('link', { name: 'Área de demonstração' }).click();
   await expect(page.locator('.buyer-summary dd').nth(2)).toHaveText('3');
   await page.getByRole('button', { name: 'Sair da demonstração' }).click();
@@ -201,7 +201,7 @@ test('licitações mostram quatro situações estáticas e detalhe de lote sem e
   await expect(page).toHaveURL(/\/leiloes$/);
 });
 test('cesta partilhada atualiza resumo e preserva produtos ao navegar e sair', async ({ page }) => {
-  await page.goto('/produtos/tomate-coracao');
+  await page.goto('/produtos/ee685adf80156cb9e1e85c27');
   await page.getByRole('button', { name: 'Adicionar Tomate coração-de-boi ao carrinho' }).click();
   await page.locator('.header-actions__login').click();
   await page.getByRole('button', { name: 'Explorar como comprador', exact: true }).click();
@@ -209,6 +209,7 @@ test('cesta partilhada atualiza resumo e preserva produtos ao navegar e sair', a
   await expect(cart).toContainText('1 unidade');
   await expect(cart).toContainText('2,80');
   await cart.getByRole('link', { name: 'Continuar a explorar' }).click();
+  await page.getByLabel('Pesquisar produtos ou produtores').fill('Tomate coração-de-boi');
   await page.getByRole('button', { name: 'Adicionar Tomate coração-de-boi ao carrinho' }).click();
   await page.getByRole('link', { name: 'Área de demonstração' }).click();
   await expect(cart).toContainText('2 unidades');

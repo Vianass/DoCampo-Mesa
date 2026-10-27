@@ -1,3 +1,4 @@
+import { stockLabel } from '../api/catalog';
 import { Link } from 'react-router';
 import { MarketImage } from '../../components/MarketImage';
 import { PriceDisplay } from '../../components/PriceDisplay';
@@ -30,7 +31,9 @@ export function CartLineItem({ line, onRemoved }: { line: CartLine; onRemoved: (
         </h3>
         <PriceDisplay amountCents={item.unitPriceSnapshotCents} unit={item.unit} />
         <p className="cart-line__stock">
-          {product.availableStock} unidades disponíveis · {item.unit} por unidade.
+          {product.source === 'api'
+            ? `${stockLabel(product)} disponíveis · preço por ${item.unit}.`
+            : `${product.availableStock} unidades disponíveis · ${item.unit} por unidade.`}
         </p>
         <button
           className="cart-remove"
@@ -46,6 +49,7 @@ export function CartLineItem({ line, onRemoved }: { line: CartLine; onRemoved: (
       </div>
       <div className="cart-line__quantity">
         <QuantityControl
+          product={product}
           quantity={item.quantity}
           stock={product.availableStock}
           name={product.name}

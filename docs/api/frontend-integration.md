@@ -1,3 +1,57 @@
+# Fase 5B — integração pública implementada localmente
+
+Base `2fa007d`, branch `feat/api-foundation`. Esta etapa integra React com `GET /api/products`, `GET /api/products/:id`, `GET /api/producers` e `GET /api/producers/:id`, sem modificar os seus contratos, os modelos, a autenticação ou as escritas de negócio existentes. São abrangidos `/produtos`, `/produtos/:id`, `/produtores`, `/produtores/:id` e as seleções públicas da homepage.
+
+## Comunicação e apresentação
+
+`apps/web/src/features/api/` contém fetch nativo tipado, validação em execução dos DTOs e adaptadores de apresentação. `VITE_API_URL` é uma base pública, por omissão `/api`; o proxy Vite de desenvolvimento usa a porta 3001. Em produção, configurar reverse proxy ou a base HTTPS antes do build e a origem exata em CORS. Não existem JWT ou credenciais no ambiente do browser. Apenas GET público é usado nesta fase.
+
+O cliente distingue rede/timeout (10 segundos), códigos HTTP, JSON/content-type inválidos e DTOs incompatíveis. Apresenta mensagens acessíveis e tentativa explícita; não mostra stacks, payloads ou mensagens internas do servidor. Cancelamento e isolamento por chave impedem respostas antigas de substituir filtros/IDs novos. A pesquisa e os filtros textuais aguardam 250 ms, sem atraso artificial na obtenção de detalhes. O skeleton conserva a estrutura do catálogo; erros não são apresentados como listas vazias nem provocam fallback aos mocks.
+
+IDs de produto e perfil são opacos e preservados, sem associação a contas ou a nomes/slugs antigos. O adaptador converte nomes portugueses em propriedades dos componentes existentes, conserva preço em cêntimos, referência da unidade e stock na grandeza original. A taxonomia de 12 categorias é uma lista estável do contrato, não inferida de uma página. Categorias antigas ambíguas só são traduzidas explicitamente na preparação dos dados fictícios (por exemplo, farinha vs pão).
+
+`nome`, `descricao`, `imagens`, origem, preço, unidade, disponibilidade, ingredientes e condições comerciais vêm da API. A imagem do perfil é reutilizada na apresentação editorial; não se inventa uma fotografia de capa. Meses ausentes são «não indicados». A indicação biológica e o modo são declarações, sem certificação. História adicional, métodos editoriais, reviews, pontuações, mapas/coordenadas e contactos não contratados não são fabricados. Campos opcionais em falta têm estados de ausência ou o placeholder visual existente.
+
+## Pesquisa, filtros e paginação
+
+O catálogo envia pesquisa, categoria por ID, produtor por ID de perfil, localidade exata, época, modo de produção declarado, biológico, preço máximo, seis ordenações e página/tamanho ao servidor. Mantém a URL e o histórico, incluindo filtros recebidos antes de carregar opções de produtor. A listagem não descarrega o catálogo inteiro para filtrar no browser. O total e as páginas vêm do envelope, incluindo o estado de página além do fim e recuperação explícita da primeira página.
+
+O seletor de produtores pesquisa e pagina os perfis públicos em blocos de 12; o ID selecionado é conservado mesmo quando não pertence à página das opções. Localidade e modo são entradas textuais exatas, evitando apresentar como universais as opções inferidas de resultados parciais. Não existe endpoint de facetas. O preço máximo usa o limite contratual de 10 000 €, não o preço maior de uma única página.
+
+O diretório pesquisa e pagina no servidor. O perfil pagina os seus produtos publicados; as categorias mostradas são explicitamente as da página corrente. As recomendações de detalhe consultam uma página da mesma categoria e excluem o produto atual; não atribuem destaque fictício.
+
+## Cesta local e demonstrações preservadas
+
+O modelo existente é estendido com unidade estruturada e um snapshot público opcional para produtos da API. `docampo.cart.v1` continua a aceitar linhas demonstrativas anteriores sem converter slugs em ObjectIds; novas linhas reais conservam o seu ID e os metadados públicos necessários. Não são guardados tokens, credenciais, contactos privados ou dados administrativos. Os snapshots são validados ao recuperar e são apenas uma estimativa local, nunca autoridade de preço/stock.
+
+A quantidade continua inteira em g/ml/unidades/embalagens, com mínimo e incremento explícitos. Cada subtotal usa arredondamento half-up inteiro de `quantidade × preço / referência`, sem tratar gramas como quilogramas. Quando existem grandezas diferentes, o indicador conta artigos/linhas e não soma g com ml ou contagens. Quantidades por linha mantêm a sua unidade. Os custos de entrega não integram o total local.
+
+Os produtos guardados são atualizados individualmente em blocos de até quatro pedidos simultâneos. Loading, erro ou ausência num resultado paginado não removem linhas. Um 404 autoritativo ou stock insuficiente é reconciliado com aviso; rede/503 conservam escolhas e indicam estimativa. Atualizações de preço/stock geram os avisos existentes. Checkout HTTP, reserva, reconfirmação de oferta e pagamento não são implementados.
+
+Comprador, produtor, administrador, sessão demonstrativa e leilões continuam locais. As suas decisões não afetam dados MongoDB; ligações de registos demo sem identidade real abrem as listagens públicas, em vez de inventarem associações de nomes ou de levarem para perfis reais arbitrários. O sistema visual continua a usar os exemplos locais apenas na sua página de demonstração.
+
+## Dados fictícios de desenvolvimento
+
+O comando [seed-catalog.mjs](../../scripts/seed-catalog.mjs) reutiliza produtos, produtores, descrições e fotografias ilustrativas existentes. É exclusivamente manual e exige `NODE_ENV=development`, base dedicada `docampo_dev_catalog`, URI loopback/porta 27018, `rs-dcm-dev` e ligação direta; recusa Atlas, produção e credenciais. Defaults e comandos de arranque constam do [README](../../README.md).
+
+Os IDs determinísticos derivam de chaves estáveis fictícias e de domínios separados por entidade. O seed verifica colisões, insere através dos modelos validados numa transação e não elimina ou atualiza dados existentes. Repetir sem alterações não insere duplicados; alterações posteriores ao ficheiro de demonstração não são uma migração automática. Uma colisão incompatível cancela a inserção. Não existe conta administrativa: as aprovações são dados fictícios e o autor é uma referência técnica de exemplo. As contas produtor têm passwords aleatórias que são descartadas, sem acesso por credencial fixa.
+
+Preço/kg e preço/L mantêm a referência 1000 e o stock antigo é multiplicado explicitamente por 1000 na preparação desses exemplos; usam mínimo 250 e incremento 50. Preços por unidade/apresentação mantêm contagem inteira. Rótulos como «frasco de 500 g» são preservados como apresentação de embalagem, sem deduzir conteúdo estruturado. A indicação biológica e os meses são declarados fictícios, não certificações. Ingredientes não aplicáveis são declarações destes exemplos de desenvolvimento; dados reais exigem a declaração correta do produtor. Nenhuma destas conversões altera os mocks originais ou constitui migração de dados reais.
+
+`SEED_IMAGE_ORIGIN` permite indicar a origem das imagens locais (default `http://127.0.0.1:5173`). `SEED_MONGODB_URI` e `SEED_DB_NAME` continuam sujeitos às mesmas proteções; não desbloqueiam outros destinos. O seed não lê `.env` nem corre no arranque da API, build ou produção. O teste real usa exclusivamente `docampo_test_web_*` na porta 27019 e remove apenas a sua base efémera.
+
+## Verificação e limites
+
+As suites existentes são preservadas e adaptadas com fixtures de rede válidas, IDs MongoDB e expectativas coerentes com campos efetivamente públicos. Testes novos cobrem DTOs, quatro modalidades, erros, timeout/cancelamento, loading, pesquisa rápida, paginação, stock/unidade, persistência e ausência de fallback. O teste separado com browser, HTTP real e MongoDB real verifica o catálogo, perfis, cesta, idempotência do seed e as seis larguras 320/430/768/1024/1280/1440 px; mocks não são apresentados como prova dessa integração.
+
+Validação executada nesta etapa: **305 testes da suite frontend habitual e 9 testes reais React/API/MongoDB aprovados** (314 no total, incluindo os 274 percursos anteriores adaptados). Os novos testes frontend são 19 de contrato/modelo, 12 de interface/rede e nove de integração real. A regressão backend completa passou **1 128 testes**: 808 unitários (incluindo 12 novos sobre o seed), 109 HTTP e 211 de integração MongoDB. TypeScript, ESLint, Prettier, builds e ligações documentais foram verificados. O ajuste final do loading móvel foi confirmado por uma execução dirigida de 37 testes de catálogo/rede, sem somar repetições ao total.
+
+Não há alteração de dependências, documentos da Fase 0, autenticação ou endpoints comerciais. O acesso JWT pela interface, a gestão privada persistida, o checkout HTTP, as reviews, leilões e uploads exigem fases próprias. Não se inicia automaticamente a etapa seguinte nem se autoriza publicação Git.
+
+---
+
+## Contrato e registos anteriores preservados
+
 # Fase 5A — contrato utilizável pelo catálogo React
 
 Implementação local de **26 de outubro de 2026**, em `feat/api-foundation`, base `c810f0f`. Não se altera React, design system, carrinho ou navegação. Os modelos e regras de persistência anteriores permanecem intactos. O [OpenAPI](openapi.yaml) é o contrato dos endpoints agora disponíveis; as notas históricas seguintes conservam o seu contexto.

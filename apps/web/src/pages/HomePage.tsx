@@ -8,19 +8,28 @@ import { Icon } from '../components/Icon';
 import { ProductCard } from '../components/ProductCard';
 import { ProducerCard } from '../components/ProducerCard';
 import { SectionHeading } from '../components/SectionHeading';
-import {
-  auction,
-  featuredCategories as categories,
-  featuredProducers as producers,
-  featuredProducts as products,
-  type Category,
-} from '../data/market';
+import { auction } from '../data/market';
+import { categories } from '../features/api/catalog-contract';
+import { adaptProduct, adaptProducer, catalogApi } from '../features/api/catalog';
+import { useRemote } from '../features/api/useRemote';
+import { RemoteError } from '../features/market/RemoteError';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
 
 export function HomePage() {
-  const [category, setCategory] = useState<Category>('Todos');
-  const previewProducts = products.filter(
-    (product) => category === 'Todos' || product.category === category,
+  const [category, setCategory] = useState('');
+  const query = new URLSearchParams({
+    porPagina: '12',
+    ...(category ? { categoria: category } : {}),
+  }).toString();
+  const catalog = useRemote(query, (signal) => catalogApi.products(query, signal));
+  const origins = useRemote('home-producers', (signal) =>
+    catalogApi.producers('porPagina=12', signal),
   );
+  const seasonal = useRemote('home-season', (signal) =>
+    catalogApi.products('epoca=Outono&porPagina=12', signal),
+  );
+  const previewProducts = catalog.data?.itens.slice(0, 4).map(adaptProduct) ?? [];
+  const producers = origins.data?.itens.slice(0, 3).map(adaptProducer) ?? [];
   return (
     <>
       <section className="editorial-hero" aria-labelledby="hero-title">
@@ -119,11 +128,16 @@ export function HomePage() {
             }
           />
           <div className="season-grid">
-            {products
-              .filter((product) => product.season.includes('Outono') && product.season.length < 4)
-              .map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+            {seasonal.loading ? (
+              <LoadingSkeleton label="A carregar sabores da época" count={3} />
+            ) : seasonal.error ? (
+              <RemoteError error={seasonal.error} retry={seasonal.retry} />
+            ) : (
+              seasonal.data?.itens
+                .slice(0, 4)
+                .map(adaptProduct)
+                .map((product) => <ProductCard key={product.id} product={product} />)
+            )}
           </div>
           <div className="season-note">
             <Icon name="sun" />
@@ -164,11 +178,17 @@ export function HomePage() {
               </Button>
             }
           />
-          <div className="producer-grid">
-            {producers.map((producer) => (
-              <ProducerCard key={producer.id} producer={producer} />
-            ))}
-          </div>
+          {origins.loading ? (
+            <LoadingSkeleton label="A carregar origens" count={3} />
+          ) : origins.error ? (
+            <RemoteError error={origins.error} retry={origins.retry} />
+          ) : (
+            <div className="producer-grid">
+              {producers.map((producer) => (
+                <ProducerCard key={producer.id} producer={producer} />
+              ))}
+            </div>
+          )}
         </Container>
       </section>
       <section className="how-section" aria-labelledby="how-title">
@@ -223,36 +243,40 @@ export function HomePage() {
               </Button>
             }
           />
-          <div
-            className="category-list"
-            role="group"
-            aria-label="Categorias do catálogo demonstrativo"
-          >
-            {categories.map((item) => (
+          <div className="category-list" role="group" aria-label="Categorias do catálogo">
+            {[{ id: '', name: 'Todos' }, ...categories].map((item) => (
               <CategoryPill
-                key={item}
-                label={item}
-                active={category === item}
-                onClick={() => setCategory(item)}
+                key={item.id}
+                label={item.name}
+                active={category === item.id}
+                onClick={() => setCategory(item.id)}
                 icon={
-                  item === 'Todos'
+                  item.name === 'Todos'
                     ? 'basket'
-                    : item === 'Hortícolas'
+                    : item.name === 'Hortícolas'
                       ? 'leaf'
-                      : item === 'Fruta'
+                      : item.name === 'Fruta'
                         ? 'sun'
                         : undefined
                 }
               />
             ))}
           </div>
-          <div className="product-grid">
-            {previewProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {catalog.loading ? (
+            <LoadingSkeleton label="A carregar seleção" count={4} />
+          ) : catalog.error ? (
+            <RemoteError error={catalog.error} retry={catalog.retry} />
+          ) : (
+            <div className="product-grid">
+              {previewProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
           <p className="catalog-note" aria-live="polite">
-            {previewProducts.length} produtos nesta seleção demonstrativa.
+            {catalog.data
+              ? `${catalog.data.total} produtos publicados · ${previewProducts.length} nesta seleção.`
+              : 'A consultar o catálogo.'}
           </p>
         </Container>
       </section>

@@ -2,16 +2,21 @@ import { useId, useState } from 'react';
 import type { Product } from '../../types/market';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
-import { quantityError } from './model';
+import { productQuantityError, quantityError } from './model';
 import { useCart } from './useCart';
 
 export function AddToCart({ product, detailed = false }: { product: Product; detailed?: boolean }) {
   const { addItem, cart, feedback } = useCart();
-  const [quantity, setQuantity] = useState('1');
+  const [quantity, setQuantity] = useState(String(product.sale?.quantidadeMinima ?? 1));
   const [error, setError] = useState<string | null>(null);
   const id = useId();
   const existing = cart.items.find((item) => item.productId === product.id)?.quantity ?? 0;
   const remaining = product.availableStock - existing;
+  const nextAmount = product.sale
+    ? existing
+      ? product.sale.incrementoCompra
+      : product.sale.quantidadeMinima
+    : 1;
   const message = feedback?.productId === product.id ? feedback : null;
   return (
     <div className={`add-to-cart ${detailed ? 'add-to-cart--detailed' : ''}`}>
@@ -34,22 +39,37 @@ export function AddToCart({ product, detailed = false }: { product: Product; det
           />
         </div>
       )}
+      {product.sale && (
+        <p className="cart-quantity-hint">
+          Quantidades em{' '}
+          {product.sale.unidadeBase === 'un'
+            ? product.sale.modalidade === 'embalagem'
+              ? 'embalagens'
+              : 'unidades'
+            : product.sale.unidadeBase}
+          . Mínimo {product.sale.quantidadeMinima}; incremento {product.sale.incrementoCompra}. Não
+          reserva stock.
+        </p>
+      )}
       <Button
         variant={detailed ? 'primary' : 'secondary'}
         size={detailed ? 'regular' : 'small'}
-        disabled={remaining <= 0}
+        disabled={remaining < nextAmount}
         aria-label={`Adicionar ${product.name} ao carrinho`}
         onClick={() => {
-          const invalid = quantityError(detailed ? quantity : 1, remaining, false);
+          const amount = detailed ? Number(quantity) : nextAmount;
+          const invalid =
+            quantityError(detailed ? quantity : amount, remaining, false) ??
+            productQuantityError(existing + amount, product);
           setError(invalid);
-          if (!invalid) addItem(product.id, detailed ? Number(quantity) : 1);
+          if (!invalid) addItem(product.id, amount, product);
         }}
       >
         <Icon name="basket" />
         <span>
           {product.availableStock === 0
             ? 'Esgotado'
-            : remaining <= 0
+            : remaining < nextAmount
               ? 'Limite na cesta'
               : 'Adicionar à cesta'}
         </span>

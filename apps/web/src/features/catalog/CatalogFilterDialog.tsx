@@ -9,7 +9,7 @@ export function CatalogFilterDialog({
   onApply,
 }: {
   children: ReactNode;
-  total: number;
+  total: number | null;
   onDismiss: () => void;
   onApply: () => void;
 }) {
@@ -69,7 +69,13 @@ export function CatalogFilterDialog({
               onApply();
             }}
           >
-            Ver {total} {total === 1 ? 'produto' : 'produtos'}
+            {total === null ? (
+              'Ver resultados'
+            ) : (
+              <>
+                Ver {total} {total === 1 ? 'produto' : 'produtos'}
+              </>
+            )}
             <Icon name="arrow" />
           </Button>
         </div>

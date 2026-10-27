@@ -4,7 +4,7 @@ import { PriceDisplay } from '../../components/PriceDisplay';
 import { useCart } from '../cart/useCart';
 
 export function BuyerCartSummary() {
-  const { cart, itemCount, subtotalCents } = useCart();
+  const { cart, itemCount, countByLine, subtotalCents } = useCart();
   return (
     <aside className="buyer-cart-summary" aria-labelledby="buyer-cart-title">
       <Icon name="basket" width="32" height="32" />
@@ -15,7 +15,15 @@ export function BuyerCartSummary() {
         <em>aqui ao lado.</em>
       </h2>
       <p>
-        {itemCount} {itemCount === 1 ? 'unidade' : 'unidades'} · {cart.items.length}{' '}
+        {itemCount}{' '}
+        {countByLine
+          ? itemCount === 1
+            ? 'artigo'
+            : 'artigos'
+          : itemCount === 1
+            ? 'unidade'
+            : 'unidades'}{' '}
+        · {cart.items.length}{' '}
         {cart.items.length === 1 ? 'produto diferente' : 'produtos diferentes'}
       </p>
       <dl>

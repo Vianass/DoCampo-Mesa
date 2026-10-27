@@ -8,7 +8,9 @@ export function ProducerCard({
   producer,
   categories,
 }: {
-  producer: Producer;
+  producer: Pick<Producer, 'id' | 'name' | 'locality' | 'image' | 'imageAlt' | 'description'> & {
+    specialty?: string;
+  };
   categories?: readonly ProductCategory[];
 }) {
   return (
@@ -23,7 +25,9 @@ export function ProducerCard({
             loading="lazy"
             decoding="async"
           />
-          <span className="producer-card__specialty">{producer.specialty}</span>
+          {producer.specialty && (
+            <span className="producer-card__specialty">{producer.specialty}</span>
+          )}
         </div>
         <div className="producer-card__body">
           <div>
@@ -37,11 +41,11 @@ export function ProducerCard({
             <Icon name="diagonal" />
           </span>
         </div>
-        {categories && (
+        {(categories || !producer.specialty) && (
           <div className="producer-card__editorial">
             <p>{producer.description}</p>
             <ul aria-label={`Categorias de ${producer.name}`}>
-              {categories.map((category) => (
+              {categories?.map((category) => (
                 <li key={category}>{category}</li>
               ))}
             </ul>

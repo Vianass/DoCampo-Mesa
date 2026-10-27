@@ -21,8 +21,8 @@ export function EntityNotFound({ kind }: { kind: 'product' | 'producer' }) {
         </h1>
         <p>
           {product
-            ? 'O produto não faz parte da seleção demonstrativa. Volta ao catálogo para encontrar outros sabores.'
-            : 'O perfil não faz parte dos produtores fictícios. Conhece as outras histórias do mercado.'}
+            ? 'O produto não está disponível no catálogo público. Volta ao catálogo para encontrar outros sabores.'
+            : 'O perfil não está disponível no diretório público. Conhece as outras histórias do mercado.'}
         </p>
         <Button to={product ? '/produtos' : '/produtores'} variant="secondary">
           {product ? 'Explorar produtos' : 'Conhecer produtores'}

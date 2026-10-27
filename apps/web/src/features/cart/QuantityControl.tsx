@@ -1,12 +1,15 @@
 import { useId, useState } from 'react';
-import { quantityError } from './model';
+import { quantityError, productQuantityError } from './model';
+import type { Product } from '../../types/market';
 
 export function QuantityControl({
   quantity,
   stock,
   name,
   onChange,
+  product,
 }: {
+  product?: Product;
   quantity: number;
   stock: number;
   name: string;
@@ -21,7 +24,9 @@ export function QuantityControl({
   if (draft.source !== quantity)
     setDraft({ source: quantity, value: String(quantity), error: null });
   function apply() {
-    const error = quantityError(draft.value, stock);
+    const error = product
+      ? productQuantityError(draft.value, product, true)
+      : quantityError(draft.value, stock);
     setDraft({ ...draft, error });
     if (!error && Number(draft.value) !== quantity) onChange(Number(draft.value));
   }
@@ -34,8 +39,8 @@ export function QuantityControl({
         <button
           type="button"
           aria-label={`Diminuir quantidade de ${name}`}
-          disabled={quantity <= 1}
-          onClick={() => onChange(quantity - 1)}
+          disabled={quantity <= (product?.sale?.quantidadeMinima ?? 1)}
+          onClick={() => onChange(quantity - (product?.sale?.incrementoCompra ?? 1))}
         >
           −
         </button>
@@ -60,14 +65,18 @@ export function QuantityControl({
         <button
           type="button"
           aria-label={`Aumentar quantidade de ${name}`}
-          disabled={quantity >= stock}
-          onClick={() => onChange(quantity + 1)}
+          disabled={quantity + (product?.sale?.incrementoCompra ?? 1) > stock}
+          onClick={() => onChange(quantity + (product?.sale?.incrementoCompra ?? 1))}
         >
           +
         </button>
       </div>
       <p id={`${id}-hint`} className="cart-quantity-hint">
-        Máximo {stock}. Introduzir 0 retira o produto.
+        Máximo {stock}
+        {product?.sale
+          ? ` ${product.sale.unidadeBase}. Mínimo ${product.sale.quantidadeMinima}; incremento ${product.sale.incrementoCompra}`
+          : ''}
+        . Introduzir 0 retira o produto.
       </p>
       {draft.error && (
         <p id={`${id}-error`} className="cart-field-error" role="alert">

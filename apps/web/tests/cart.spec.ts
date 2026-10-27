@@ -1,20 +1,26 @@
-import { expect, test, type Page } from '@playwright/test';
+import { productDtos } from './support/catalog-fixtures';
+import { adaptProduct } from '../src/features/api/catalog';
+import { expect, test, type Page } from './support/test';
 import { CART_STORAGE_KEY } from '../src/features/cart/storage';
 
 const now = '2026-10-15T10:00:00.000Z';
 const tomato = {
-  productId: 'tomate-coracao',
-  producerId: 'horta-ribeira',
+  productId: 'ee685adf80156cb9e1e85c27',
+  producerId: 'fdbe9e7dd68e7983981d7b7e',
   quantity: 1,
   unitPriceSnapshotCents: 280,
-  unit: 'kg',
+  productSnapshot: adaptProduct(
+    productDtos.find((p) => p.precoCent === 280 && p.nome === 'Tomate coração-de-boi')!,
+  ),
+  unit: 'unidade',
 };
 const pear = {
-  productId: 'pera-rocha',
-  producerId: 'pomar-vale',
+  productId: 'aa6b68cc89c59bc055a5699b',
+  producerId: '1e65f31692c88a4dac46bf37',
   quantity: 1,
   unitPriceSnapshotCents: 240,
-  unit: 'kg',
+  productSnapshot: adaptProduct(productDtos.find((p) => p.nome === 'Pera Rocha')!),
+  unit: 'unidade',
 };
 const storage = (items: unknown[]) => JSON.stringify({ version: 1, updatedAt: now, items });
 async function seed(page: Page, raw: string) {
@@ -35,7 +41,7 @@ async function headerCount(page: Page, count: number) {
   );
 }
 async function addTomato(page: Page, quantity = '1') {
-  await page.goto('/produtos/tomate-coracao');
+  await page.goto('/produtos/ee685adf80156cb9e1e85c27');
   await page.getByLabel('Quantidade a adicionar').fill(quantity);
   await page.getByRole('button', { name: 'Adicionar Tomate coração-de-boi ao carrinho' }).click();
 }
@@ -95,7 +101,7 @@ test('adicionar produtos de duas origens pela interface mantém ambas as escolha
   page,
 }) => {
   await addTomato(page, '2');
-  await page.goto('/produtos/pera-rocha');
+  await page.goto('/produtos/aa6b68cc89c59bc055a5699b');
   await page.getByRole('button', { name: 'Adicionar Pera Rocha ao carrinho' }).click();
   await headerCount(page, 3);
   await page.locator('.header-cart').click();
@@ -192,7 +198,14 @@ test('persistência após reload contém apenas o esquema versionado e snapshots
   expect(persisted.version).toBe(1);
   expect(persisted.items).toEqual([{ ...tomato, quantity: 3 }]);
   expect(Object.keys(persisted.items[0]).sort()).toEqual(
-    ['productId', 'producerId', 'quantity', 'unit', 'unitPriceSnapshotCents'].sort(),
+    [
+      'productId',
+      'producerId',
+      'quantity',
+      'unit',
+      'unitPriceSnapshotCents',
+      'productSnapshot',
+    ].sort(),
   );
   await page.locator('.header-cart').click();
   await expect(page.locator('.cart-summary__total')).toContainText('8,40');
