@@ -6,6 +6,9 @@ import { createApp } from '../../../api/src/app.ts';
 import { parseAuthEnvironment } from '../../../api/src/config/auth-environment.ts';
 import { createAuthService } from '../../../api/src/modules/auth/auth.service.ts';
 import { createCatalogService } from '../../../api/src/modules/catalog/catalog.service.ts';
+import { createOrdersService } from '../../../api/src/modules/orders/orders.service.ts';
+import { createCheckoutPreparationService } from '../../../api/src/modules/orders/checkout-preparation.service.ts';
+import { createProducerModel } from '../../../api/src/modules/producers/producer.model.ts';
 import { seedCatalog } from '../../../api/src/development/catalog-seed.ts';
 import { products, producers } from '../../src/data/market.ts';
 // Apenas MongoDB de teste em loopback; nenhuma .env, credencial ou base de desenvolvimento.
@@ -18,6 +21,7 @@ const connection = await createConnection(
 ).asPromise();
 let server;
 let stopping;
+const checkoutReview = process.env.DOCAMPO_CHECKOUT_REVIEW === '1';
 function stop() {
   return (stopping ??= (async () => {
     server?.close();
@@ -35,7 +39,7 @@ try {
     throw Error('Replica set de teste necessário.');
   const authConfig = parseAuthEnvironment({
     NODE_ENV: 'test',
-    JWT_TTL_SECONDS: '60',
+    JWT_TTL_SECONDS: checkoutReview ? '900' : '60',
     JWT_SECRET: randomBytes(48).toString('base64url'),
     CORS_ORIGINS: 'http://127.0.0.1:5183',
   });
@@ -43,12 +47,32 @@ try {
     catalog = createCatalogService(connection, authConfig.secret);
   await auth.prepare();
   await catalog.prepare();
+  const orders = createOrdersService(connection);
+  const preparation = createCheckoutPreparationService(connection);
+  await orders.prepare();
+  await preparation.prepare();
   const result = await seedCatalog(connection, { products, producers }, 'http://127.0.0.1:5183');
   const second = await seedCatalog(connection, { products, producers }, 'http://127.0.0.1:5183');
   if (second.inserted !== 0) throw Error('Seed não idempotente.');
+  if (checkoutReview) {
+    // Apenas na base efémera desta execução. Não atualizar o catálogo de desenvolvimento.
+    const Producer = createProducerModel(connection);
+    const profiles = await Producer.find({}).select(
+      '+telefone +aprovacao.decisao.autor +comercial.pagamentoPrivado',
+    );
+    for (const profile of profiles) {
+      profile.set(
+        'comercial.localLevantamento',
+        'Ponto de levantamento fictício para revisão — ' + profile.nomePublico,
+      );
+      await profile.save();
+    }
+  }
   server = createApp({
     auth,
     catalog,
+    orders,
+    preparation,
     security: authConfig,
     rateLimit: { ipLimit: 1000, accountLimit: 1000 },
   }).listen(3011, '127.0.0.1', () =>

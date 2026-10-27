@@ -12,6 +12,12 @@ export interface CartState {
   readonly items: readonly CartItem[];
   readonly updatedAt: string;
 }
+export interface CartPurchaseLine {
+  productId: string;
+  quantity: number;
+  stamp: string;
+  signature: string;
+}
 export interface CartLine {
   item: CartItem;
   product: Product;
@@ -43,6 +49,7 @@ export type CartOperation =
   | { type: 'remove'; productId: string }
   | { type: 'clear' };
 export type CartAction =
+  | { type: 'purchase-confirmed'; lines: readonly CartPurchaseLine[]; now: string }
   | { type: 'operate'; operation: CartOperation; catalog: readonly Product[]; now: string }
   | { type: 'reconcile'; catalog: readonly Product[]; now: string }
   | { type: 'storage-failure' }

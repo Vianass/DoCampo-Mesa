@@ -1,3 +1,15 @@
+# API — preparação e recuperação do checkout da Fase 5E
+
+À API da Fase 5D juntam-se três operações privadas de comprador: `POST /api/orders/prepare`, `POST /api/orders/attempts` e `GET /api/orders/attempts/:referencia`. O runtime prepara também o índice TTL da coleção técnica `checkout_attempts`. Esta conserva temporariamente o pedido da própria conta para recuperação após reload; não cria encomendas, não reserva stock e não substitui a idempotência global do checkout.
+
+Revisões, associações conta/perfil e ofertas vêm do MongoDB autenticado. A validação transacional final mantém-se no serviço existente. Listagem/detalhe de encomendas passam a incluir, quando disponível, a identificação pública atual do produtor; valores, linhas e receção permanecem snapshots. Sem alteração dos modelos de negócio, dependências ou autenticação.
+
+Ver [OpenAPI](../../docs/api/openapi.yaml), [contrato de integração e privacidade](../../docs/api/frontend-integration.md) e [revisão isolada pelo browser](../../README.md). O pedido temporário expira logicamente em 24 horas, com remoção TTL assíncrona. A recuperação exige a mesma conta ativa com capacidade comprador; a referência não é um token de acesso. O prazo não afeta encomendas já criadas.
+
+---
+
+## Registo da Fase 5D preservado
+
 # API — checkout e encomendas próprias da Fase 5D
 
 Disponíveis localmente, além do catálogo/autenticação existentes: `POST /api/orders`, `GET /api/orders` e `GET /api/orders/:id`. Exigem JWT válido, conta ativa e capacidade atual `comprador`. O arranque prepara os índices existentes de orders antes de abrir HTTP; não há novo modelo ou migração.

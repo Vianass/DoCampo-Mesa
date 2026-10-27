@@ -1,6 +1,6 @@
 import type { Product } from '../../types/market';
 import { createContext } from 'react';
-import type { CartSession } from './types';
+import type { CartSession, CartPurchaseLine } from './types';
 import type { cartSummary } from './model';
 
 export interface CartContextValue extends CartSession, ReturnType<typeof cartSummary> {
@@ -11,6 +11,8 @@ export interface CartContextValue extends CartSession, ReturnType<typeof cartSum
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+  snapshotPurchase: () => CartPurchaseLine[];
+  acknowledgePurchase: (lines: readonly CartPurchaseLine[]) => void;
   remoteIssue?: string;
 }
 export const CartContext = createContext<CartContextValue | null>(null);

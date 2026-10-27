@@ -143,6 +143,8 @@ export function demoDestination(raw: string | null, role: Role) {
 }
 
 export function accountDestination(raw: string | null, papeis: readonly Role[]) {
+  if ((raw === '/checkout' || raw === '/checkout/confirmacao') && papeis.includes('comprador'))
+    return raw;
   const requested = raw?.split('/')[2];
   const role = papeis.find((value) => value === requested) ?? papeis[0];
   return role ? demoDestination(raw, role) : '/entrar';

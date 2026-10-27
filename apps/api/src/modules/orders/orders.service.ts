@@ -30,6 +30,25 @@ function buyer(principal: AuthPrincipal) {
     throw new ApiError(403, 'ACESSO_PROIBIDO', 'Não tens acesso a esta operação.');
   return new Types.ObjectId(principal.id);
 }
+async function producerLabels(connection: Connection, accounts: readonly Types.ObjectId[]) {
+  const ids = [...new Map(accounts.map((id) => [id.toHexString(), id])).values()];
+  const result = new Map<string, { perfilId: string; nomePublico: string }>();
+  if (!ids.length) return result;
+  const profiles = await connection
+    .db!.collection('producers')
+    .find(
+      { userId: { $in: ids } },
+      { projection: { _id: 1, userId: 1, nomePublico: 1 }, maxTimeMS: 5000 },
+    )
+    .toArray();
+  for (const profile of profiles)
+    if (profile.userId instanceof Types.ObjectId && typeof profile.nomePublico === 'string')
+      result.set(profile.userId.toHexString(), {
+        perfilId: profile._id.toHexString(),
+        nomePublico: profile.nomePublico,
+      });
+  return result;
+}
 async function read<T>(operation: () => Promise<T>): Promise<T> {
   try {
     return await operation();
@@ -97,8 +116,16 @@ export function createOrdersService(
           )
           .toArray();
         const total = page?.contagem[0]?.total ?? 0;
+        const orders = page?.itens ?? [];
+        const labels = await producerLabels(
+          connection,
+          orders.map((order) => order.produtor),
+        );
         return {
-          itens: (page?.itens ?? []).map(buyerOrderDto),
+          itens: orders.map((order) => {
+            const produtor = labels.get(order.produtor.toHexString());
+            return { ...buyerOrderDto(order), ...(produtor ? { produtor } : {}) };
+          }),
           pagina: query.pagina,
           porPagina: query.porPagina,
           total,
@@ -120,7 +147,10 @@ export function createOrdersService(
         );
         if (!record)
           throw new ApiError(404, 'ENCOMENDA_NAO_ENCONTRADA', 'A encomenda não está disponível.');
-        return buyerOrderDetailDto(record);
+        const produtor = (await producerLabels(connection, [record.produtor])).get(
+          record.produtor.toHexString(),
+        );
+        return { ...buyerOrderDetailDto(record), ...(produtor ? { produtor } : {}) };
       });
     },
   };

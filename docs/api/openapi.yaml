@@ -2,9 +2,9 @@
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.4.0-local-orders
+  version: 0.5.0-local-checkout-web
   description:
-    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. A Fase 5D expõe checkout e consultas de encomendas próprias por HTTP autenticado; não existe publicação de produção. Métodos/códigos
+    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração React local; não existe publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
     essas operações não podem ser disponibilizadas antes de aprovação e segurança real. Papéis nas extensões
     são propostas da matriz, não permissões concedidas. Ver README.md, decisions.md e security.md.'
@@ -1128,6 +1128,227 @@ paths:
                 codigo: RESULTADO_DESCONHECIDO
                 mensagem: Não foi possível confirmar o resultado. Repete o mesmo pedido com a mesma chave.
                 repetirComMesmaChave: true
+  /orders/prepare:
+    post:
+      tags:
+        - Encomendas
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - comprador
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5E
+      operationId: prepareOwnCheckout
+      summary: Obter metadados atuais da cesta autenticada
+      description:
+        JWT válido, conta ativa e capacidade comprador. Só aceita produtoId/quantidade; as associações
+        e revisões provêm do MongoDB numa leitura snapshot com orçamento de 10 segundos. Reutiliza validação de stock/oferta
+        e aritmética existentes. Incompatibilidade gera 409 genérico sem motivos administrativos privados; não remove
+        linhas nem cria compras. Cache-Control no-store. Opções não são uma reserva ou cotação garantida até ao commit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutPreparationRequest'
+            example:
+              itens:
+                - produtoId: '222222222222222222222222'
+                  quantidade: 500
+      responses:
+        '200':
+          description: Metadados derivados do servidor, sem efeitos comerciais.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutPreparation'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '415':
+          description: Utiliza application/json.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /orders/attempts:
+    post:
+      tags:
+        - Encomendas
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - comprador
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5E
+      operationId: saveOwnCheckoutAttempt
+      summary: Conservar o pedido para recuperação após reload
+      description:
+        Checkpoint privado na coleção técnica checkout_attempts. Não cria encomendas, não debita stock
+        e não decide o resultado comercial. Reutiliza validação/fingerprint de 4B.1. Referência UUID fornecida pelo
+        cliente, ligada à conta JWT; a mesma referência/chave/pedido não renova o prazo. Alterações ou referência
+        alheia geram 409 genérico. A validação final de preços, revisões, stock e capacidades continua exclusivamente
+        no checkout transacional. Prazo técnico de 24 horas, protegido por autenticação e TTL; sem credenciais ou
+        tokens no checkpoint. Apenas a referência e escolhas públicas da cesta ficam no browser.
+      parameters:
+        - $ref: '#/components/parameters/CheckoutIdempotency'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutAttemptWrite'
+            example:
+              referencia: aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee
+              pedido:
+                linhas:
+                  - produtoId: '222222222222222222222222'
+                    produtorContaId: '111111111111111111111111'
+                    quantidade: 500
+                    ofertaAceite:
+                      precoReferenciaCent: 150
+                      unidadeVenda:
+                        modalidade: peso
+                        unidadeBase: g
+                        quantidadeReferencia: 1000
+                        quantidadeMinima: 250
+                        incrementoCompra: 50
+                      revisaoProdutoObservada: 0
+                condicoesPorProdutor:
+                  - produtorContaId: '111111111111111111111111'
+                    modalidade: levantamento
+                    periodo:
+                      inicioEm: '2026-11-02T09:00:00.000Z'
+                      fimEm: '2026-11-02T10:00:00.000Z'
+                      fusoHorario: Europe/Lisbon
+                    metodoPagamento: dinheiro
+                    taxaEntregaAceiteCent: 0
+                    revisaoProdutorObservada: 0
+      responses:
+        '200':
+          description: Referência conservada, sem executar compra.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutAttemptReference'
+              example:
+                referencia: aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee
+                expiraEm: '2026-11-02T08:00:00.000Z'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '410':
+          description: Referência própria observada após o prazo lógico; consultar encomendas antes de outra tentativa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          description: Utiliza application/json.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /orders/attempts/{referencia}:
+    get:
+      tags:
+        - Encomendas
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - comprador
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 5E
+      operationId: recoverOwnCheckoutAttempt
+      summary: Recuperar a chave e o pedido originais da própria conta
+      description:
+        'Exige JWT atual e capacidade comprador, inclusive após novo login. Não aceita buyerId. Filtro
+        por conta na própria leitura; referência inexistente, já removida por TTL ou alheia dá o mesmo 404. Se ainda
+        observado após o prazo lógico dá 410. A referência não é um token de autenticação. Resposta somente em memória
+        no React: morada/contacto não são persistidos em localStorage/sessionStorage. Repetir o pedido devolvido por
+        POST /orders com a chave original; apenas 200/201 deste último confirma a compra. Cache-Control no-store.'
+      parameters:
+        - name: referencia
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pedido original verificado; não é confirmação de compra.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutAttemptRecovery'
+              example:
+                referencia: aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee
+                expiraEm: '2026-11-02T08:00:00.000Z'
+                chaveIdempotencia: chave-opaca-exemplo
+                pedido:
+                  linhas:
+                    - produtoId: '222222222222222222222222'
+                      produtorContaId: '111111111111111111111111'
+                      quantidade: 500
+                      ofertaAceite:
+                        precoReferenciaCent: 150
+                        unidadeVenda:
+                          modalidade: peso
+                          unidadeBase: g
+                          quantidadeReferencia: 1000
+                          quantidadeMinima: 250
+                          incrementoCompra: 50
+                        revisaoProdutoObservada: 0
+                  condicoesPorProdutor:
+                    - produtorContaId: '111111111111111111111111'
+                      modalidade: levantamento
+                      periodo:
+                        inicioEm: '2026-11-02T09:00:00.000Z'
+                        fimEm: '2026-11-02T10:00:00.000Z'
+                        fusoHorario: Europe/Lisbon
+                      metodoPagamento: dinheiro
+                      taxaEntregaAceiteCent: 0
+                      revisaoProdutorObservada: 0
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '410':
+          description: Prazo lógico da referência própria terminado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /orders/{id}:
     get:
       tags:
@@ -5409,6 +5630,18 @@ components:
         atualizadaEm:
           type: string
           format: date-time
+        produtor:
+          type: object
+          additionalProperties: false
+          properties:
+            perfilId:
+              type: string
+              pattern: ^[a-fA-F0-9]{24}$
+            nomePublico:
+              type: string
+          required:
+            - perfilId
+            - nomePublico
       required:
         - id
         - operacaoCompraId
@@ -5424,7 +5657,9 @@ components:
         - atualizadaEm
       description:
         Projeção privada do comprador, baseada exclusivamente nos snapshots. Exclui idempotência, comprador,
-        versões técnicas, contactos e auditoria interna; produtorContaId não é um perfil público.
+        versões técnicas, contactos e auditoria interna; produtorContaId não é um perfil público. A propriedade opcional
+        produtor identifica o perfil público atual; não é um snapshot histórico do seu nome. Valores/linhas/entrega
+        continuam snapshots.
     BuyerOrderDetail:
       type: object
       additionalProperties: false
@@ -5548,6 +5783,18 @@ components:
             required:
               - tipo
               - ocorridoEm
+        produtor:
+          type: object
+          additionalProperties: false
+          properties:
+            perfilId:
+              type: string
+              pattern: ^[a-fA-F0-9]{24}$
+            nomePublico:
+              type: string
+          required:
+            - perfilId
+            - nomePublico
       required:
         - id
         - operacaoCompraId
@@ -5565,7 +5812,9 @@ components:
         - historicoEstado
       description:
         'Detalhe autorizado: inclui snapshot de levantamento ou morada/contacto da própria encomenda, período
-        inicial e histórico minimizado; nunca reconsulta preços atuais ou expõe atores/auditoria privada.'
+        inicial e histórico minimizado; nunca reconsulta preços atuais ou expõe atores/auditoria privada. A propriedade
+        opcional produtor identifica o perfil público atual; não é um snapshot histórico do seu nome. Valores/linhas/entrega
+        continuam snapshots.'
     BuyerOrderPage:
       type: object
       additionalProperties: false
@@ -5616,3 +5865,262 @@ components:
         - codigo
         - mensagem
         - repetirComMesmaChave
+    CheckoutWeeklyWindow:
+      type: object
+      additionalProperties: false
+      properties:
+        diaSemana:
+          type: integer
+          minimum: 1
+          maximum: 7
+        inicio:
+          type: string
+          pattern: ^(?:[01][0-9]|2[0-3]):[0-5][0-9]$
+        fim:
+          type: string
+          pattern: ^(?:[01][0-9]|2[0-3]):[0-5][0-9]$
+      required:
+        - diaSemana
+        - inicio
+        - fim
+    CheckoutWeeklyAvailability:
+      type: object
+      additionalProperties: false
+      properties:
+        fusoHorario:
+          type: string
+        levantamento:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutWeeklyWindow'
+        entrega:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutWeeklyWindow'
+      required:
+        - fusoHorario
+        - levantamento
+        - entrega
+    CheckoutPreparedCommercial:
+      type: object
+      additionalProperties: false
+      properties:
+        modalidades:
+          type: object
+          additionalProperties: false
+          properties:
+            levantamento:
+              type: boolean
+            entrega:
+              type: boolean
+          required:
+            - levantamento
+            - entrega
+        localLevantamento:
+          type: string
+        taxaEntregaCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        concelhosEntregaIds:
+          type: array
+          items:
+            type: string
+        metodosPagamento:
+          type: array
+          items:
+            type: string
+            enum:
+              - dinheiro
+              - mb_way
+              - transferencia_bancaria
+          minItems: 1
+          uniqueItems: true
+        disponibilidade:
+          $ref: '#/components/schemas/CheckoutWeeklyAvailability'
+      required:
+        - modalidades
+        - concelhosEntregaIds
+        - metodosPagamento
+        - disponibilidade
+      description:
+        Projeção mínima da configuração declarada, obtida no servidor. Local só se levantamento ativo, taxa/concelhos
+        só se entrega ativa; janelas de modalidades desativadas ficam vazias. Sem telefone, decisor, contactos MB WAY
+        ou dados bancários. Agenda informativa, sem reserva/capacidade garantida.
+    CheckoutPreparedProducer:
+      type: object
+      additionalProperties: false
+      properties:
+        produtorContaId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        perfilId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        nome:
+          type: string
+        revisaoProdutorObservada:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        comercial:
+          $ref: '#/components/schemas/CheckoutPreparedCommercial'
+      required:
+        - produtorContaId
+        - perfilId
+        - nome
+        - revisaoProdutorObservada
+        - comercial
+    CheckoutPreparedLine:
+      type: object
+      additionalProperties: false
+      properties:
+        produtoId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        produtorContaId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        quantidade:
+          type: integer
+          minimum: 1
+          maximum: 10000000
+        ofertaAceite:
+          type: object
+          additionalProperties: false
+          properties:
+            precoReferenciaCent:
+              $ref: '#/components/schemas/ProductPrice'
+            unidadeVenda:
+              $ref: '#/components/schemas/CheckoutSaleUnit'
+            revisaoProdutoObservada:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+          required:
+            - precoReferenciaCent
+            - unidadeVenda
+            - revisaoProdutoObservada
+        nome:
+          type: string
+        stockDisponivel:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        subtotalCent:
+          $ref: '#/components/schemas/OrderPositiveMoney'
+      required:
+        - produtoId
+        - produtorContaId
+        - quantidade
+        - ofertaAceite
+        - nome
+        - stockDisponivel
+        - subtotalCent
+    CheckoutPreparationRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        itens:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              produtoId:
+                type: string
+                pattern: ^[a-fA-F0-9]{24}$
+              quantidade:
+                type: integer
+                minimum: 1
+                maximum: 10000000
+            required:
+              - produtoId
+              - quantidade
+          minItems: 1
+          maxItems: 100
+      required:
+        - itens
+      description:
+        IDs distintos do catálogo e quantidades da cesta. Não recebe owner, contas produtoras, preços ou
+        revisões livres. Até 100 produtos e dez produtores, conforme limites técnicos do checkout já existente.
+    CheckoutPreparation:
+      type: object
+      additionalProperties: false
+      properties:
+        linhas:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutPreparedLine'
+          minItems: 1
+          maxItems: 100
+        produtores:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutPreparedProducer'
+          minItems: 1
+          maxItems: 10
+        moeda:
+          type: string
+          enum:
+            - EUR
+      required:
+        - linhas
+        - produtores
+        - moeda
+      description:
+        'Leitura snapshot autenticada: mapeia produtos a contas/perfis produtores atuais, ofertas, revisões
+        e configuração. Usa os validadores/cálculos existentes. Não escreve encomendas, não reserva stock e não substitui
+        a validação transacional final.'
+    CheckoutAttemptWrite:
+      type: object
+      additionalProperties: false
+      properties:
+        referencia:
+          type: string
+          format: uuid
+        pedido:
+          $ref: '#/components/schemas/CreateOrder'
+      required:
+        - referencia
+        - pedido
+    CheckoutAttemptReference:
+      type: object
+      additionalProperties: false
+      properties:
+        referencia:
+          type: string
+          format: uuid
+        expiraEm:
+          type: string
+          format: date-time
+      required:
+        - referencia
+        - expiraEm
+    CheckoutAttemptRecovery:
+      type: object
+      additionalProperties: false
+      properties:
+        referencia:
+          type: string
+          format: uuid
+        expiraEm:
+          type: string
+          format: date-time
+        chaveIdempotencia:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: ^[!-~]{1,128}$
+        pedido:
+          $ref: '#/components/schemas/CreateOrder'
+      required:
+        - referencia
+        - expiraEm
+        - chaveIdempotencia
+        - pedido
+      description:
+        'Exclusivamente à conta compradora original: chave e pedido normalizados imutáveis para repetir POST
+        /orders. Não é um recibo e não prova commit ou rollback. Não envia hash, conta, JWT ou metadados de persistência.
+        Referência expira logicamente em 24 horas, com remoção TTL assíncrona; encomendas e idempotência comercial não
+        expiram por causa disso.'

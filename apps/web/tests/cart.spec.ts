@@ -93,7 +93,7 @@ test('produtos de diferentes produtores têm grupos, subtotais e total corretos'
   await expect(page.locator('.cart-summary')).toContainText('5 unidades');
   await expect(page.locator('.cart-summary__total')).toContainText('12,80');
   await expect(page.locator('.cart-checkout-note')).toContainText(
-    'finalização da compra ficará disponível numa fase futura',
+    'escolhe as condições de receção e pagamento de cada produtor',
   );
 });
 

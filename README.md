@@ -1,6 +1,6 @@
 # Do Campo à Mesa
 
-**Fase 5D — checkout HTTP e encomendas reais, implementação local.** A API disponibiliza `POST /api/orders`, `GET /api/orders` e `GET /api/orders/:id` para compradores autenticados. Reutiliza o checkout transacional existente, com idempotência global, stock atómico e snapshots persistidos. O frontend mantém a Fase 5C; ainda não existe checkout visual. Ver [contrato HTTP, compatibilidade e limitações](docs/api/frontend-integration.md).
+**Fase 5E — checkout real no React, implementação local.** O percurso Cesta → Checkout → Confirmação utiliza a API e MongoDB, com escolhas de receção/pagamento por produtor e encomendas próprias na área do comprador. Reutiliza o checkout transacional de 4B/5D, mantém o JWT apenas em memória e recupera tentativas com a mesma chave/pedido. Não há pagamentos online. Ver [contrato, recuperação e limitações](docs/api/frontend-integration.md).
 
 **Fase 5C — autenticação JWT no React, implementação local.** Registo comprador, login, identidade confirmada por `/auth/me`, áreas pessoais por capacidades e logout usam a API existente. O catálogo público da Fase 5B permanece integrado. A sessão fica apenas em memória: atualizar a página ou abrir outro separador exige novo login. Não há refresh tokens nem revogação imediata no logout.
 
@@ -31,11 +31,38 @@ npm run dev
 
 Abrir `http://127.0.0.1:5173/produtos`. O Vite encaminha `/api` para `http://127.0.0.1:3001`. A variável pública `VITE_API_URL`, documentada em [apps/web/.env.example](apps/web/.env.example), permite outra origem/base. Nunca contém JWT, passwords ou segredos. No build de produção, usar `/api` com reverse proxy ou uma URL HTTPS da API e configurar a origem exata no CORS. Reiniciar Vite/recriar o build depois de alterar a variável. `vite preview` não fornece o proxy de desenvolvimento.
 
+## Rever o checkout numa base isolada
+
+O seed antigo da base de desenvolvimento pode não ter local de levantamento. O seed não atualiza dados existentes e a aplicação não inventa esse local. Para revisão completa, usar uma base temporária independente, sem alterar `docampo_dev_catalog`.
+
+Com Docker ativo, iniciar MongoDB de teste e, em dois terminais, executar:
+
+```sh
+npm run mongo:test:up --workspace @docampo/api
+DOCAMPO_CHECKOUT_REVIEW=1 node --import tsx apps/web/tests/support/real-api-server.mjs
+```
+
+```sh
+VITE_API_URL=http://127.0.0.1:3011/api npm run dev --workspace @docampo/web -- --port 5183
+```
+
+Abrir `http://127.0.0.1:5183`. O modo de revisão insere o catálogo fictício numa base aleatória `docampo_test_web_*` e configura locais de levantamento explicitamente fictícios nessa base. Conserva a disponibilidade declarada de sábado, 09:00–12:00, e pagamento em dinheiro. Não cria credenciais administrativas ou contas de comprador fixas; a sessão de revisão dura 15 minutos. O servidor de testes normal mantém o TTL de 60 segundos para os ensaios de expiração.
+
+1. Criar uma conta **fictícia** em `/registo`, confirmar o aviso genérico e iniciar sessão em `/entrar`.
+2. Adicionar produtos, eventualmente de produtores diferentes, à cesta e seguir **Continuar para checkout**. Um visitante pode entrar sem perder a cesta.
+3. Rever quantidades, preços, total previsto e condições. Selecionar data, janela e pagamento para cada produtor; aceitar as condições e confirmar.
+4. Verificar a referência global, encomendas, valores persistidos, receção e pagamento por pagar. Seguir **Consultar as minhas encomendas** para listagem, ordenação, paginação e detalhe/histórico.
+5. Se houver resultado incerto, usar **Recuperar resultado da compra**. Após reload, iniciar sessão na mesma conta e recuperar: a chave e o pedido originais vêm do servidor. Não iniciar outra tentativa enquanto o resultado for desconhecido.
+
+A referência local não contém JWT, password, morada ou contacto. O pedido privado temporário tem prazo técnico de 24 horas; a sua expiração não elimina encomendas nem prova falha da compra. As alterações posteriores da cesta são preservadas. As demonstrações em `/demonstracao` não permitem comprar.
+
+**Ctrl+C no servidor da revisão elimina apenas a sua base temporária**, incluindo as contas e compras fictícias dessa execução. A base de desenvolvimento permanece intacta. Entrega, taxas, métodos alternativos, falhas e concorrência são cobertos pelos testes com configurações fictícias próprias; não são inventados na configuração de levantamento do catálogo de revisão.
+
 ## Rever a autenticação
 
 1. Preparar API e React conforme o arranque acima e abrir `/registo`. O registo público recebe apenas nome, email e password (15–128 caracteres; sem composição artificial) e cria exclusivamente uma conta compradora. A confirmação 202 é genérica, inclusive para emails duplicados, e não inicia sessão.
 2. Em `/entrar`, usar as credenciais da conta fictícia criada localmente. O React confirma `/auth/me` antes de apresentar a identidade em `/area`. Os papéis vêm da API; não existe seletor de produtor ou administrador no registo real.
-3. Percorrer a área pessoal, voltar ao catálogo e à cesta. A atividade privada ainda não integrada está explicitamente indisponível. A prévia visual dos três dashboards abre num separador separado em `/demonstracao/entrar`, sem partilhar a sessão real.
+3. Percorrer a área pessoal, voltar ao catálogo e à cesta. A secção de encomendas do comprador usa dados reais; a restante atividade privada ainda não integrada está explicitamente indisponível. A prévia visual dos três dashboards abre num separador separado em `/demonstracao/entrar`, sem partilhar a sessão real.
 4. Atualizar uma página privada exige novo login, mantendo a cesta. Terminar sessão descarta o token no cliente e chama `/auth/logout`; não revoga imediatamente tokens emitidos. Expiração/401 limpam a sessão; 403 e falhas temporárias bloqueiam a apresentação privada e permitem nova confirmação.
 
 JWT e passwords não são guardados em localStorage, sessionStorage, cookies ou variáveis Vite. Memória reduz a persistência de um token roubado, mas não elimina o risco de XSS no separador ativo. Não existe sincronização ou renovação de sessões entre separadores. Ver [segurança](docs/api/security.md) e [integração](docs/api/frontend-integration.md).

@@ -18,7 +18,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   useEffect(() => () => account.dispose(), [account]);
   useEffect(() => {
-    if (!demonstrationSite && location.pathname.startsWith('/area')) void account.revalidate();
+    if (
+      !demonstrationSite &&
+      (location.pathname.startsWith('/area') || location.pathname.startsWith('/checkout'))
+    )
+      void account.revalidate();
   }, [account, location.pathname]);
   useEffect(() => {
     const focus = () => {
@@ -46,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login: account.login,
       logout: account.logout,
       revalidate: account.revalidate,
+      request: account.request,
     }),
     [snapshot, demonstration, startDemonstration, endDemonstration, account],
   );

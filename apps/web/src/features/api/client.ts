@@ -3,6 +3,8 @@ export class ApiFailure extends Error {
   constructor(
     readonly kind: 'network' | 'timeout' | 'http' | 'invalid' | 'configuration',
     readonly status?: number,
+    readonly codigo?: string,
+    readonly repetirComMesmaChave?: boolean,
   ) {
     super(
       kind === 'timeout'
@@ -14,6 +16,15 @@ export class ApiFailure extends Error {
             : 'O mercado está temporariamente indisponível. Tenta novamente.',
     );
   }
+}
+export interface JsonRequestOptions {
+  base?: string;
+  timeoutMs?: number;
+  method?: 'GET' | 'POST';
+  body?: unknown;
+  bearer?: string;
+  expectedStatus?: number | readonly number[];
+  idempotencyKey?: string;
 }
 export function apiBase(value: string = import.meta.env?.VITE_API_URL || '/api') {
   const base = value.replace(/\/+$/, '');
@@ -37,14 +48,7 @@ export async function requestJson<T>(
   path: string,
   parse: (v: unknown) => T,
   signal?: AbortSignal,
-  options: {
-    base?: string;
-    timeoutMs?: number;
-    method?: 'GET' | 'POST';
-    body?: unknown;
-    bearer?: string;
-    expectedStatus?: number;
-  } = {},
+  options: JsonRequestOptions = {},
 ): Promise<T> {
   const controller = new AbortController();
   let timeout = false;
@@ -62,14 +66,43 @@ export async function requestJson<T>(
         Accept: 'application/json',
         ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
         ...(options.bearer ? { Authorization: 'Bearer ' + options.bearer } : {}),
+        ...(options.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : {}),
       },
       ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
       credentials: 'omit',
       signal: controller.signal,
     });
-    if (!response.ok) throw new ApiFailure('http', response.status);
+    if (!response.ok) {
+      let codigo: string | undefined;
+      let repeat: boolean | undefined;
+      try {
+        const value = await response.json();
+        const known = [
+          'PEDIDO_INVALIDO',
+          'QUANTIDADE_INVALIDA',
+          'OFERTA_INCOERENTE',
+          'RECONFIRMACAO_NECESSARIA',
+          'CONFLITO_REVISAO',
+          'CONFLITO_IDEMPOTENCIA',
+          'RESULTADO_DESCONHECIDO',
+          'SERVICO_INDISPONIVEL',
+          'RECUPERACAO_EXPIRADA',
+          'TENTATIVA_NAO_ENCONTRADA',
+          'ENCOMENDA_NAO_ENCONTRADA',
+          'ACESSO_PROIBIDO',
+        ];
+        if (known.includes(value?.codigo)) codigo = value.codigo;
+        if (value?.repetirComMesmaChave === true) repeat = true;
+      } catch {
+        /* Resposta inválida: preservar o estado HTTP sem divulgar o corpo. */
+      }
+      throw new ApiFailure('http', response.status, codigo, repeat);
+    }
+    const statuses = options.expectedStatus ?? 200;
     if (
-      response.status !== (options.expectedStatus ?? 200) ||
+      !(typeof statuses === 'number'
+        ? response.status === statuses
+        : statuses.includes(response.status)) ||
       !response.headers.get('content-type')?.toLowerCase().includes('application/json')
     )
       throw new InvalidResponse();

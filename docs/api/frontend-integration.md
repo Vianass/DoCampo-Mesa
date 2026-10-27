@@ -1,3 +1,61 @@
+# Fase 5E — checkout real no React
+
+Implementação local sobre `765d37d`, em `feat/api-foundation`. Integra Cesta → Checkout → Confirmação e encomendas reais do comprador. O serviço transacional, contratos puros, fingerprint, guardas, modelos, cálculos e idempotência comercial de 4B/5D são reutilizados. Não se implementam pagamentos online, cancelamento, alterações de estados, leilões ou novas permissões.
+
+## Metadados e fronteira HTTP
+
+| Operação                                  | Dados e responsabilidade                                                                                                                                                                                                                                                                                                                           |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/orders/prepare`                | Recebe apenas `{itens:[{produtoId,quantidade}]}`, IDs distintos. Deriva do MongoDB associação produto/conta/perfil, nomes, stock, oferta completa, revisões e configuração comercial. Leitura snapshot com orçamento de 10 segundos, sem reserva ou escritas de negócio. Reutiliza o validador de stock/oferta e o cálculo de subtotal existentes. |
+| `POST /api/orders/attempts`               | Recebe `{referencia,pedido}` e `Idempotency-Key`. Conserva o pedido normalizado e fingerprint existentes, exclusivamente para a conta JWT. A referência UUID não é credencial e não identifica uma encomenda. Não executa o checkout. Repetições exatas não renovam o prazo; alteração ou referência alheia dá 409.                                |
+| `GET /api/orders/attempts/:referencia`    | Recupera chave/pedido originais da própria conta. Não devolve recibo nem afirma commit. 404 é comum para inexistente/alheio/removido; 410 assinala prazo lógico terminado quando o registo ainda é observado.                                                                                                                                      |
+| `POST /api/orders`                        | Contrato 5D preservado: contexto apenas JWT, 201 nova compra, 200 replay, 409 conflito/reconfirmação e 503 indeterminado. A criação, débito e recibo continuam exclusivamente no checkout transacional existente.                                                                                                                                  |
+| `GET /api/orders` e `GET /api/orders/:id` | Compras próprias, paginação/cronologia e snapshots. Acrescentam opcionalmente `produtor:{perfilId,nomePublico}` obtido do perfil público atual, sem apresentar esse nome como snapshot histórico.                                                                                                                                                  |
+
+As três extensões exigem JWT válido, conta ativa e capacidade atual comprador, com validação estrita, query vazia e `Cache-Control:no-store`. Reutilizam o limite JSON de 100 KiB e CORS restritivo da API. A preparação respeita os limites existentes de 100 produtos/dez produtores. Não aceita revisões/owners livres no pedido de metadados: recebe só IDs/quantidades. As revisões nas ofertas aceites são expectativas verificadas contra a persistência pelo checkout, nunca versões atribuídas pelo browser; valores manipulados não autorizam compra.
+
+`perfilId` identifica a página pública; `produtorContaId` é a associação exigida pelo contrato de checkout. Não são intercambiáveis e não se inferem pelo nome, slug, ETag ou revisão zero. Local de levantamento só é devolvido quando essa modalidade está ativa; taxa/concelhos só para entrega ativa. Janelas de modalidades desativadas ficam vazias. Não se devolvem telefone privado, decisão administrativa, dados MB WAY/IBAN, email de conta ou revisão de segurança do utilizador.
+
+## Sessão e estados da interface
+
+O controlador da Fase 5C ganhou transporte autenticado tipado, com token privado em memória, origem API configurada e cancelamento/geração da sessão. 401 limpa a sessão; 403 recusa a operação sem inventar permissões. O checkout confirma novamente o acesso quando necessário. Após logout, troca de conta ou resposta antiga, dados anteriores não podem tornar-se resultados da sessão nova. Nenhum token/credencial entra em storage, URL ou mensagens.
+
+`/checkout` exige capacidade comprador e guarda a intenção de destino no login. Um visitante mantém a cesta e retoma o percurso após entrar. `/demonstracao` permanece separado e nunca permite compras reais. Formulários de entrega ficam apenas em memória e sobrevivem à revalidação da mesma sessão; mudar de conta ou recarregar elimina essa cópia local.
+
+A preparação compara a cesta com os dados atuais e não omite produtos ou reduz quantidades silenciosamente. O utilizador vê subtotais calculados pelo servidor, taxas por produtor e total previsto (apenas soma desses valores, sem recalcular preços/arredondamentos). Métodos e janelas correspondem aos dados declarados. A seleção usa datas locais no fuso do produtor convertidas explicitamente para UTC; extremos horários ambíguos/inexistentes não são escolhidos implicitamente. Não se criam feriados, capacidade, reservas ou disponibilidade adicional.
+
+Quantidades, preços, condições e dados obrigatórios exigem aceitação explícita. Alterar a seleção limpa essa aceitação. 409 de reconfirmação permite rever dados e iniciar uma nova tentativa lógica após nova aceitação. Conflito de idempotência, rede, timeout, resposta inválida ou resultado indeterminado não geram automaticamente outra chave nem apagam a cesta. Falha na consulta dos detalhes não desmente um recibo 200/201 válido.
+
+## Recuperação sem dados pessoais no browser
+
+Antes de enviar o checkout, a interface conserva localmente uma referência UUID e um retrato **público** das linhas/marcadores de alteração da cesta. O pedido exato, incluindo morada/contacto quando necessários, fica na coleção técnica privada `checkout_attempts`, associado ao comprador e protegido por autenticação. A escrita é confirmada por majority; o registo é imutável por referência e usa o fingerprint já existente. Não é uma segunda estratégia de idempotência: não arbitra débitos, não guarda resultados comerciais e nunca substitui a âncora/índice global de orders.
+
+O prazo técnico escolhido é **24 horas**, verificado pela API e suportado por índice TTL. A remoção física é assíncrona. Registos não são renovados por leitura/repetição; a referência não dá acesso sem JWT da própria conta. Expirar essa cópia temporária não elimina compras nem expira a chave comercial. Se a recuperação já não estiver disponível, consultar as encomendas antes de uma nova compra; a interface não inventa falha ou sucesso nem troca automaticamente a chave.
+
+O browser não conserva pedido privado, morada, contacto, hashes desses dados, password ou JWT. O storage de recuperação filtra explicitamente os campos permitidos. Após reload exige novo login e usa a referência para obter o pedido original no servidor, repetindo exatamente chave/payload em `POST /orders`. Uma tentativa cujo checkpoint não foi encontrado e que ainda não chegou à fase de envio pode ser revista explicitamente. Se não for possível guardar a referência local, a compra não é enviada.
+
+A limpeza da cesta ocorre só depois de recibo válido. São removidas apenas linhas incluídas e ainda iguais à versão confirmada, com marcadores próprios de alteração. Linhas acrescentadas/editadas depois são preservadas. Enquanto o resultado for desconhecido, a atualização do catálogo não elimina automaticamente as linhas envolvidas; continuam escolhas estimadas, sem reserva de stock. Uma referência pendente pertence à conta original; outra conta não recebe o seu pedido. O transporte pode ser abandonado pelo browser sem cancelar uma transação já iniciada: recuperar o resultado, não presumir rollback.
+
+## Encomendas reais e revisão
+
+A secção `/area/comprador/encomendas` e os seus detalhes usam os GET próprios da API, com carregamento, vazio, erro/retry, ordenação, paginação, IDs inválidos e 404 seguro. Apresentam produtos/quantidades, valores persistidos, receção, pagamento e histórico minimizado. Não carregam a atividade demonstrativa, não recalculam preços históricos nem oferecem comandos inexistentes. As restantes áreas e todos os dashboards demonstrativos permanecem preservados.
+
+O [README](../../README.md) inclui um modo de revisão na base aleatória `docampo_test_web_*`, separado do catálogo de desenvolvimento. Configura apenas nessa base locais de levantamento explicitamente fictícios, conserva o horário declarado e permite registo comprador sem credenciais fixas. Não atualiza produtores existentes na base de desenvolvimento. Os testes reais usam configurações próprias para levantamento, entrega/taxas, métodos, stock, recuperação e concorrência; respostas HTTP simuladas são usadas apenas para cobertura de apresentação/erros, nunca como prova de transações.
+
+Não se migram encomendas demonstrativas, não se atribuem permissões produtor/admin ao comprador, não se alteram modelos/regras comerciais nem os nove documentos originais da Fase 0. Sem novos pacotes, commits ou push nesta implementação. A escolha do prazo de recuperação, a apresentação de referências de concelhos ainda sem catálogo de nomes e a seleção de janelas completas ficam explícitas para revisão antes da consolidação.
+
+## Validação da Fase 5E
+
+A suite habitual do frontend foi reexecutada com **386 testes aprovados**, e a suite real React/API/MongoDB com **41**, sem falhas, skips ou flaky: **427 no total**, incluindo 58 novos testes desta fase (24 de contratos/modelo, 18 de apresentação/interação e 16 reais). O backend completo passou nos **1 236 testes**: 830 unitários, 124 HTTP e 282 de integração MongoDB, incluindo 27 novos testes da preparação e recuperação. O conteúdo backend mantém-se igual ao da execução completa; a repetição final das suites frontend inclui o tratamento de 404 antes/depois do envio.
+
+TypeScript API/frontend, ESLint, Prettier, builds e `git diff --check` aprovados. OpenAPI verificado por análise YAML, resolução das 643 referências locais, validação de 22 exemplos e sete respostas HTTP reais contra os schemas; sem instalar um validador adicional. Ligações documentais, ausência de segredos e integridade byte a byte dos nove documentos da Fase 0 verificadas.
+
+Checkout, confirmação e encomendas foram testados nas larguras 320, 430, 768, 1024, 1280 e 1440 px, sem overflow horizontal nem erros de JavaScript; capturas inspecionadas em telemóvel, tablet e desktop. O percurso de revisão com o catálogo original também foi executado numa base efémera: registo 202, compra de 250 g, uma encomenda persistida de 70 cêntimos e débito exato do stock. Essa base foi removida pelo encerramento do próprio servidor. Os ensaios de apresentação com HTTP simulado não são apresentados como prova de transações.
+
+---
+
+## Registo da Fase 5D preservado
+
 # Fase 5D — checkout HTTP e encomendas próprias
 
 Implementação local sobre `445365d`, sem alterações ao frontend. `POST /api/orders` compõe o contexto JWT atual com o serviço transacional existente de 4B.3, o contrato/validação/fingerprint de 4B.1 e a recuperação de 4B.2. Não se reescrevem cálculos, modelos, guardas, débitos, snapshots, índice global ou política de tentativas. `GET /api/orders` e `GET /api/orders/:id` consultam exclusivamente o comprador autenticado. O [OpenAPI](openapi.yaml) contém o contrato e os exemplos executáveis; os outros comandos propostos continuam futuros.

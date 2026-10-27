@@ -4,6 +4,9 @@ import { Icon } from '../../components/Icon';
 import { useAuth } from '../auth/useAuth';
 import { isRole, roleLabels } from '../auth/types';
 import { privateSections, roleHome } from './navigation';
+import { lazy, Suspense } from 'react';
+import { LoadingSkeleton } from '../../components/LoadingSkeleton';
+const OrdersArea = lazy(() => import('../orders/OrdersArea'));
 export function AccountArea() {
   const { session } = useAuth();
   const location = useLocation();
@@ -19,6 +22,12 @@ export function AccountArea() {
       </section>
     );
   const section = privateSections[role].find((item) => item.slug === pieces[2]);
+  if (role === 'comprador' && pieces[2] === 'encomendas')
+    return (
+      <Suspense fallback={<LoadingSkeleton label="A carregar as tuas encomendas" count={2} />}>
+        <OrdersArea />
+      </Suspense>
+    );
   if (pieces[2] && !section)
     return (
       <section className="private-unavailable">

@@ -1,13 +1,38 @@
 import { mergeCatalog } from './remote';
 import { adaptProduct, catalogApi } from '../api/catalog';
 import { ApiFailure } from '../api/client';
-import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useLayoutEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import type { Product } from '../../types/market';
 import { products } from '../../data/market';
 import { CartContext } from './CartContext';
-import { cartReducer, cartSummary } from './model';
-import { readCartStorage, writeCartStorage } from './storage';
-import type { CartOperation } from './types';
+import { cartReducer, cartSummary, cartSignature } from './model';
+import { readCartStorage, writeCartStorage, CART_STORAGE_KEY } from './storage';
+import type { CartOperation, CartPurchaseLine } from './types';
+import { readPending } from '../checkout/model';
+
+const touchKey = CART_STORAGE_KEY + '.touches';
+function readTouches(): Record<string, string> {
+  try {
+    const v = JSON.parse(localStorage.getItem(touchKey) ?? '{}');
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+    return Object.fromEntries(
+      Object.entries(v).flatMap(([key, value]) =>
+        key.length < 200 && typeof value === 'string' && value.length < 100 ? [[key, value]] : [],
+      ),
+    );
+  } catch {
+    return {};
+  }
+}
 
 export function CartProvider({
   children,
@@ -19,6 +44,43 @@ export function CartProvider({
   const [session, dispatch] = useReducer(cartReducer, baseCatalog, (items) =>
     readCartStorage(items, new Date().toISOString()),
   );
+  const latest = useRef(session.cart);
+  useLayoutEffect(() => {
+    latest.current = session.cart;
+  }, [session.cart]);
+  const touches = useRef<Record<string, string>>(readTouches());
+  const [remoteRefresh, setRemoteRefresh] = useState(0);
+  function mark(ids: readonly string[]) {
+    touches.current = { ...touches.current, ...readTouches() };
+    for (const id of ids) touches.current[id] = crypto.randomUUID();
+    const entries = Object.entries(touches.current).slice(-300);
+    touches.current = Object.fromEntries(entries);
+    try {
+      localStorage.setItem(touchKey, JSON.stringify(touches.current));
+    } catch {
+      /* Uma falha conserva as linhas por precaução no reload. */
+    }
+  }
+  const snapshotPurchase = useCallback(() => {
+    const items = latest.current.items;
+    const missing = items.filter((i) => !touches.current[i.productId]).map((i) => i.productId);
+    if (missing.length) mark(missing);
+    return items.map((i) => ({
+      productId: i.productId,
+      quantity: i.quantity,
+      stamp: touches.current[i.productId]!,
+      signature: cartSignature(i),
+    }));
+  }, []);
+  const acknowledgePurchase = useCallback((lines: readonly CartPurchaseLine[]) => {
+    const current = { ...touches.current, ...readTouches() };
+    dispatch({
+      type: 'purchase-confirmed',
+      lines: lines.filter((l) => current[l.productId] === l.stamp),
+      now: new Date().toISOString(),
+    });
+    setRemoteRefresh((n) => n + 1);
+  }, []);
   const catalog = useMemo(
     () =>
       mergeCatalog(
@@ -58,9 +120,18 @@ export function CartProvider({
         if (!active) return;
       }
       if (active) {
+        const pending = readPending();
+        const protectedIds = new Set(
+          !pending?.confirmed ? pending?.baseline.map((line) => line.productId) : [],
+        );
+        // Uma atualização pública não pode retirar escolhas de uma compra ainda por confirmar.
+        // A tentativa original mantém as suas ofertas; só o checkout decide o resultado.
         dispatch({
           type: 'refresh',
-          catalog: mergeCatalog(baseCatalog, updates),
+          catalog: mergeCatalog(
+            baseCatalog,
+            updates.filter((product) => !protectedIds.has(product.id)),
+          ),
           now: new Date().toISOString(),
         });
         setRemoteIssue(
@@ -76,7 +147,7 @@ export function CartProvider({
     };
     // A composição muda em operações da cesta; apenas mudanças de IDs iniciam nova consulta.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remoteIds]);
+  }, [remoteIds, remoteRefresh]);
   useEffect(() => {
     if (!writeCartStorage(session.cart)) dispatch({ type: 'storage-failure' });
   }, [session.cart]);
@@ -84,13 +155,19 @@ export function CartProvider({
     dispatch({ type: 'reconcile', catalog, now: new Date().toISOString() });
   }, [catalog]);
   const operate = useCallback(
-    (operation: CartOperation, product?: Product) =>
+    (operation: CartOperation, product?: Product) => {
+      mark(
+        operation.type === 'clear'
+          ? latest.current.items.map((i) => i.productId)
+          : [operation.productId],
+      );
       dispatch({
         type: 'operate',
         operation,
         catalog: product ? mergeCatalog(catalog, [product]) : catalog,
         now: new Date().toISOString(),
-      }),
+      });
+    },
     [catalog],
   );
   const summary = useMemo(() => cartSummary(session.cart, catalog), [session.cart, catalog]);
@@ -107,8 +184,10 @@ export function CartProvider({
       updateQuantity: (productId: string, quantity: number) =>
         operate({ type: 'quantity', productId, quantity }),
       clearCart: () => operate({ type: 'clear' }),
+      snapshotPurchase,
+      acknowledgePurchase,
     }),
-    [session, summary, operate, remoteIssue],
+    [session, summary, operate, remoteIssue, snapshotPurchase, acknowledgePurchase],
   );
   return (
     <CartContext value={value}>

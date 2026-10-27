@@ -8,6 +8,7 @@ import { Icon } from '../components/Icon';
 import { PriceDisplay } from '../components/PriceDisplay';
 import { CartLineItem } from '../features/cart/CartLineItem';
 import { useCart } from '../features/cart/useCart';
+import { demonstrationSite } from '../features/auth/demo-mode';
 
 export default function CartPage() {
   const {
@@ -189,18 +190,31 @@ export default function CartPage() {
                 </dl>
                 <p className="cart-summary__note">
                   O total corresponde aos produtos escolhidos. Os custos de entrega não estão
-                  incluídos; não existe finalização de compra nesta fase.
+                  incluídos
+                  {demonstrationSite
+                    ? '; não existe finalização de compra na demonstração.'
+                    : '; serão apresentados por produtor antes da confirmação.'}
                 </p>
                 <div className="cart-checkout-note">
                   <Icon name="clock" />
                   <div>
-                    <h3>O próximo passo está a crescer.</h3>
+                    <h3>
+                      {demonstrationSite
+                        ? 'O próximo passo está a crescer.'
+                        : 'Combinar a chegada.'}
+                    </h3>
                     <p>
-                      A finalização da compra ficará disponível numa fase futura. Por agora, a cesta
-                      guarda apenas as tuas escolhas.
+                      {demonstrationSite
+                        ? 'A demonstração guarda apenas as tuas escolhas, sem criar compras reais.'
+                        : 'Revê os produtos e escolhe as condições de receção e pagamento de cada produtor.'}
                     </p>
                   </div>
                 </div>
+                {!demonstrationSite && (
+                  <Button to="/checkout">
+                    Continuar para checkout <Icon name="arrow" />
+                  </Button>
+                )}
                 <Button to="/produtos" variant="secondary">
                   Continuar a explorar <Icon name="arrow" />
                 </Button>
@@ -225,8 +239,8 @@ export default function CartPage() {
         )}
         <p className="cart-demo-note">
           Cesta local, com escolhas do catálogo e eventuais exemplos demonstrativos. Não reserva
-          stock nem cria encomendas. Preços e disponibilidade terão de ser confirmados antes de uma
-          compra real.
+          stock. As encomendas só são criadas após confirmação no checkout. Preços e disponibilidade
+          são novamente verificados antes da compra.
         </p>
       </Container>
     </div>

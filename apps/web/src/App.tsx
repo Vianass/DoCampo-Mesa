@@ -25,6 +25,7 @@ const ProductsPage = lazy(() => import('./pages/ProductsPage'));
 const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'));
 const ProducerDetailPage = lazy(() => import('./pages/ProducerDetailPage'));
 const CartPage = lazy(() => import('./pages/CartPage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegistrationPage = lazy(() => import('./pages/auth/RegistrationPage'));
 const RecoveryPage = lazy(() => import('./pages/auth/RecoveryPage'));
@@ -126,6 +127,14 @@ export function App() {
           }
         />
         <Route path="leiloes" element={<AuctionsPage />} />
+        <Route
+          path="checkout/*"
+          element={
+            <Suspense fallback={<AuthLoading />}>
+              <CheckoutPage />
+            </Suspense>
+          }
+        />
         <Route path="leiloes/:id" element={<AuctionDetailPage />} />
         <Route path="como-funciona" element={<HowItWorksPage />} />
         <Route

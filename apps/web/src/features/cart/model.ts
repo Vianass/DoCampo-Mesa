@@ -12,6 +12,16 @@ import type {
 export function emptyCart(now: string): CartState {
   return { items: [], updatedAt: now };
 }
+export function cartSignature(item: CartItem) {
+  return JSON.stringify([
+    item.productId,
+    item.producerId,
+    item.quantity,
+    item.unitPriceSnapshotCents,
+    item.unit,
+    item.productSnapshot?.sale ?? null,
+  ]);
+}
 export function quantityError(
   value: string | number,
   stock: number,
@@ -178,6 +188,22 @@ function applyOperation(
 }
 
 export function cartReducer(session: CartSession, action: CartAction): CartSession {
+  if (action.type === 'purchase-confirmed') {
+    const selected = new Map(action.lines.map((line) => [line.productId, line]));
+    const items = session.cart.items.filter((item) => {
+      const line = selected.get(item.productId);
+      return !line || line.quantity !== item.quantity || line.signature !== cartSignature(item);
+    });
+    return {
+      ...session,
+      cart: { items, updatedAt: action.now },
+      feedback: {
+        id: (session.feedback?.id ?? 0) + 1,
+        kind: 'success',
+        message: 'Compra confirmada. As alterações posteriores da cesta foram preservadas.',
+      },
+    };
+  }
   if (action.type === 'refresh')
     return cartReducer(session, {
       type: 'reconcile',

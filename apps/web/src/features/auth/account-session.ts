@@ -1,5 +1,5 @@
 import { authApi, type AuthApi, type Credentials } from './auth-api';
-import { ApiFailure } from '../api/client';
+import { ApiFailure, requestJson, type JsonRequestOptions } from '../api/client';
 import type { AccountSession } from './types';
 interface Snapshot {
   session: AccountSession;
@@ -141,6 +141,37 @@ export function createAccountSession(api: AuthApi = authApi, now: () => number =
       op.done();
     }
   }
+  async function request<T>(
+    path: string,
+    parse: (value: unknown) => T,
+    options: Omit<JsonRequestOptions, 'bearer' | 'base'> = {},
+    signal?: AbortSignal,
+  ) {
+    if (!token || state.session.kind !== 'authenticated') throw new ApiFailure('http', 401);
+    if (Date.parse(state.session.expiresAt) <= now()) {
+      expired();
+      throw new ApiFailure('http', 401);
+    }
+    const version = epoch,
+      currentToken = token,
+      op = operation(signal);
+    try {
+      const value = await requestJson(path, parse, op.controller.signal, {
+        ...options,
+        base: undefined,
+        bearer: currentToken,
+      });
+      if (version !== epoch || op.controller.signal.aborted) throw cancelled();
+      return value;
+    } catch (error) {
+      if (version !== epoch || op.controller.signal.aborted) throw cancelled();
+      if (error instanceof ApiFailure && error.status === 401)
+        clear('A sessão deixou de ser válida. Entra novamente para continuar.', 'invalid');
+      throw error;
+    } finally {
+      op.done();
+    }
+  }
   return {
     getSnapshot: () => state,
     subscribe: (listener: () => void) => {
@@ -150,6 +181,7 @@ export function createAccountSession(api: AuthApi = authApi, now: () => number =
     login,
     revalidate,
     logout,
+    request,
     dispose: () => clear(),
   };
 }
