@@ -205,7 +205,14 @@ test('contas produtor/administrador e múltiplas capacidades só usam os papéis
     const user = await account(request, roles);
     await login(page, user);
     await expect(page.locator('.account-identity')).toContainText(user.nome);
-    await expect(page.locator('.admin-metrics,.producer-metrics,.buyer-summary')).toHaveCount(0);
+    // A visão geral produtora já usa agregados reais: a conta nova não tem encomendas.
+    if (roles[0] === 'produtor') {
+      await expect(page.getByLabel('Indicadores reais de vendas')).toBeVisible();
+      await expect(page.locator('.producer-metrics dd')).toHaveText(['0', '0', '0', '0,00 €']);
+      await expect(page.locator('.producer-live-card')).toHaveCount(0);
+      await expect(page.locator('.admin-metrics,.buyer-summary')).toHaveCount(0);
+    } else
+      await expect(page.locator('.admin-metrics,.producer-metrics,.buyer-summary')).toHaveCount(0);
     if (roles.length > 1) {
       await page.getByRole('link', { name: 'Área de Produtor', exact: true }).click();
       await expect(page).toHaveURL(/\/area\/produtor$/);

@@ -20,11 +20,15 @@ export class ApiFailure extends Error {
 export interface JsonRequestOptions {
   base?: string;
   timeoutMs?: number;
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PATCH';
   body?: unknown;
   bearer?: string;
   expectedStatus?: number | readonly number[];
   idempotencyKey?: string;
+  ifMatch?: string;
+}
+export interface JsonResponseMetadata {
+  etag: string | null;
 }
 export function apiBase(value: string = import.meta.env?.VITE_API_URL || '/api') {
   const base = value.replace(/\/+$/, '');
@@ -46,7 +50,7 @@ export function apiBase(value: string = import.meta.env?.VITE_API_URL || '/api')
 }
 export async function requestJson<T>(
   path: string,
-  parse: (v: unknown) => T,
+  parse: (v: unknown, metadata: JsonResponseMetadata) => T,
   signal?: AbortSignal,
   options: JsonRequestOptions = {},
 ): Promise<T> {
@@ -67,6 +71,7 @@ export async function requestJson<T>(
         ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
         ...(options.bearer ? { Authorization: 'Bearer ' + options.bearer } : {}),
         ...(options.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : {}),
+        ...(options.ifMatch ? { 'If-Match': options.ifMatch } : {}),
       },
       ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
       credentials: 'omit',
@@ -90,6 +95,9 @@ export async function requestJson<T>(
           'TENTATIVA_NAO_ENCONTRADA',
           'ENCOMENDA_NAO_ENCONTRADA',
           'ACESSO_PROIBIDO',
+          'TRANSICAO_INDISPONIVEL',
+          'PRECONDICAO_FALHOU',
+          'RESULTADO_INDETERMINADO',
         ];
         if (known.includes(value?.codigo)) codigo = value.codigo;
         if (value?.repetirComMesmaChave === true) repeat = true;
@@ -113,7 +121,7 @@ export async function requestJson<T>(
       throw new InvalidResponse();
     }
     try {
-      return parse(value);
+      return parse(value, { etag: response.headers.get('etag') });
     } catch {
       throw new InvalidResponse();
     }

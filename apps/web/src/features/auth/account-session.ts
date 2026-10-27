@@ -143,7 +143,7 @@ export function createAccountSession(api: AuthApi = authApi, now: () => number =
   }
   async function request<T>(
     path: string,
-    parse: (value: unknown) => T,
+    parse: (value: unknown, metadata: import('../api/client').JsonResponseMetadata) => T,
     options: Omit<JsonRequestOptions, 'bearer' | 'base'> = {},
     signal?: AbortSignal,
   ) {

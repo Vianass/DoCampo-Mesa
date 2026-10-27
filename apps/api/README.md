@@ -1,3 +1,17 @@
+# API — gestão de encomendas do produtor da Fase 5F
+
+Disponíveis com JWT, conta ativa e papel atual produtor: `GET /api/me/producer/orders`, `GET /api/me/producer/orders/:id` e `PATCH /api/me/producer/orders/:id/status`. A propriedade é a conta produtora guardada na encomenda, nunca um ID escolhido no cliente. Aprovação e condições comerciais atuais não reescrevem nem bloqueiam automaticamente encomendas históricas próprias; esta fase não concede novos poderes de vender/publicar.
+
+A listagem admite `pagina`, `porPagina`, `ordem` e `estado`, com indicadores globais próprios. O detalhe inclui apenas os snapshots operacionais necessários, histórico minimizado e ações possíveis. Os GET próprios do comprador continuam os existentes. Ver [contratos e permissões](../../docs/api/frontend-integration.md).
+
+O PATCH exige JSON estrito `{estado}`, `If-Match` forte do detalhe e transação snapshot/majority com guarda de capacidades e `save` completo validado, reutilizando `versao`/optimisticConcurrency de orders. 428 sem precondição, 400 inválida, 412 desatualizada, 409 para transição proibida. Só permite pendente → confirmada → em_preparacao → pronta; sem novos estados ou cancelamento/conclusão/pagamento genéricos. Não altera stock, recibo original ou snapshots. Falha de rede/503 exige releitura, sem repetição automática do comando. CORS passa a permitir PATCH/If-Match nas origens já autorizadas, sem alargar a lista de origens.
+
+Não são acrescentadas dependências, modelos ou índices. A revisão com contas fictícias e base temporária está no [README principal](../../README.md).
+
+---
+
+## Registo da Fase 5E preservado
+
 # API — preparação e recuperação do checkout da Fase 5E
 
 À API da Fase 5D juntam-se três operações privadas de comprador: `POST /api/orders/prepare`, `POST /api/orders/attempts` e `GET /api/orders/attempts/:referencia`. O runtime prepara também o índice TTL da coleção técnica `checkout_attempts`. Esta conserva temporariamente o pedido da própria conta para recuperação após reload; não cria encomendas, não reserva stock e não substitui a idempotência global do checkout.

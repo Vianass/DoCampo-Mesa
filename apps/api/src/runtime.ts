@@ -8,6 +8,7 @@ import { createAuthService } from './modules/auth/auth.service.js';
 import { createCatalogService } from './modules/catalog/catalog.service.js';
 import { createOrdersService } from './modules/orders/orders.service.js';
 import { createCheckoutPreparationService } from './modules/orders/checkout-preparation.service.js';
+import { createProducerOrdersService } from './modules/orders/producer-orders.service.js';
 
 interface DatabaseHandle {
   connection?: Connection;
@@ -37,6 +38,9 @@ export async function startApi(
   const preparation = authentication
     ? createCheckoutPreparationService(database.connection!)
     : undefined;
+  const producerOrders = authentication
+    ? createProducerOrdersService(database.connection!, authentication.secret)
+    : undefined;
   try {
     if (auth) await auth.prepare();
     if (catalog) await catalog.prepare();
@@ -54,6 +58,7 @@ export async function startApi(
             catalog,
             orders,
             preparation,
+            producerOrders,
             security: authentication,
           }
         : undefined,

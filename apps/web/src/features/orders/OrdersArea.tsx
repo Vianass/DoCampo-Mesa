@@ -67,6 +67,9 @@ export default function OrdersArea() {
           compra.
         </p>
       </header>
+      <Button variant="secondary" onClick={() => setRetry((n) => n + 1)}>
+        Atualizar consulta
+      </Button>
       {id && (
         <Link className="buyer-detail-link" to="/area/comprador/encomendas">
           ← Todas as encomendas

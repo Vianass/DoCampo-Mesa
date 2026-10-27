@@ -1,3 +1,57 @@
+# Fase 5F — encomendas reais da produção
+
+Implementação local sobre `aeec891`, em `feat/api-foundation`. Reutiliza orders, snapshots, auditoria, JWT, guardas de capacidades, transações e componentes visuais. Não reconstrói o checkout nem modifica os nove documentos originais da Fase 0.
+
+## Contratos e propriedade
+
+| Operação                                   | Responsabilidade                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/me/producer/orders`              | Paginação 1–1000, 12/24/36 por página, ordem recentes/antigas e filtro opcional por um dos seis estados. Datas e ID desempatam a ordem. Query estrita, sem produtor/comprador livres. Resumo sem dados pessoais do comprador; modalidade e valores vêm dos snapshots.                                      |
+| `GET /api/me/producer/orders/:id`          | Detalhe apenas da encomenda cujo produtor é a conta JWT. Terceiro e ausente recebem o mesmo 404. Inclui entrega/levantamento, pagamento, histórico minimizado, `acoesPermitidas` e ETag forte no header. Sem email, ID do comprador, atores, pedidos privados, hash, chave, manifesto ou versões técnicas. |
+| `PATCH /api/me/producer/orders/:id/status` | JSON estrito `{estado}` e um único `If-Match` forte, obtido do detalhe. JWT ativo e papel produtor atual. Estado/versão atuais, guarda transacional de capacidades, `save` completo validado e novo evento de auditoria com autor real, data e versão observada. Resposta 200 com detalhe e novo ETag.     |
+
+Todas as operações usam `Cache-Control:no-store`. Consultas com orçamento de 5 segundos; comandos com orçamento de 10 segundos e até três execuções transacionais, revalidando o ETag e as capacidades em cada uma. Snapshot/majority/primary seguem o protocolo existente. MongoDB deve estar num replica set; não há efeitos externos dentro do callback repetível.
+
+A autorização exige conta ativa, papel atual produtor e propriedade na própria consulta. A conta produtora referenciada por orders é uma conta users, não o ID do perfil público. A aprovação para novas vendas e configuração atual não são reaplicadas aos snapshots de encomendas históricas, nem concedem permissões adicionais. Não existe bypass administrativo nesta rota. As rotas planeadas de outros comandos, incluindo o caminho académico `PATCH /orders/:id/estado`, continuam propostas separadas; não são aliases disponibilizados nesta fase.
+
+## Transições e concorrência
+
+Só se disponibiliza a cadeia operacional aprovada O02/OR01: **pendente → confirmada → em_preparacao → pronta**. Ações permitidas são calculadas no servidor. Pronta não significa receção confirmada. O13 reserva a conclusão ao comprador ou aos mecanismos administrativo/automático previstos. Concluída e cancelada continuam consultáveis e finais, sem reabertura. O pedido de cancelamento pendente não suspende preparação, conforme OR07; a fase não decide pedidos nem altera propostas de agenda.
+
+Não há comando de cancelamento: a reposição transacional/pendente e decisões auditadas OR06 não são simuladas com uma mudança do enum. Não há comandos de declaração de entrega, confirmação de receção, pagamento, reembolso, reclamação ou agendador. Não se acrescentam estados, regras comerciais, atualizações de stock ou novos poderes administrativos.
+
+ETag opaco usa HMAC com chave privada já existente, contexto próprio, conta produtora, ID e `versao` persistida. Ausente dá 428; formato inválido, wildcard, ETag fraco ou duplicado dá 400; desatualizado dá 412; salto/repetição/ação proibida dá 409. `save` conserva as validações de evolução e incrementa a versão otimista; transações também verificam as capacidades atuais por escrita condicionada em users. Duas operações com a mesma versão só podem acrescentar uma transição. Não se aceita mass assignment nem se expõem snapshots completos para serem reenviados.
+
+Uma resposta perdida ou 503 pode ocorrer depois do commit. A interface não afirma rollback nem repete automaticamente: bloqueia outro comando até **Atualizar consulta**, obtendo estado/histórico/ETag atuais. Repetir um ETag antigo não avança a etapa seguinte. A auditoria e o recibo original de idempotência permanecem preservados; um replay de checkout continua a devolver o resultado original da compra, não o estado operacional novo.
+
+## React e indicadores
+
+`features/producer-orders` separa contratos/parsers e apresentação. A secção autenticada `/area/produtor/encomendas` apresenta listagem, estado, ordenação, paginação, detalhe e ações guiadas. A visão geral e indicadores usam os mesmos agregados reais. As demonstrações de produtor, comprador e administrador permanecem isoladas e inalteradas. `OrderDetails`, estilos e componentes existentes são reutilizados, sem apresentar a atividade fictícia como pertencendo à conta real.
+
+O transporte autenticado continua sem expor/persistir JWT; acrescenta PATCH, If-Match e apenas o ETag de resposta como metadado do parser. Respostas tardias continuam sujeitas à geração da sessão e cancelamento. Recarregar ou abrir outro separador exige login. O comprador mantém `GET /orders` e `GET /orders/:id` e pode usar **Atualizar consulta** ou voltar à página para ler os estados atuais. Sem polling, notificações ou Socket.IO nesta fase.
+
+Os indicadores são calculados numa agregação dos documentos da conta: número total, contagens por estado e **soma de totalCent apenas de encomendas concluídas**, incluindo a taxa histórica. São globais, sem filtro temporal e independentes do filtro/página da listagem. Pendentes, confirmadas, em preparação, prontas e canceladas não entram nesse valor. Não se afirma recebimento, lucro, saldo ou confirmação de pagamento. Esta métrica restrita não fecha a futura definição financeira completa de Q15. A soma usa Decimal128; se exceder a representação inteira segura do contrato, retorna 503 explícito em vez de arredondar silenciosamente.
+
+## Revisão, limites e decisões pendentes
+
+O [README](../../README.md) descreve `DOCAMPO_PRODUCER_REVIEW=1`: base efémera própria, duas contas produtoras/comprador fictícios e encomendas criadas pelo checkout existente. Passwords aleatórias ficam apenas num ficheiro temporário privado 0600, cujo caminho é comunicado; o encerramento elimina esse ficheiro e a sua base. Não há credenciais fixas, registo público de produtor ou alteração de papéis pelo browser. O runtime de produção não importa esse preparador de dados.
+
+Mantêm-se pendentes os comandos de receção/conclusão e cronómetro, cancelamentos/reposição, pagamentos diretos auditados, reclamações e conciliação académica entre o termo entregue e concluida. A fase não resolve essas dependências nem altera os contratos históricos. Leilões, notificações, pagamentos online e métricas financeiras avançadas permanecem fora do âmbito. Sem novas dependências, commits ou push.
+
+## Validação da Fase 5F
+
+A suite backend completa passou nos **1 288 testes** (837 unitários, 124 HTTP e 327 de integração MongoDB), incluindo 52 novos: sete de política/validação e 45 de integração. A suite frontend completa passou nos **407 testes habituais + 53 reais React/API/MongoDB = 460**, sem falhas, skips ou flaky. Os 33 novos testes frontend incluem oito de contratos, 13 de interface e 12 reais, com as seis larguras de 320, 430, 768, 1024, 1280 e 1440 px. O cenário JWT existente mantém a verificação de papéis/identidade, passando a verificar agregados reais vazios no produtor em vez de exigir ausência de indicadores.
+
+Cobertura real: ownership e minimização, capacidades atuais e remoção concorrente, cadeia completa até pronta, estados finais, precondições/duas escritas concorrentes, snapshots/stock/recibo inalterados, perda injetada da resposta após commit e recuperação por releitura, comprador React a consultar o novo estado e responsividade sem overflow/erros de JavaScript. Não se usam respostas simuladas como prova de persistência ou atomicidade.
+
+TypeScript API/frontend, ESLint, Prettier, builds, `git diff --check`, ligações documentais e segredos verificados. OpenAPI analisado como YAML, com 680 referências locais resolvidas, 22 exemplos e quatro respostas reais do modo de revisão validados contra os schemas. Nove documentos da Fase 0, modelos de negócio, checkout, carrinho, demonstrações e dependências preservados. A implementação mantém-se local.
+
+O modo de revisão foi executado com as três contas fictícias: cada produtor consultou a sua encomenda, o comprador observou a confirmação e o MongoDB conservou os dois documentos, snapshots e stock. O ficheiro de credenciais tinha modo 0600; ele e a base foram removidos pelo encerramento do servidor. Capturas de listagem/detalhe inspecionadas em telemóvel, tablet e desktop.
+
+---
+
+## Registo da Fase 5E preservado
+
 # Fase 5E — checkout real no React
 
 Implementação local sobre `765d37d`, em `feat/api-foundation`. Integra Cesta → Checkout → Confirmação e encomendas reais do comprador. O serviço transacional, contratos puros, fingerprint, guardas, modelos, cálculos e idempotência comercial de 4B/5D são reutilizados. Não se implementam pagamentos online, cancelamento, alterações de estados, leilões ou novas permissões.

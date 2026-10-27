@@ -12,6 +12,8 @@ import { catalogRoutes } from './modules/catalog/catalog.routes.js';
 import { ordersRoutes } from './modules/orders/orders.routes.js';
 import type { OrdersService } from './modules/orders/orders.service.js';
 import type { CheckoutPreparationService } from './modules/orders/checkout-preparation.service.js';
+import { producerOrdersRoutes } from './modules/orders/producer-orders.routes.js';
+import type { ProducerOrdersService } from './modules/orders/producer-orders.service.js';
 
 export function createApp(
   options: {
@@ -19,6 +21,7 @@ export function createApp(
     catalog?: CatalogService;
     orders?: OrdersService;
     preparation?: CheckoutPreparationService;
+    producerOrders?: ProducerOrdersService;
     security?: HttpSecurityConfiguration;
     rateLimit?: AuthRateLimitOptions;
   } = {},
@@ -38,6 +41,8 @@ export function createApp(
   if (options.catalog) app.use('/api', catalogRoutes(options.catalog, options.auth));
   if (options.orders)
     app.use('/api/orders', ordersRoutes(options.orders, options.auth, options.preparation));
+  if (options.producerOrders)
+    app.use('/api/me/producer/orders', producerOrdersRoutes(options.producerOrders, options.auth));
   app.use('/api', technicalRoutes());
   app.use((_request, _response, next) => {
     next(new ApiError(404, 'ROTA_NAO_ENCONTRADA', 'O recurso pedido não está disponível.'));

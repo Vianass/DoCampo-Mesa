@@ -3,7 +3,13 @@ import { Link } from 'react-router';
 import { PriceDisplay } from '../../components/PriceDisplay';
 import type { OwnOrder } from '../checkout/contracts';
 import { paymentLabels, stateLabels } from '../checkout/contracts';
-export function OrderDetails({ order }: { order: OwnOrder }) {
+export function OrderDetails({
+  order,
+  showProducer = true,
+}: {
+  order: OwnOrder;
+  showProducer?: boolean;
+}) {
   const delivery = order.entrega;
   return (
     <article className="buyer-order-detail live-order" aria-labelledby={'order-' + order.id}>
@@ -15,13 +21,15 @@ export function OrderDetails({ order }: { order: OwnOrder }) {
         </div>
         <span className="buyer-order-status">{stateLabels[order.estado]}</span>
       </header>
-      <p className="live-order-producer">
-        {order.produtor ? (
-          <Link to={'/produtores/' + order.produtor.perfilId}>{order.produtor.nomePublico}</Link>
-        ) : (
-          'Produtor associado à encomenda'
-        )}
-      </p>
+      {showProducer && (
+        <p className="live-order-producer">
+          {order.produtor ? (
+            <Link to={'/produtores/' + order.produtor.perfilId}>{order.produtor.nomePublico}</Link>
+          ) : (
+            'Produtor associado à encomenda'
+          )}
+        </p>
+      )}
       <ul className="live-order-lines">
         {order.linhas.map((line) => (
           <li key={line.id}>

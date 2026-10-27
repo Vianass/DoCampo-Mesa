@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 5F — gestão real de encomendas pelo produtor, implementação local.** A área autenticada permite consultar, filtrar e avançar encomendas próprias até pronta, com concorrência protegida e histórico persistido. O comprador pode atualizar a consulta para ver os novos estados. Os indicadores contam dados reais e separam encomendas concluídas de pagamentos recebidos. Ver [contratos e limites](docs/api/frontend-integration.md).
+
 **Fase 5E — checkout real no React, implementação local.** O percurso Cesta → Checkout → Confirmação utiliza a API e MongoDB, com escolhas de receção/pagamento por produtor e encomendas próprias na área do comprador. Reutiliza o checkout transacional de 4B/5D, mantém o JWT apenas em memória e recupera tentativas com a mesma chave/pedido. Não há pagamentos online. Ver [contrato, recuperação e limitações](docs/api/frontend-integration.md).
 
 **Fase 5C — autenticação JWT no React, implementação local.** Registo comprador, login, identidade confirmada por `/auth/me`, áreas pessoais por capacidades e logout usam a API existente. O catálogo público da Fase 5B permanece integrado. A sessão fica apenas em memória: atualizar a página ou abrir outro separador exige novo login. Não há refresh tokens nem revogação imediata no logout.
@@ -57,6 +59,31 @@ Abrir `http://127.0.0.1:5183`. O modo de revisão insere o catálogo fictício n
 A referência local não contém JWT, password, morada ou contacto. O pedido privado temporário tem prazo técnico de 24 horas; a sua expiração não elimina encomendas nem prova falha da compra. As alterações posteriores da cesta são preservadas. As demonstrações em `/demonstracao` não permitem comprar.
 
 **Ctrl+C no servidor da revisão elimina apenas a sua base temporária**, incluindo as contas e compras fictícias dessa execução. A base de desenvolvimento permanece intacta. Entrega, taxas, métodos alternativos, falhas e concorrência são cobertos pelos testes com configurações fictícias próprias; não são inventados na configuração de levantamento do catálogo de revisão.
+
+## Rever a gestão de encomendas do produtor
+
+Num ambiente isolado, com Docker e dependências já disponíveis:
+
+```sh
+npm run mongo:test:up --workspace @docampo/api
+DOCAMPO_PRODUCER_REVIEW=1 node --import tsx apps/web/tests/support/real-api-server.mjs
+```
+
+Noutro terminal:
+
+```sh
+VITE_API_URL=http://127.0.0.1:3011/api npm run dev --workspace @docampo/web -- --port 5183
+```
+
+O servidor cria a sua própria base aleatória `docampo_test_web_*`, dois produtores fictícios, um comprador e uma compra transacional com duas encomendas. Não altera contas ou dados de desenvolvimento. As credenciais aleatórias ficam num **ficheiro temporário privado**, com permissões `0600`, cujo caminho é indicado no terminal; não são impressas nos logs nem guardadas no repositório. O registo público continua exclusivamente comprador, sem seleção de papéis privilegiados. A sessão de revisão dura 15 minutos.
+
+1. Abrir `http://127.0.0.1:5183/entrar`, usar uma das contas produtoras desse ficheiro e consultar `/area/produtor`. Os indicadores iniciais mostram as encomendas efetivamente persistidas; o valor concluído é zero enquanto não houver conclusão.
+2. Abrir **As minhas encomendas**, testar estado, ordenação e detalhe. Avançar **Confirmar encomenda → Iniciar preparação → Marcar como pronta**. Cada ação mostra a confirmação e acrescenta um evento ao histórico.
+3. Abrir outro separador com a segunda conta produtora: a encomenda da primeira conta não fica disponível. Um segundo separador da mesma conta com um detalhe antigo recebe conflito, exigindo **Atualizar consulta**.
+4. Entrar com o comprador noutro separador, consultar as duas encomendas e usar **Atualizar consulta** para ver os estados atualizados. Não há atualização em tempo real.
+5. Verificar 320, 430, 768, 1024, 1280 e 1440 px e navegar pelos filtros e ações com teclado. Recarregar exige novo login, preservando a política JWT em memória.
+
+**Ctrl+C no servidor remove apenas a sua base e o ficheiro temporário de credenciais.** Não há botão de conclusão direta, cancelamento ou alteração de pagamento. A autorização e propriedade são verificadas na API; este modo é apenas uma preparação de dados de teste, fora do runtime de produção.
 
 ## Rever a autenticação
 

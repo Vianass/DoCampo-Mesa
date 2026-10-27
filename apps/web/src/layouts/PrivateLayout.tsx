@@ -135,7 +135,7 @@ export function PrivateLayout() {
             )}
             <p className="private-navigation__note">
               {!demonstrationSite
-                ? 'Dados próprios ainda por integrar. Os exemplos não pertencem à tua conta.'
+                ? 'Cada secção indica os dados disponíveis. Os exemplos demonstrativos não pertencem à tua conta.'
                 : role === 'comprador'
                   ? 'Atividade fictícia para explorar. Sem compras, pagamentos ou ofertas reais.'
                   : role === 'produtor'

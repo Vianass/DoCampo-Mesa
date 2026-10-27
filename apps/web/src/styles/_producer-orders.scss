@@ -1,0 +1,51 @@
+@use 'tokens' as t;
+.producer-live .account-identity {
+  display: block;
+  min-width: 0;
+}
+.producer-live {
+  min-width: 0;
+  .producer-metrics dd {
+    overflow-wrap: anywhere;
+  }
+}
+.producer-live-toolbar {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-block: 24px;
+}
+.producer-live-states {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-block: 28px;
+  div {
+    border-top: 1px solid t.$line;
+    padding-top: 12px;
+  }
+  dd {
+    font-size: 1.4rem;
+    margin-top: 8px;
+  }
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.producer-live-card {
+  min-width: 0;
+  h2 {
+    overflow-wrap: anywhere;
+  }
+  > .editorial-text-link {
+    display: block;
+    margin-top: 16px;
+  }
+}
+.producer-live-actions {
+  padding-block: 24px;
+  border-top: 1px solid t.$line;
+  h2 {
+    margin-bottom: 24px;
+  }
+}
