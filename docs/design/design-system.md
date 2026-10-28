@@ -544,3 +544,17 @@ Inventário: 19 ficheiros criados — data/admin.ts; features/admin/{types.ts, s
 Oito ficheiros modificados: README.md, docs/design/design-system.md, apps/web/src/{App.tsx, main.tsx}, apps/web/src/features/private-area/navigation.ts, apps/web/src/layouts/PrivateLayout.tsx, apps/web/src/styles/main.scss e apps/web/tests/auth.spec.ts. Não existem alterações às nove fontes originais da Fase 0, dependências, backend/shared, dados públicos, modelos ou páginas do comprador/produtor/carrinho. Capturas e scripts auxiliares ficam em /tmp; build e resultados de testes estão ignorados.
 
 A branch local feat/admin-dashboard parte da versão aprovada ebf6109 de feat/producer-dashboard e conserva o mesmo HEAD. main permanece em c10d031. Sem staging, commits, push, merge ou PR; a revisão visual e qualquer publicação dependem de autorização explícita. Nenhuma fase posterior foi iniciada.
+
+## Fase 6C — O tempo da colheita
+
+Os [leilões reais](../api/phase-6c-react-auctions.md) acrescentam uma composição editorial com introdução tipográfica, fotografias de lotes, origem, estado e valor. Mantêm DM Serif Display/DM Sans, floresta, creme, sálvia, terracota e os espaçamentos existentes. Não alteram os restantes percursos nem a demonstração original.
+
+`LiveAuctionCard` distingue uma oferta pelo lote da compra direta. `AuctionRoom` combina fotografia e narrativa com painel de participação; o valor é o foco visual, seguido do tempo, mínimo e confirmação. O histórico usa linhas adaptáveis, sequência, data e referência anonimizada; «A tua oferta» só deriva de informação autorizada. Não se apresentam nomes inventados para compradores reais. Valores vencedores são identificados como ofertas finais, sem alegar receita ou pagamento.
+
+`AuctionBadge`, `AuctionClock`, `AuctionImage` e `AuctionPagination` usam os componentes base e os tokens. Estados têm texto além da cor. Fotografia indisponível apresenta fallback; não se utiliza imagem remota nova nem se omitem os créditos existentes. O catálogo diferencia filtros REST da pesquisa limitada à página carregada. A informação de presença explica que conta separadores/ligação, não pessoas.
+
+Mobile First: cartões numa coluna a 320/430 px, duas a partir de 768 px; o detalhe mantém uma coluna até 1024 px e passa a fotografia/painel em duas colunas. Formulários usam uma coluna em telemóvel e pares de campos a partir de 768 px, mantendo labels, descrições e botões com quebra de linha. O diálogo de cancelamento tem confirmação explícita e foco nativo. O layout privado e a navegação móvel aprovados são reutilizados.
+
+Não há anúncios por segundo: o relógio tem `aria-live="off"`; confirmações pessoais e resultados usam mensagens discretas. Há foco visível herdado, resumo de erros focável, labels, estados de carregamento/vazio/erro e respeito por movimento reduzido. A zero, «A confirmar…» precede o resultado do servidor. Sem ligação, a última confirmação é identificada e a submissão fica indisponível. A recuperação de uma tentativa pendente é uma ação distinta de enviar uma nova oferta.
+
+As seis larguras 320/430/768/1024/1280/1440 px são verificadas com dados reais de revisão. Capturas de catálogo, detalhe, gestão e formulário ficam nos artefactos ignorados do Playwright; a inspeção humana complementa os testes de overflow, controlos e erros JavaScript. Não se declara certificação de acessibilidade ou cobertura de todos os motores de navegador.
