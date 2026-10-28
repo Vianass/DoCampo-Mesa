@@ -33,6 +33,7 @@ x-model-preparation-base: 68f41ec
 x-approved-functional-decisions: [Q01, Q02, Q03, Q04, Q05, Q06, Q07, Q08, Q14]
 x-auction-approval-scope: Q07 reserva/libertação/lote do vencedor sem encomenda automática; Q08 prazo fixo e relógio MongoDB; Q09 resumo público, detalhe/histórico autenticados, presença pendente.
 x-local-auctions: phase-6a-auctions.md
+x-realtime-contract: phase-6b-socketio.md
 x-pending-functional-decisions: [Q09, Q10, Q11, Q12, Q13, Q15, Q16]
 x-order-functional-approval-scope:
   Q05: O02–O04/O13–O16 aprovam cadeia, cancelamento, reposição, receção e reclamações; OR01–OR12 posteriormente aprovadas; detalhes físicos são propostas técnicas.
@@ -95,9 +96,9 @@ x-technical-decisions:
   - C05
   - C06
 x-socket-command:
-  name: licitar
+  name: auction:bid
   stage: '6B'
-  status: transporte-futuro
+  status: implementado-localmente
   decision-dependencies:
     - Q01
     - Q07
@@ -105,8 +106,9 @@ x-socket-command:
     - Q09
     - Q13
   notes: >-
-    REST e domínio transacional implementados na Fase 6A. Socket.IO reutilizará esse serviço, sem segunda
-    lógica de aceitação, emitindo apenas após commit. Presença/salas continuam pendentes; não há sockets nesta fase.
+    REST e domínio transacional da Fase 6A reutilizados por Socket.IO na Fase 6B, sem segunda lógica
+    de aceitação. Contrato complementar em phase-6b-socketio.md; não são endpoints HTTP. Presença conta ligações;
+    estados confirmados são recuperados na entrada e por reconciliação, sem promessa de eventos duráveis.
 
 paths:
   /health:

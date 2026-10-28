@@ -1,3 +1,13 @@
+# API — Socket.IO da Fase 6B
+
+O mesmo servidor Express/HTTP recebe o namespace autenticado `/auctions`, no path `/socket.io`. Dependências: `socket.io@4.8.4` e cliente apenas de desenvolvimento `socket.io-client@4.8.4`. Reutiliza JWT/CORS/proxy e o serviço de licitações, com publicação após commit e recuperação de estado. Não há nova porta, interface React, encomenda ou pagamento de leilão.
+
+Variáveis opcionais: `SOCKET_ENABLED=true`, `SOCKET_SYNC_INTERVAL_MS=500`, `SOCKET_AUTH_INTERVAL_MS=1000`. Ver [contrato tipado, quotas, reconexão e limites de entrega](../../docs/api/phase-6b-socketio.md). REST mantém o OpenAPI anterior; eventos Socket.IO não são endpoints REST.
+
+Demonstração isolada: iniciar `npm run mongo:test:up --workspace @docampo/api` na raiz e executar `DOCAMPO_AUCTION_DEMO=1 npm run demo:auctions --workspace @docampo/api`. Apenas MongoDB de teste local, contas fictícias, servidor/clientes reais e remoção da própria base temporária no fim. Sem credenciais nos logs.
+
+---
+
 # API — leilões e licitações da Fase 6A
 
 O runtime prepara `auctions`/`bids`, índices e recuperação temporal antes de abrir HTTP. Inicia manutenção periódica de um segundo e aguarda o seu encerramento antes de fechar a ligação MongoDB. Mantêm-se as variáveis existentes, JWT real e replica set; sem dependências adicionais.

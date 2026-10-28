@@ -10,6 +10,7 @@ import { operationalRevision } from '../concurrency/concurrency-error.js';
 import { createAuctionRepository } from './auction.repository.js';
 import { releaseAuctionStock } from './auction-stock.repository.js';
 import { auctionDto, auctionDetailDto, bidDto } from './auction.dto.js';
+import { auctionSnapshot } from './auction.snapshot.js';
 import { auctionCreate, auctionEditable, idempotencyKey, bidBody } from './auction.validation.js';
 import type { AuctionCreate, AuctionEdit, AuctionQuery } from './auction.validation.js';
 import type { AuctionRecord } from './auction.types.js';
@@ -47,6 +48,19 @@ function parse<T>(
 }
 export function createAuctionService(connection: Connection, secret: Buffer | string) {
   const repo = createAuctionRepository(connection, secret);
+  const listeners = new Set<(id: string) => void>();
+  async function committed<T>(id: Types.ObjectId, work: (session: ClientSession) => Promise<T>) {
+    const value = await repo.transaction(work);
+    if (value !== false)
+      for (const listener of listeners) {
+        try {
+          listener(id.toHexString());
+        } catch {
+          /* A leitura periódica recupera a publicação; nunca alterar o resultado confirmado. */
+        }
+      }
+    return value;
+  }
   async function owned(user: AuthPrincipal, id: string, session: ClientSession) {
     const owner = role(user, 'produtor');
     const a = await repo
@@ -67,7 +81,7 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
     };
   }
   async function advance(id: Types.ObjectId) {
-    return repo.transaction(async (session) => {
+    return committed(id, async (session) => {
       const a = await repo.auctions().findOne({ _id: id }, { session });
       if (!a) return false;
       const now = await repo.clock('auctions', id, session);
@@ -176,6 +190,26 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
   let pendingCursor: Types.ObjectId | undefined;
   return {
     prepare: repo.prepare,
+    subscribeCommitted(listener: (id: string) => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    async snapshot(id: string) {
+      return repo.read(async () => {
+        const _id = new Types.ObjectId(id);
+        await advance(_id);
+        const a = await repo
+          .auctions()
+          .findOne(
+            { _id },
+            { maxTimeMS: 5000, readConcern: { level: 'majority' }, readPreference: 'primary' },
+          );
+        if (!a) throw unavailable();
+        return auctionSnapshot(a, await repo.clock('auctions', _id), repo);
+      });
+    },
     recover,
     advance,
     startLifecycle() {
@@ -200,7 +234,7 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
         request = key(header),
         hash = digest(input),
         id = new Types.ObjectId();
-      return repo.transaction(async (session) => {
+      return committed(id, async (session) => {
         const previous = await repo
           .auctions()
           .findOne({ produtor: owner, 'criacao.chave': request }, { session });
@@ -348,7 +382,7 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
     },
     async edit(user: AuthPrincipal, id: string, body: unknown, etag?: string) {
       const input: AuctionEdit = parse(auctionEditable.safeParse(body));
-      return repo.transaction(async (session) => {
+      return committed(new Types.ObjectId(id), async (session) => {
         const a = await owned(user, id, session);
         repo.match(a, etag);
         await repo.guardUsers([{ id: a.produtor, roles: ['produtor'] }], session);
@@ -407,7 +441,7 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
       });
     },
     async cancel(user: AuthPrincipal, id: string, etag?: string) {
-      return repo.transaction(async (session) => {
+      return committed(new Types.ObjectId(id), async (session) => {
         const a = await owned(user, id, session);
         repo.match(a, etag);
         if (!['agendado', 'ativo'].includes(a.estado) || a.sequencia)
@@ -455,7 +489,7 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
         hash = digest(input),
         auctionId = new Types.ObjectId(id),
         bidId = new Types.ObjectId();
-      return repo.transaction(async (session) => {
+      return committed(auctionId, async (session) => {
         const a = await repo.auctions().findOne({ _id: auctionId }, { session });
         if (!a) throw unavailable();
         const previous = await repo
@@ -466,6 +500,7 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
           await repo.guardUsers([{ id: buyer, roles: ['comprador'] }], session);
           return {
             status: 200,
+            snapshot: auctionSnapshot(a, await repo.clock('auctions', a._id, session), repo),
             body: {
               origem: 'replay' as const,
               licitacao: bidDto(previous, a, user.id, repo),
@@ -565,6 +600,7 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
         await new repo.Bid(b).save({ session });
         return {
           status: 201,
+          snapshot: auctionSnapshot(changed, changed.updatedAt, repo),
           body: {
             origem: 'nova' as const,
             licitacao: bidDto(b, changed, user.id, repo),

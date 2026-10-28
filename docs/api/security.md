@@ -1,3 +1,11 @@
+# Fase 6B — segurança do transporte Socket.IO
+
+O [contrato de tempo real](phase-6b-socketio.md) define namespace autenticado, revalidação por comando/publicação e quotas comuns entre sockets da mesma conta. JWT apenas em `auth.token`, nunca em URL ou logs; expiração/inatividade desligam a sessão. Origem/TLS/proxy são verificados também no Engine.IO, independentemente do Express. Broadcasts usam projeção comum sem `proprio`/IDs privados; recusas e resultados incertos são distintos.
+
+Payload e recursos são limitados; quotas REST/Socket.IO são independentes e locais ao processo. Não se promete segurança distribuída nem entrega durável de cada evento. Não há permissões fictícias, novos poderes administrativos ou alteração de checkout. O frontend futuro deve fechar a ligação ao terminar sessão; a política atual de logout não revoga tokens emitidos.
+
+---
+
 # Fase 6A — segurança dos leilões REST
 
 Estado local vigente: as regras desta secção complementam a autenticação e as fases comerciais já implementadas. A matriz de preparação mais abaixo é histórica; não representa por si só endpoints ativos. Ver [contratos e limites](phase-6a-auctions.md).

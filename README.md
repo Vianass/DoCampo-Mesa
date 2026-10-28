@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 6B — leilões em tempo real, implementação local.** Socket.IO partilha o servidor HTTP e reutiliza o serviço transacional da Fase 6A. Salas autenticadas recebem versões confirmadas, liderança e encerramento; reconexão relê MongoDB. Presença conta ligações, sem identidades privadas. A interface React fica para 6C. Ver [protocolo, garantias, limitações e demonstração real](docs/api/phase-6b-socketio.md).
+
 **Fase 6A — backend REST de leilões e licitações, implementação local.** Produtores aprovados podem reservar um lote, agendar, consultar, editar antes do início e cancelar antes da primeira oferta. Compradores autenticados licitam com controlo transacional de prazo, incremento, liderança e histórico. Há resumo público e detalhe/histórico autenticados. O encerramento conserva o vencedor e o lote reservado; não cria encomenda nem pagamento. Sem nova interface React ou Socket.IO. Ver [contratos, decisões aprovadas, testes e limitações](docs/api/phase-6a-auctions.md).
 
 **Fase 5F — gestão real de encomendas pelo produtor, implementação local.** A área autenticada permite consultar, filtrar e avançar encomendas próprias até pronta, com concorrência protegida e histórico persistido. O comprador pode atualizar a consulta para ver os novos estados. Os indicadores contam dados reais e separam encomendas concluídas de pagamentos recebidos. Ver [contratos e limites](docs/api/frontend-integration.md).

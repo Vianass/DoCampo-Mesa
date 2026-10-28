@@ -1,5 +1,7 @@
 # Decisões de entrada — análise Q01–Q16
 
+> **Atualização vigente — Fase 6B (28-10-2026):** transporte Socket.IO local autorizado, reutilizando as regras transacionais da Fase 6A. Presença mínima conta ligações, não compradores únicos. Contrato e garantias em [Fase 6B](phase-6b-socketio.md). As restrições anteriores de cada entrega conservam o seu contexto; esta fase não autoriza publicação Git ou início de 6C.
+
 > **Atualização vigente — Fase 6A (28-10-2026):** Q07 e Q08 aprovadas no âmbito abaixo; Q09 aprovada quanto à consulta REST. Implementação local de leilões/licitações autorizada, sem operações Git de publicação, Socket.IO, encomenda automática ou pagamento. Os registos das fases anteriores conservam o seu contexto histórico. Ver [implementação e limites da Fase 6A](phase-6a-auctions.md).
 
 > Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.
@@ -98,6 +100,8 @@ Esta escolha permite preparação privada antes da aprovação e ultrapassa a re
 **Recomendação P:** prazo fixo e elegibilidade na avaliação atómica, bloquear alterações comerciais após início. **Necessária:** antes de criação/ciclo temporal dependentes (3.6/5). O contrato não declara que o relógio do browser ou do ack decide o resultado.
 
 ## Q09 — Observadores e presença
+
+**Âmbito autorizado na Fase 6B:** sala Socket.IO autenticada, reconexão com revalidação e presença mínima por número de ligações. Vários sockets da mesma conta contam várias ligações; não se adota a antiga proposta de utilizadores únicos nem se expõem identidades. O contrato REST permanece o aprovado.
 
 **Decisão REST aprovada expressamente na Fase 6A:** resumo público; detalhe e histórico apenas para contas autenticadas e ativas, sem identidade privada dos compradores. Ofertas usam pseudónimo por leilão e indicação de participação própria. Consultar não concede direito de licitar; este exige capacidade comprador e proíbe auto-licitação por identidade. **Presença, salas e contagem de participantes continuam pendentes para a Fase 6B**; não se aprova aqui a recomendação de utilizadores únicos nem se implementam sockets.
 

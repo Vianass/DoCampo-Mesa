@@ -10,6 +10,11 @@ import { createOrdersService } from './modules/orders/orders.service.js';
 import { createCheckoutPreparationService } from './modules/orders/checkout-preparation.service.js';
 import { createProducerOrdersService } from './modules/orders/producer-orders.service.js';
 import { createAuctionService } from './modules/auctions/auction.service.js';
+import { attachAuctionSockets } from './realtime/auction.socket.js';
+import {
+  parseRealtimeEnvironment,
+  type RealtimeConfiguration,
+} from './config/realtime-environment.js';
 
 interface DatabaseHandle {
   connection?: Connection;
@@ -24,6 +29,7 @@ export async function startApi(
   configuration: ApiConfiguration,
   dependencies: RuntimeDependencies = { connect: connectDatabase },
   authentication?: AuthConfiguration,
+  realtime: RealtimeConfiguration = parseRealtimeEnvironment(),
 ) {
   // A porta HTTP só abre depois de a configuração e a ligação estarem válidas.
   const database = await dependencies.connect(configuration);
@@ -73,6 +79,10 @@ export async function startApi(
         : undefined,
     ),
   );
+  const sockets =
+    auctions && auth && authentication && realtime.enabled
+      ? attachAuctionSockets(server, auctions, auth, authentication, realtime)
+      : undefined;
   try {
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject);
@@ -82,6 +92,7 @@ export async function startApi(
       });
     });
   } catch {
+    await sockets?.close();
     await database.close();
     throw new Error('Não foi possível iniciar o servidor HTTP.');
   }
@@ -95,11 +106,13 @@ export async function startApi(
       shutdown = (async () => {
         let timeout: NodeJS.Timeout | undefined;
         const work = (async () => {
+          await sockets?.close();
           await stopAuctions?.();
-          await new Promise<void>((resolve, reject) => {
-            server.close((error) => (error ? reject(error) : resolve()));
-            server.closeIdleConnections();
-          });
+          if (server.listening)
+            await new Promise<void>((resolve, reject) => {
+              server.close((error) => (error ? reject(error) : resolve()));
+              server.closeIdleConnections();
+            });
           await database.close();
         })();
         try {
