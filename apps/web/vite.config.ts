@@ -7,7 +7,10 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    proxy: { '/api': { target: 'http://127.0.0.1:3001', changeOrigin: true } },
+    proxy: {
+      '/api': { target: 'http://127.0.0.1:3001', changeOrigin: true },
+      '/socket.io': { target: 'http://127.0.0.1:3001', ws: true, changeOrigin: true },
+    },
   },
   preview: { port: 4173, strictPort: true },
 });

@@ -7,6 +7,8 @@ import { privateSections, roleHome } from './navigation';
 import { lazy, Suspense } from 'react';
 import { LoadingSkeleton } from '../../components/LoadingSkeleton';
 import { AccountIdentity } from './AccountIdentity';
+const ProducerAuctionsArea = lazy(() => import('../auctions/ProducerAuctionsArea'));
+const BuyerAuctionsArea = lazy(() => import('../auctions/BuyerAuctionsArea'));
 const OrdersArea = lazy(() => import('../orders/OrdersArea'));
 const ProducerOrdersArea = lazy(() => import('../producer-orders/ProducerOrdersArea'));
 export function AccountArea() {
@@ -22,6 +24,18 @@ export function AccountArea() {
         <h1>Este percurso não está na tua área.</h1>
         <Button to="/area">Voltar à minha área</Button>
       </section>
+    );
+  if (role === 'produtor' && pieces[2] === 'leiloes')
+    return (
+      <Suspense fallback={<LoadingSkeleton label="A carregar os teus leilões" count={2} />}>
+        <ProducerAuctionsArea />
+      </Suspense>
+    );
+  if (role === 'comprador' && pieces[2] === 'licitacoes')
+    return (
+      <Suspense fallback={<LoadingSkeleton label="A carregar os leilões" count={2} />}>
+        <BuyerAuctionsArea />
+      </Suspense>
     );
   const section = privateSections[role].find((item) => item.slug === pieces[2]);
   if (role === 'produtor' && (!pieces[2] || ['encomendas', 'indicadores'].includes(pieces[2])))

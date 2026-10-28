@@ -12,15 +12,18 @@ import { ProducerArea, ProducerLoading } from './features/producer/ProducerPageF
 import { PrivateNotFoundPage } from './pages/private/PrivatePages';
 import { AdminArea, AdminLoading } from './features/admin/AdminPageFrame';
 import { HomePage } from './pages/HomePage';
+import { demonstrationSite } from './features/auth/demo-mode';
 import {
-  AuctionDetailPage,
-  AuctionsPage,
+  AuctionDetailPage as DemoAuctionDetailPage,
+  AuctionsPage as DemoAuctionsPage,
   DesignSystemPage,
   HowItWorksPage,
   NotFoundPage,
   ProducersPage,
 } from './pages/MarketPages';
 
+const AuctionsPage = lazy(() => import('./features/auctions/AuctionsPage'));
+const AuctionDetailPage = lazy(() => import('./features/auctions/AuctionDetailPage'));
 const ProductsPage = lazy(() => import('./pages/ProductsPage'));
 const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'));
 const ProducerDetailPage = lazy(() => import('./pages/ProducerDetailPage'));
@@ -126,7 +129,18 @@ export function App() {
             </Suspense>
           }
         />
-        <Route path="leiloes" element={<AuctionsPage />} />
+        <Route
+          path="leiloes"
+          element={
+            demonstrationSite ? (
+              <DemoAuctionsPage />
+            ) : (
+              <Suspense fallback={<CatalogLoadingPage />}>
+                <AuctionsPage />
+              </Suspense>
+            )
+          }
+        />
         <Route
           path="checkout/*"
           element={
@@ -135,7 +149,18 @@ export function App() {
             </Suspense>
           }
         />
-        <Route path="leiloes/:id" element={<AuctionDetailPage />} />
+        <Route
+          path="leiloes/:id"
+          element={
+            demonstrationSite ? (
+              <DemoAuctionDetailPage />
+            ) : (
+              <Suspense fallback={<DetailLoadingPage kind="product" />}>
+                <AuctionDetailPage />
+              </Suspense>
+            )
+          }
+        />
         <Route path="como-funciona" element={<HowItWorksPage />} />
         <Route
           path="entrar"
@@ -201,6 +226,8 @@ export function App() {
               <Route path="encomendas/:id" element={producerPage(<ProducerOrderDetailPage />)} />
               <Route path="leiloes" element={producerPage(<ProducerAuctionsPage />)} />
               <Route path="leiloes/:id" element={producerPage(<ProducerAuctionDetailPage />)} />
+              <Route path="leiloes/novo" element={<PrivateNotFoundPage />} />
+              <Route path="leiloes/:id/editar" element={<PrivateNotFoundPage />} />
               <Route path="indicadores" element={producerPage(<ProducerStockPage />)} />
               <Route path="*" element={<PrivateNotFoundPage home="/area/produtor" />} />
             </Route>
