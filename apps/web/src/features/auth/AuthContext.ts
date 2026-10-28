@@ -13,5 +13,7 @@ export interface AuthContextValue {
   logout: () => Promise<void>;
   revalidate: () => Promise<void>;
   request: ReturnType<typeof createAccountSession>['request'];
+  socketAuth: ReturnType<typeof createAccountSession>['socketAuth'];
+  trackConnection: ReturnType<typeof createAccountSession>['trackConnection'];
 }
 export const AuthContext = createContext<AuthContextValue | null>(null);

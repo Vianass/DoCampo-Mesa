@@ -14,6 +14,7 @@ export function createAccountSession(api: AuthApi = authApi, now: () => number =
     epoch = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let pending: { epoch: number; promise: Promise<void> } | undefined;
+  const connections = new Set<() => void>();
   const listeners = new Set<() => void>(),
     requests = new Set<AbortController>();
   function publish(next: Snapshot) {
@@ -22,6 +23,8 @@ export function createAccountSession(api: AuthApi = authApi, now: () => number =
   }
   function invalidate() {
     epoch++;
+    for (const close of connections) close();
+    connections.clear();
     for (const controller of requests) controller.abort();
     requests.clear();
     clearTimeout(timer);
@@ -182,6 +185,21 @@ export function createAccountSession(api: AuthApi = authApi, now: () => number =
     revalidate,
     logout,
     request,
+    socketAuth(done: (auth: { token: string }) => void) {
+      if (
+        !token ||
+        state.session.kind !== 'authenticated' ||
+        Date.parse(state.session.expiresAt) <= now()
+      )
+        throw new ApiFailure('http', 401);
+      done({ token });
+    },
+    trackConnection(close: () => void) {
+      connections.add(close);
+      return () => {
+        connections.delete(close);
+      };
+    },
     dispose: () => clear(),
   };
 }

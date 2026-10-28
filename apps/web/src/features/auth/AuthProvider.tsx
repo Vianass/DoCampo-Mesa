@@ -51,6 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout: account.logout,
       revalidate: account.revalidate,
       request: account.request,
+      socketAuth: account.socketAuth,
+      trackConnection: account.trackConnection,
     }),
     [snapshot, demonstration, startDemonstration, endDemonstration, account],
   );

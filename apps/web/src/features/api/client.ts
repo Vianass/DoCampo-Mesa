@@ -20,7 +20,7 @@ export class ApiFailure extends Error {
 export interface JsonRequestOptions {
   base?: string;
   timeoutMs?: number;
-  method?: 'GET' | 'POST' | 'PATCH';
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT';
   body?: unknown;
   bearer?: string;
   expectedStatus?: number | readonly number[];
@@ -98,6 +98,14 @@ export async function requestJson<T>(
           'TRANSICAO_INDISPONIVEL',
           'PRECONDICAO_FALHOU',
           'RESULTADO_INDETERMINADO',
+          'PRODUTOR_INELEGIVEL',
+          'LEILAO_NAO_ENCONTRADO',
+          'LICITACAO_INSUFICIENTE',
+          'LEILAO_FORA_PRAZO',
+          'LEILAO_ENCERRADO',
+          'AUTO_LICITACAO_PROIBIDA',
+          'EDICAO_INDISPONIVEL',
+          'CANCELAMENTO_INDISPONIVEL',
         ];
         if (known.includes(value?.codigo)) codigo = value.codigo;
         if (value?.repetirComMesmaChave === true) repeat = true;
