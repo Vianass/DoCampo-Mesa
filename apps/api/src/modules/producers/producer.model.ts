@@ -7,6 +7,10 @@ import type { ProducerCommercialSettings } from './producer-commercial.types.js'
 import { validateProducerCommercial } from './producer-commercial.validation.js';
 import { redactProducerSerialization } from './producer.serialization.js';
 import { protectDocumentRevision } from '../concurrency/document-revision.js';
+import {
+  createApplicationHistorySchema,
+  type ProducerApplicationHistory,
+} from './producer-application-history.schema.js';
 
 export const applicationStatuses = ['pendente', 'aprovado', 'rejeitado'] as const;
 export type ApplicationStatus = (typeof applicationStatuses)[number];
@@ -38,6 +42,7 @@ export interface ProducerRecord {
   telefone: string;
   imagem?: ProducerImage;
   aprovacao: ProducerApplication;
+  historicoCandidaturas?: ProducerApplicationHistory[];
   comercial?: ProducerCommercialSettings;
   revisaoOperacional?: number;
   createdAt: Date;
@@ -116,6 +121,11 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
       telefone: { ...textField('telefone'), select: false },
       imagem: { type: imageSchema, default: undefined },
       aprovacao: { type: applicationSchema, required: true, default: () => ({}) },
+      historicoCandidaturas: {
+        type: [createApplicationHistorySchema()],
+        default: undefined,
+        select: false,
+      },
       comercial: { type: createProducerCommercialSchema(), default: undefined },
       revisaoOperacional: {
         type: Number,
@@ -219,6 +229,7 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
     return account && typeof account === 'object' && 'nome' in account ? account.nome : undefined;
   });
   schema.index({ userId: 1 }, { unique: true });
+  schema.index({ 'aprovacao.estado': 1, 'aprovacao.submetidaEm': -1, _id: 1 });
   requireDocumentValidation(schema);
   protectDocumentRevision(schema);
   return connection.model<ProducerRecord>('ProducerProfile', schema);

@@ -1,5 +1,9 @@
 # Decisões de entrada — análise Q01–Q16
 
+## Atualização vigente — Fase 7A
+
+O pedido explícito da Fase 7A autoriza candidatura real e decisão administrativa usando `users`/`producers`, com reapresentação após rejeição e preservação do histórico. A submissão não concede produtor; aprovação e adição cumulativa do papel são transacionais. Não publica rascunhos, inventa dados comerciais, revoga papéis legados ou atribui outros poderes administrativos. Endpoints e escolhas técnicas de concorrência/privacidade estão em [phase-7a-producer-applications.md](phase-7a-producer-applications.md). As pendências históricas de recandidatura abaixo ficam resolvidas neste âmbito; direitos adicionais e fases seguintes continuam pendentes. Implementação apenas local, sem autorização de publicação Git.
+
 > **Atualização vigente — Fase 6B (28-10-2026):** transporte Socket.IO local autorizado, reutilizando as regras transacionais da Fase 6A. Presença mínima conta ligações, não compradores únicos. Contrato e garantias em [Fase 6B](phase-6b-socketio.md). As restrições anteriores de cada entrega conservam o seu contexto; esta fase não autoriza publicação Git ou início de 6C.
 
 > **Atualização vigente — Fase 6A (28-10-2026):** Q07 e Q08 aprovadas no âmbito abaixo; Q09 aprovada quanto à consulta REST. Implementação local de leilões/licitações autorizada, sem operações Git de publicação, Socket.IO, encomenda automática ou pagamento. Os registos das fases anteriores conservam o seu contexto histórico. Ver [implementação e limites da Fase 6A](phase-6a-auctions.md).

@@ -61,7 +61,12 @@ describe('users/producers em MongoDB real e isolado', () => {
     const users = await User.listIndexes();
     const producers = await Producer.listIndexes();
     expect(users).toHaveLength(2);
-    expect(producers).toHaveLength(2);
+    expect(producers).toHaveLength(3);
+    expect(producers).toContainEqual(
+      expect.objectContaining({
+        key: { 'aprovacao.estado': 1, 'aprovacao.submetidaEm': -1, _id: 1 },
+      }),
+    );
     expect(users).toContainEqual(
       expect.objectContaining({ key: { emailNormalizado: 1 }, unique: true }),
     );

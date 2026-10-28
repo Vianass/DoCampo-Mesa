@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 7A — candidaturas e aprovação de produtores, implementação backend local para revisão.** Submissão e consulta próprias, listagem/detalhe administrativos, decisões transacionais e reapresentação com histórico privado. Aprovação acumula o papel de produtor sem publicar produtos ou configurar vendas. Frontend e demonstrações existentes preservados; integração React futura. Ver [contratos, segurança, testes e limitações](docs/api/phase-7a-producer-applications.md).
+
 **Fase 6C — interface React dos leilões em tempo real, implementação local para revisão.** Catálogo público REST, salas autenticadas com JWT em memória, ofertas confirmadas, recuperação de tentativas, relógio sincronizado e gestão dos próprios leilões pelo produtor. Demonstração isolada com dois compradores, API/Socket.IO/MongoDB reais; sem encomendas ou pagamentos automáticos. Ver [arquitetura, revisão visual, testes e limitações](docs/api/phase-6c-react-auctions.md).
 
 **Fase 6B — leilões em tempo real, implementação local.** Socket.IO partilha o servidor HTTP e reutiliza o serviço transacional da Fase 6A. Salas autenticadas recebem versões confirmadas, liderança e encerramento; reconexão relê MongoDB. Presença conta ligações, sem identidades privadas. A interface React fica para 6C. Ver [protocolo, garantias, limitações e demonstração real](docs/api/phase-6b-socketio.md).

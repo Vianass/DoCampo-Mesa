@@ -17,6 +17,8 @@ import type { ProducerOrdersService } from './modules/orders/producer-orders.ser
 import { auctionRoutes } from './modules/auctions/auction.routes.js';
 import type { AuctionService } from './modules/auctions/auction.service.js';
 import type { AuctionRateOptions } from './modules/auctions/auction-rate-limit.js';
+import { producerApplicationRoutes } from './modules/producer-applications/producer-application.routes.js';
+import type { ProducerApplicationService } from './modules/producer-applications/producer-application.service.js';
 
 export function createApp(
   options: {
@@ -26,6 +28,7 @@ export function createApp(
     preparation?: CheckoutPreparationService;
     producerOrders?: ProducerOrdersService;
     auctions?: AuctionService;
+    producerApplications?: ProducerApplicationService;
     auctionLimits?: AuctionRateOptions;
     security?: HttpSecurityConfiguration;
     rateLimit?: AuthRateLimitOptions;
@@ -50,6 +53,8 @@ export function createApp(
     app.use('/api/me/producer/orders', producerOrdersRoutes(options.producerOrders, options.auth));
   if (options.auctions)
     app.use('/api', auctionRoutes(options.auctions, options.auth, options.auctionLimits));
+  if (options.producerApplications)
+    app.use('/api', producerApplicationRoutes(options.producerApplications, options.auth));
   app.use('/api', technicalRoutes());
   app.use((_request, _response, next) => {
     next(new ApiError(404, 'ROTA_NAO_ENCONTRADA', 'O recurso pedido não está disponível.'));

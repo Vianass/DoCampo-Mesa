@@ -69,12 +69,17 @@ function internal(id: ProducerRecord['_id']) {
 }
 
 describe('configuração comercial em MongoDB real', () => {
-  it('mantém os modelos, coleções e índices originais, sem coleção comercial adicional', async () => {
+  it('mantém modelos, coleções e unicidade, com índice administrativo aditivo e sem coleção comercial', async () => {
     expect(database!.connection.modelNames().sort()).toEqual(['ProducerProfile', 'User']);
     expect(
       (await database!.connection.db!.listCollections().toArray()).map((item) => item.name).sort(),
     ).toEqual(['producers', 'users']);
-    expect(await Producer.listIndexes()).toHaveLength(2);
+    expect(await Producer.listIndexes()).toHaveLength(3);
+    expect(await Producer.listIndexes()).toContainEqual(
+      expect.objectContaining({
+        key: { 'aprovacao.estado': 1, 'aprovacao.submetidaEm': -1, _id: 1 },
+      }),
+    );
     expect(await Producer.listIndexes()).toContainEqual(
       expect.objectContaining({ key: { userId: 1 }, unique: true }),
     );

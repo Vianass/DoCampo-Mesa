@@ -1,5 +1,9 @@
 # Correspondência de dados — proposta para aprovação
 
+## Atualização vigente — candidaturas da Fase 7A
+
+Reutiliza `producers` por conta única, mantendo a candidatura atual em `aprovacao` e os dados do perfil. `historicoCandidaturas`, privado e opcional, conserva snapshots de tentativas rejeitadas quando existe reapresentação; não cria coleção de candidaturas/decisões. DTO próprio omite autoria administrativa; DTO administrativo inclui IDs de auditoria; catálogo e perfil público omitem contactos/histórico. Aprovação acumula `produtor` em `users.papeis` na mesma transação da decisão, sem remover comprador ou outros papéis. A reapresentação anteriormente pendente é concretizada pelo pedido da Fase 7A; ver [modelo e contratos vigentes](phase-7a-producer-applications.md). Os registos abaixo mantêm o contexto das fases anteriores.
+
 > Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.
 
 Estado atual: [Q01/Q03/Q04/Q06/Q14 aprovadas funcionalmente](decisions.md), e T32-01–T32-06 aprovadas no âmbito explícito, com campos/limites/índices residuais por confirmar. A proposta detalhada vigente é [phase-3.2-models.md](phase-3.2-models.md), com alternativas e bloqueios no [plano 3.2](phase-3.2-proposal.md). A01–A03 aprovadas e primeiro bloco implementado; não promover campos legados a decisões aprovadas.

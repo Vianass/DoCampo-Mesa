@@ -1,3 +1,13 @@
+# Fase 7A — segurança das candidaturas de produtores
+
+As novas rotas de candidatura reutilizam JWT, contas ativas, capacidades atuais e DTOs privados. `/me/producer-application` deriva a propriedade exclusivamente da identidade autenticada, sem exigir papel produtor na submissão. `/admin/producer-applications` exige administrador atual; o serviço revalida esse papel na base, independentemente da principal passada pelo chamador. Payloads não aceitam papéis, proprietário, decisões, datas ou histórico.
+
+Aprovação e concessão cumulativa de produtor são atómicas em transação MongoDB com fences das contas e revisão do perfil. Inatividade do candidato ou perda de papel administrativo durante a transação impedem aprovação parcial. Decisões exigem ETag atual em `If-Match`; tentativa reapresentada não pode ser aprovada por pedido antigo. Submissão e rejeição não concedem capacidades; papéis legados não são revogados. O backend consulta papéis atuais por pedido, incluindo JWT já emitido.
+
+Histórico e contactos são privados, sem exposição no catálogo ou serialização por omissão. O próprio não recebe IDs administrativos. Não há novos logs, dependências, poderes administrativos genéricos, email, notificações em tempo real ou interface React. Limites JSON/CORS/TLS/proxy mantêm-se; não existe quota dedicada/distribuída de candidaturas. Ver [regras, transações e limitações](phase-7a-producer-applications.md). As secções seguintes conservam o contexto das fases anteriores.
+
+---
+
 # Fase 6B — segurança do transporte Socket.IO
 
 O [contrato de tempo real](phase-6b-socketio.md) define namespace autenticado, revalidação por comando/publicação e quotas comuns entre sockets da mesma conta. JWT apenas em `auth.token`, nunca em URL ou logs; expiração/inatividade desligam a sessão. Origem/TLS/proxy são verificados também no Engine.IO, independentemente do Express. Broadcasts usam projeção comum sem `proprio`/IDs privados; recusas e resultados incertos são distintos.
