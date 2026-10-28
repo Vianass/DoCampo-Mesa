@@ -1,3 +1,24 @@
+# Fase 6A — segurança dos leilões REST
+
+Estado local vigente: as regras desta secção complementam a autenticação e as fases comerciais já implementadas. A matriz de preparação mais abaixo é histórica; não representa por si só endpoints ativos. Ver [contratos e limites](phase-6a-auctions.md).
+
+| Operação                                       | Acesso efetivo                                                                                                                        |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| GET `/api/auctions`                            | Resumo público, sem comprador, pseudónimo, chave, email ou auditoria.                                                                 |
+| GET `/api/auctions/:id` e `/bids`              | Qualquer conta autenticada e ativa; apenas pseudónimo por leilão e participação própria.                                              |
+| GET `/api/me/producer/auctions`                | Produtor atual, só os seus leilões; não concede capacidade de criar se a aprovação foi retirada.                                      |
+| POST `/api/auctions` e PUT `/api/auctions/:id` | Produtor ativo e aprovado, produto/leilão próprios, guardas transacionais de conta/perfil e stock.                                    |
+| POST `/api/auctions/:id/cancel`                | Produtor ativo, proprietário, sem oferta e antes do fim. Não exige aprovação comercial atual para libertar uma reserva histórica.     |
+| POST `/api/auctions/:id/bids`                  | Comprador ativo atual; produtor do lote também ativo/aprovado. Identidade compradora diferente da produtora, mesmo acumulando papéis. |
+
+JWT, atividade e papéis são consultados no MongoDB. Guardas de escrita participam na transação para detetar alterações concorrentes. Administrador não recebe direitos comerciais por ser administrador. Não há troca de papéis demonstrativos, concessão de capacidades ou acesso a hashes/chaves internas.
+
+Pedidos JSON estritos, sem mass assignment, limitados a 100 KiB. Parâmetros de consulta e cabeçalhos duplicados são rejeitados. PUT/cancelamento exigem ETag forte; criação/licitação exigem chave idempotente opaca. Respostas privadas não são colocadas em cache. Erros não incluem valores recebidos, URI MongoDB, tokens ou detalhes internos; não há logger de corpos/cabeçalhos.
+
+Limites técnicos locais: 120 pedidos/minuto/IP nas rotas de leilões e 60 mutações/minuto/conta, com HTTP 429 e Retry-After, mapa limitado a 10 000 identidades HMAC. Estes contadores são por processo e reiniciam com ele; não constituem garantia de consistência nem defesa distribuída. CORS e proxy mantêm as regras existentes. Presença e Socket.IO continuam por implementar.
+
+---
+
 > **Fase 5C — integração React local:** login real seguido de `/auth/me`, JWT exclusivamente em memória e áreas pessoais com capacidades confirmadas pelo serviço. Registo público só comprador, HTTP 202 genérico e login separado. Expiração/401 descartam a sessão; 403/rede bloqueiam a apresentação privada até revalidar. Logout limpa o cliente sem afirmar revogação. O protótipo por papéis fica isolado em `/demonstracao`, sem autenticar contas; a cesta demo tem chave separada. Ver [ciclo de vida e limites](frontend-integration.md). Não são alterados os contratos, hashes, modelos ou políticas do backend descritos abaixo.
 
 > **Fase 5A:** catálogo público restrito a publicados/aprovados/contas ativas; gestão própria de produtos protegida por JWT, capacidade, owner, If-Match e guardas transacionais. DELETE arquiva; consultas próprias não tornam rascunhos públicos. Ver [contrato de integração](frontend-integration.md). Não há checkout HTTP ou operações de leilão.

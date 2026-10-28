@@ -9,6 +9,7 @@ import { createCatalogService } from './modules/catalog/catalog.service.js';
 import { createOrdersService } from './modules/orders/orders.service.js';
 import { createCheckoutPreparationService } from './modules/orders/checkout-preparation.service.js';
 import { createProducerOrdersService } from './modules/orders/producer-orders.service.js';
+import { createAuctionService } from './modules/auctions/auction.service.js';
 
 interface DatabaseHandle {
   connection?: Connection;
@@ -41,11 +42,18 @@ export async function startApi(
   const producerOrders = authentication
     ? createProducerOrdersService(database.connection!, authentication.secret)
     : undefined;
+  const auctions = authentication
+    ? createAuctionService(database.connection!, authentication.secret)
+    : undefined;
   try {
     if (auth) await auth.prepare();
     if (catalog) await catalog.prepare();
     if (orders) await orders.prepare();
     if (preparation) await preparation.prepare();
+    if (auctions) {
+      await auctions.prepare();
+      await auctions.recover();
+    }
   } catch {
     await database.close();
     throw new Error('Não foi possível preparar a autenticação.');
@@ -59,6 +67,7 @@ export async function startApi(
             orders,
             preparation,
             producerOrders,
+            auctions,
             security: authentication,
           }
         : undefined,
@@ -77,6 +86,7 @@ export async function startApi(
     throw new Error('Não foi possível iniciar o servidor HTTP.');
   }
 
+  const stopAuctions = auctions?.startLifecycle();
   let shutdown: Promise<void> | undefined;
   return {
     server,
@@ -85,6 +95,7 @@ export async function startApi(
       shutdown = (async () => {
         let timeout: NodeJS.Timeout | undefined;
         const work = (async () => {
+          await stopAuctions?.();
           await new Promise<void>((resolve, reject) => {
             server.close((error) => (error ? reject(error) : resolve()));
             server.closeIdleConnections();

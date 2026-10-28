@@ -1,10 +1,10 @@
-# Contrato misto: autenticação, catálogo e checkout/leitura de encomendas implementados; restantes operações assinaladas como propostas.
+# Contrato misto: autenticação, catálogo, encomendas e leilões REST implementados; restantes operações assinaladas como propostas.
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.5.1-local-producer-orders
+  version: 0.6.0-local-auctions
   description:
-    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração React local; A Fase 5F acrescenta consulta e avanço operacional de encomendas pelo produtor autenticado, com ETag, auditoria e indicadores; não existe publicação de produção. Métodos/códigos
+    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração React local; A Fase 5F acrescenta consulta e avanço operacional de encomendas pelo produtor autenticado, com ETag, auditoria e indicadores; A Fase 6A implementa leilões e licitações REST transacionais, sem encomenda automática, pagamentos ou Socket.IO; não existe publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
     essas operações não podem ser disponibilizadas antes de aprovação e segurança real. Papéis nas extensões
     são propostas da matriz, não permissões concedidas. Ver README.md, decisions.md e security.md.'
@@ -30,8 +30,10 @@ x-local-implementation: foundation-implementation.md
 x-base-commit: 807aa68
 x-preserved-phase0: true
 x-model-preparation-base: 68f41ec
-x-approved-functional-decisions: [Q01, Q02, Q03, Q04, Q05, Q06, Q14]
-x-pending-functional-decisions: [Q07, Q08, Q09, Q10, Q11, Q12, Q13, Q15, Q16]
+x-approved-functional-decisions: [Q01, Q02, Q03, Q04, Q05, Q06, Q07, Q08, Q14]
+x-auction-approval-scope: Q07 reserva/libertação/lote do vencedor sem encomenda automática; Q08 prazo fixo e relógio MongoDB; Q09 resumo público, detalhe/histórico autenticados, presença pendente.
+x-local-auctions: phase-6a-auctions.md
+x-pending-functional-decisions: [Q09, Q10, Q11, Q12, Q13, Q15, Q16]
 x-order-functional-approval-scope:
   Q05: O02–O04/O13–O16 aprovam cadeia, cancelamento, reposição, receção e reclamações; OR01–OR12 posteriormente aprovadas; detalhes físicos são propostas técnicas.
 x-approved-order-decisions:
@@ -71,10 +73,9 @@ x-residual-model-details:
   T32-05: P04 resolve rascunho/publicação de Product; comando HTTP de publicação, restauro/DELETE e poderes Q12 futuros.
   T32-06: Campos/required/índices dos restantes modelos; DTOs futuros do perfil alargado A02 por alinhar antes dos endpoints.
 x-dependency-interpretation: >-
-  x-decision-dependencies rastreia Q; consultar decisões aprovadas e detalhes residuais,
-  sem interpretar todos os IDs como totalmente pendentes. users/producers/products implementados apenas localmente; outros quatro modelos
-  não autorizados. As 44 operações futuras continuam bloqueadas por escolhas,
-  regras pendentes e segurança real C04. Ver phase-3.2-proposal.md.
+  Contrato misto: operações com x-contract-status implementado-localmente correspondem ao backend atual;
+  restantes são propostas futuras. Q09 conserva presença/salas pendentes. Decisões residuais não são aprovadas
+  implicitamente pela implementação da Fase 6A; consultar decisions.md e phase-6a-auctions.md.
 
 x-approved-technical-decisions:
   - C01
@@ -85,7 +86,7 @@ x-pending-technical-decisions:
   - C03
   - C05
 x-approval-scope: decisions.md
-x-private-api-availability: Autenticação e gestão própria de produtos implementadas localmente; checkout HTTP, leilões e restantes operações propostas permanecem ausentes.
+x-private-api-availability: Autenticação, catálogo próprio, checkout, encomendas comprador/produtor e leilões REST implementados localmente; restantes operações propostas permanecem ausentes.
 x-technical-decisions:
   - C01
   - C02
@@ -95,17 +96,18 @@ x-technical-decisions:
   - C06
 x-socket-command:
   name: licitar
-  stage: '5'
-  status: proposta-bloqueada
+  stage: '6B'
+  status: transporte-futuro
   decision-dependencies:
     - Q01
     - Q07
     - Q08
     - Q09
     - Q13
-  notes:
-    'Transporte não descrito como operação HTTP. Q01 proíbe auto-licitação por identidade mesmo com capacidades acumuladas. Validar mínimo, estado e prazo no servidor; CAS + bid
-    transacional são D06 por aprovar. Protocolo histórico: ../architecture/auction-consistency.md.'
+  notes: >-
+    REST e domínio transacional implementados na Fase 6A. Socket.IO reutilizará esse serviço, sem segunda
+    lógica de aceitação, emitindo apenas após commit. Presença/salas continuam pendentes; não há sockets nesta fase.
+
 paths:
   /health:
     get:
@@ -1657,39 +1659,49 @@ paths:
       operationId: listAuctions
       tags:
         - Leilões
-      summary: Consultar resumos de leilões
+      summary: Consultar resumos públicos de leilões
       description:
-        'Proposta: resumo público para destaque RF-CAT-04. Não concede entrada anónima em sala/presença/histórico
-        nem direito de licitar; Q09 decidirá detalhe e observação. Sem IDs privados de compradores.'
+        Sem comprador, pseudónimo ou auditoria. Recuperação temporal em lotes; 503 se um item selecionado
+        ainda tiver estado temporal desatualizado. Sem pesquisa textual. Query desconhecida/duplicada inválida.
       security: []
       x-authorized-roles:
         - visitante
         - comprador
         - produtor
         - administrador
-      x-decision-dependencies:
-        - Q04
-        - Q07
-        - Q08
-        - Q09
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.6'
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 6A
       parameters:
-        - { $ref: '#/components/parameters/Q' }
-        - { $ref: '#/components/parameters/Page' }
-        - { $ref: '#/components/parameters/PageSize' }
-        - $ref: '#/components/parameters/State'
+        - $ref: '#/components/parameters/CatalogPage'
+        - $ref: '#/components/parameters/CatalogPageSize'
+        - name: ordem
+          in: query
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum:
+              - agendado
+              - ativo
+              - terminado
+              - cancelado
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Página de resumos, ordem por criação e ID.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Auction'
+                $ref: '#/components/schemas/RestAuctionPage'
         '400':
           $ref: '#/components/responses/Error400'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -1698,46 +1710,90 @@ paths:
       operationId: createAuction
       tags:
         - Leilões
-      summary: Criar leilão próprio
-      description: >-
-        Só produtor aprovado pode criar; Q01 permite comprar noutros contextos mas nunca auto-licitar no próprio lote. Q07/Q08 bloqueiam origem/reserva/ciclo temporal. Preparação futura não implementa sockets ou cria bid do preço base.
+      summary: Reservar produto e criar leilão próprio
+      description:
+        Conta atual ativa, produtor aprovado e produto próprio publicado. Reserva e criação na mesma transação;
+        sem encomenda/pagamento. Repetir mesma chave/corpo não volta a debitar stock. JSON <= 100 KiB, sem query.
       security:
         - bearerAuth: []
-      x-authorized-roles: *id001
-      x-decision-dependencies:
-        - Q03
-        - Q04
-        - Q06
-        - Q07
-        - Q08
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.6'
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 6A
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: ^[!-~]{1,128}$
+            minLength: 1
+            maxLength: 128
+          description:
+            'Uma chave por operação lógica. Criação: âmbito produtor; bid: âmbito leilão/comprador. Mesmo
+            corpo normalizado recupera, diferente dá 409. Header duplicado é inválido. Em rede/503 conservar chave e
+            pedido, sem gerar outra.'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuctionWrite'
+              $ref: '#/components/schemas/RestAuctionCreate'
+            example:
+              produtoId: 507f1f77bcf86cd799439011
+              quantidade: 500
+              titulo: Lote agrícola fictício
+              descricao: Exemplo de lote para teste.
+              precoBaseCent: 30000
+              incrementoCent: 100
+              terminaEm: '2026-12-01T18:00:00Z'
       responses:
         '201':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Novo leilão e reserva confirmados.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Auction'
+                $ref: '#/components/schemas/RestAuctionDetail'
           headers:
-            Location:
-              description: URI do recurso criado. Para checkout, forma final depende de Q02.
+            ETag:
+              description: Revisão opaca forte; reenviar em If-Match para PUT/cancelamento.
               schema:
                 type: string
+            Location:
+              schema:
+                type: string
+              description: /api/auctions/{id} do recurso original.
+        '200':
+          description: Repetição da criação; detalhe atual do recurso original.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestAuctionDetail'
+          headers:
+            ETag:
+              description: Revisão opaca forte; reenviar em If-Match para PUT/cancelamento.
+              schema:
+                type: string
+            Location:
+              schema:
+                type: string
+              description: /api/auctions/{id} do recurso original.
         '400':
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
         '409':
           $ref: '#/components/responses/Error409'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -1747,26 +1803,91 @@ paths:
       operationId: getAuction
       tags:
         - Leilões
-      summary: Consultar detalhe autorizado de leilão
-      description: Consultar detalhe autorizado de leilão. Operação proposta; não implementada.
+      summary: Consultar detalhe autenticado
+      description:
+        Conta ativa, sem necessidade de capacidade comprador para observar. Pseudónimos por leilão e participação
+        própria, sem identidade privada. Só proprietário recebe reserva/auditoria. Reconcilia prazo. Sem query.
       security:
         - bearerAuth: []
-      x-authorized-roles: *id007
-      x-decision-dependencies:
-        - Q07
-        - Q08
-        - Q09
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.6'
+      x-authorized-roles:
+        - comprador
+        - produtor
+        - administrador
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 6A
       parameters:
-        - { $ref: '#/components/parameters/Id' }
+        - $ref: '#/components/parameters/CatalogId'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Estado observado do leilão.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Auction'
+                $ref: '#/components/schemas/RestAuctionDetail'
+          headers:
+            ETag:
+              description: Revisão opaca forte; reenviar em If-Match para PUT/cancelamento.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+    put:
+      operationId: updateAuction
+      tags:
+        - Leilões
+      summary: Substituir campos editáveis antes do início
+      description:
+        Apenas proprietário ativo/aprovado, agendado, sem ofertas e antes do início original no MongoDB.
+        Substituição completa; lote/produto/quantidade imutáveis. CAS da versão, sem query. Não estende prazo automaticamente.
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 6A
+      parameters:
+        - $ref: '#/components/parameters/CatalogId'
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: ^"[A-Za-z0-9_-]{43}"$
+          description: ETag forte atual. Ausente 428; inválido/duplicado 400; desatualizado 412.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestAuctionEdit'
+            example:
+              titulo: Lote agrícola fictício
+              descricao: Exemplo de lote para teste.
+              precoBaseCent: 30000
+              incrementoCent: 100
+              terminaEm: '2026-12-01T18:00:00Z'
+      responses:
+        '200':
+          description: Leilão atualizado e novo ETag.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestAuctionDetail'
+          headers:
+            ETag:
+              description: Revisão opaca forte; reenviar em If-Match para PUT/cancelamento.
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -1775,6 +1896,143 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /auctions/{id}/cancel:
+    post:
+      operationId: cancelAuction
+      tags:
+        - Leilões
+      summary: Cancelar antes da primeira oferta
+      description:
+        Conta proprietária ativa; aprovação comercial atual não é exigida para libertar reserva histórica.
+        Antes do fim, sem ofertas, CAS/If-Match. Reposição idempotente com saldo pendente se não couber ou unidade
+        tiver mudado; não converter unidades. Sem query.
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 6A
+      parameters:
+        - $ref: '#/components/parameters/CatalogId'
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: ^"[A-Za-z0-9_-]{43}"$
+          description: ETag forte atual. Ausente 428; inválido/duplicado 400; desatualizado 412.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: []
+              properties: {}
+            example: {}
+      responses:
+        '200':
+          description: Cancelado e saldo da reserva registado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestAuctionDetail'
+          headers:
+            ETag:
+              description: Revisão opaca forte; reenviar em If-Match para PUT/cancelamento.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /me/producer/auctions:
+    get:
+      operationId: listOwnAuctions
+      tags:
+        - Leilões
+      summary: Consultar leilões do produtor autenticado
+      description:
+        Conta produtora atual; owner vem do JWT. Sem identidade privada dos compradores; inclui reserva/auditoria
+        próprias. Aprovação comercial atual não é necessária para ler histórico próprio.
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 6A
+      parameters:
+        - $ref: '#/components/parameters/CatalogPage'
+        - $ref: '#/components/parameters/CatalogPageSize'
+        - name: ordem
+          in: query
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum:
+              - agendado
+              - ativo
+              - terminado
+              - cancelado
+      responses:
+        '200':
+          description: Página própria.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestOwnAuctionPage'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -1784,31 +2042,101 @@ paths:
       operationId: listAuctionBids
       tags:
         - Licitações
-      summary: Consultar histórico de ofertas aceites
+      summary: Consultar histórico autenticado de ofertas
       description:
-        Histórico paginado e ordenado por sequência, sem email/identidade privada. Não aceita licitações
-        por REST neste esboço. Comando licitar pertence ao protocolo Socket.IO da Fase 5.
+        Snapshot de auction e bids até à sequência observada. Ordenação por sequência e pseudónimos por
+        leilão; sem email/IDs privados. Qualquer conta ativa pode observar. Sem filtro estado.
       security:
         - bearerAuth: []
-      x-authorized-roles: *id007
-      x-decision-dependencies:
-        - Q08
-        - Q09
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.6'
+      x-authorized-roles:
+        - comprador
+        - produtor
+        - administrador
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 6A
       parameters:
-        - { $ref: '#/components/parameters/Id' }
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/CatalogId'
+        - $ref: '#/components/parameters/CatalogPage'
+        - $ref: '#/components/parameters/CatalogPageSize'
+        - name: ordem
+          in: query
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Página de ofertas aceites.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Bid'
+                $ref: '#/components/schemas/RestBidPage'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+    post:
+      operationId: createAuctionBid
+      tags:
+        - Licitações
+      summary: Licitar atomicamente no lote
+      description:
+        'Comprador ativo atual, produtor do lote ativo/aprovado, identidades distintas mesmo acumulando
+        papéis. Valor total do lote >= atual+incremento; base não é bid. Predicado MongoDB: iniciaEm <= $$NOW < terminaEm,
+        versão e sequência observadas. Liderança e bid no mesmo commit snapshot/majority. Oferta elegível pode concluir
+        commit depois do fim. Repetição retorna oferta original mesmo após fim, sem novo bid. Não altera automaticamente
+        encomendas/pagamentos. Sem query.'
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - comprador
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 6A
+      parameters:
+        - $ref: '#/components/parameters/CatalogId'
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: ^[!-~]{1,128}$
+            minLength: 1
+            maxLength: 128
+          description:
+            'Uma chave por operação lógica. Criação: âmbito produtor; bid: âmbito leilão/comprador. Mesmo
+            corpo normalizado recupera, diferente dá 409. Header duplicado é inválido. Em rede/503 conservar chave e
+            pedido, sem gerar outra.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestBidWrite'
+            example:
+              valorCent: 31700
+      responses:
+        '201':
+          description: Oferta aceite e estado da sua atualização atómica.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestBidReceipt'
+        '200':
+          description: Oferta original recuperada e estado atual do leilão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestBidReceipt'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -1817,46 +2145,14 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
-        '500':
-          $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
-  /me/auctions:
-    get:
-      operationId: listOwnAuctions
-      tags:
-        - Leilões
-      summary: Consultar leilões próprios
-      description: Consultar leilões próprios. Operação proposta; não implementada.
-      security:
-        - bearerAuth: []
-      x-authorized-roles: *id001
-      x-decision-dependencies:
-        - Q04
-        - Q07
-        - Q08
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.6'
-      parameters:
-        - { $ref: '#/components/parameters/Q' }
-        - { $ref: '#/components/parameters/Page' }
-        - { $ref: '#/components/parameters/PageSize' }
-        - $ref: '#/components/parameters/State'
-      responses:
-        '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Auction'
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '413':
+          $ref: '#/components/responses/Error413'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -3004,6 +3300,746 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    RestAuctionUnit:
+      type: object
+      additionalProperties: false
+      properties:
+        modalidade:
+          type: string
+          enum:
+            - peso
+            - volume
+            - unidade
+            - embalagem
+        unidadeBase:
+          type: string
+          enum:
+            - g
+            - ml
+            - un
+        quantidadeReferencia:
+          type: integer
+          minimum: 1
+        quantidadeMinima:
+          type: integer
+          minimum: 1
+        incrementoCompra:
+          type: integer
+          minimum: 1
+        rotulo:
+          type: string
+          maxLength: 120
+        conteudoPorUnidade:
+          type: object
+          additionalProperties: false
+          required:
+            - quantidade
+            - unidade
+          properties:
+            quantidade:
+              type: integer
+              minimum: 1
+            unidade:
+              type: string
+              enum:
+                - g
+                - ml
+                - un
+      description:
+        Snapshot completo da unidade do produto, quantidades inteiras em g/ml/un/embalagens; preço da licitação
+        é o total do lote.
+      required:
+        - modalidade
+        - unidadeBase
+        - quantidadeReferencia
+        - quantidadeMinima
+        - incrementoCompra
+    RestAuctionCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - titulo
+        - descricao
+        - precoBaseCent
+        - incrementoCent
+        - terminaEm
+        - produtoId
+        - quantidade
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 180
+        descricao:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        precoBaseCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        incrementoCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        iniciaEm:
+          type: string
+          format: date-time
+        terminaEm:
+          type: string
+          format: date-time
+        produtoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        quantidade:
+          type: integer
+          minimum: 1
+          maximum: 10000000
+      description:
+        Reserva transacional de produto próprio publicado de produtor aprovado. Quantidade respeita mínimo/passo/teto
+        da modalidade. Início omitido é o relógio MongoDB; se explícito deve ser futuro. Fim posterior. Base+incremento
+        <= MAX_SAFE_INTEGER.
+      example:
+        produtoId: 507f1f77bcf86cd799439011
+        quantidade: 500
+        titulo: Lote agrícola fictício
+        descricao: Exemplo de lote para teste.
+        precoBaseCent: 30000
+        incrementoCent: 100
+        terminaEm: '2026-12-01T18:00:00Z'
+    RestAuctionEdit:
+      type: object
+      additionalProperties: false
+      required:
+        - titulo
+        - descricao
+        - precoBaseCent
+        - incrementoCent
+        - terminaEm
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 180
+        descricao:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        precoBaseCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        incrementoCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        iniciaEm:
+          type: string
+          format: date-time
+        terminaEm:
+          type: string
+          format: date-time
+      description:
+        PUT substitui todos os campos editáveis; início omitido significa imediato. Apenas antes do início
+        original e sem ofertas; fim futuro. Soma base+incremento segura. Produto, quantidade e unidade imutáveis.
+    RestAuctionSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - produtoId
+        - produtor
+        - titulo
+        - descricao
+        - lote
+        - precoBaseCent
+        - incrementoCent
+        - iniciaEm
+        - terminaEm
+        - estado
+        - licitacaoAtual
+        - sequencia
+        - versao
+        - criadoEm
+        - atualizadoEm
+        - serverNow
+        - moeda
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        produtoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        produtor:
+          type: object
+          additionalProperties: false
+          required:
+            - perfilId
+            - nome
+          properties:
+            perfilId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+            nome:
+              type: string
+        titulo:
+          type: string
+        descricao:
+          type: string
+        lote:
+          type: object
+          additionalProperties: false
+          required:
+            - nome
+            - quantidade
+            - unidadeVenda
+          properties:
+            nome:
+              type: string
+            quantidade:
+              type: integer
+              minimum: 1
+              maximum: 9007199254740991
+            unidadeVenda:
+              $ref: '#/components/schemas/RestAuctionUnit'
+        precoBaseCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        incrementoCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        iniciaEm:
+          type: string
+          format: date-time
+        terminaEm:
+          type: string
+          format: date-time
+        estado:
+          type: string
+          enum:
+            - agendado
+            - ativo
+            - terminado
+            - cancelado
+        licitacaoAtual:
+          type: object
+          additionalProperties: false
+          required:
+            - valorCent
+            - bidId
+          properties:
+            valorCent:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            bidId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+              nullable: true
+        sequencia:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        versao:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        resultado:
+          type: object
+          additionalProperties: false
+          required:
+            - tipo
+            - valorCent
+            - bidId
+          properties:
+            tipo:
+              type: string
+              enum:
+                - sem_licitacoes
+                - vencedor
+            valorCent:
+              type: integer
+              minimum: 1
+              maximum: 9007199254740991
+              nullable: true
+            bidId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+              nullable: true
+        encerradoEm:
+          type: string
+          format: date-time
+        criadoEm:
+          type: string
+          format: date-time
+        atualizadoEm:
+          type: string
+          format: date-time
+        serverNow:
+          type: string
+          format: date-time
+        moeda:
+          type: string
+          enum:
+            - EUR
+      description:
+        'Resumo público sem identidade dos compradores. Base sem ofertas: valor atual = base, bidId nulo,
+        sequência zero. Resultado só após encerramento persistido; sem ofertas tem valor/bid nulos. serverNow é observação
+        MongoDB, sem promessa de tempo real.'
+      example:
+        id: 507f1f77bcf86cd799439012
+        produtoId: 507f1f77bcf86cd799439011
+        produtor:
+          perfilId: 507f1f77bcf86cd799439013
+          nome: Produção fictícia
+        titulo: Lote agrícola fictício
+        descricao: Exemplo de lote para teste.
+        lote:
+          nome: Produto fictício
+          quantidade: 500
+          unidadeVenda:
+            modalidade: peso
+            unidadeBase: g
+            quantidadeReferencia: 1000
+            quantidadeMinima: 250
+            incrementoCompra: 50
+        precoBaseCent: 30000
+        incrementoCent: 100
+        iniciaEm: '2026-12-01T12:00:00Z'
+        terminaEm: '2026-12-01T18:00:00Z'
+        estado: ativo
+        licitacaoAtual:
+          valorCent: 30000
+          bidId: null
+        sequencia: 0
+        versao: 0
+        criadoEm: '2026-12-01T12:00:00Z'
+        atualizadoEm: '2026-12-01T12:00:00Z'
+        serverNow: '2026-12-01T12:00:01Z'
+        moeda: EUR
+    RestAuctionDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - produtoId
+        - produtor
+        - titulo
+        - descricao
+        - lote
+        - precoBaseCent
+        - incrementoCent
+        - iniciaEm
+        - terminaEm
+        - estado
+        - licitacaoAtual
+        - sequencia
+        - versao
+        - criadoEm
+        - atualizadoEm
+        - serverNow
+        - moeda
+        - lider
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        produtoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        produtor:
+          type: object
+          additionalProperties: false
+          required:
+            - perfilId
+            - nome
+          properties:
+            perfilId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+            nome:
+              type: string
+        titulo:
+          type: string
+        descricao:
+          type: string
+        lote:
+          type: object
+          additionalProperties: false
+          required:
+            - nome
+            - quantidade
+            - unidadeVenda
+          properties:
+            nome:
+              type: string
+            quantidade:
+              type: integer
+              minimum: 1
+              maximum: 9007199254740991
+            unidadeVenda:
+              $ref: '#/components/schemas/RestAuctionUnit'
+        precoBaseCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        incrementoCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        iniciaEm:
+          type: string
+          format: date-time
+        terminaEm:
+          type: string
+          format: date-time
+        estado:
+          type: string
+          enum:
+            - agendado
+            - ativo
+            - terminado
+            - cancelado
+        licitacaoAtual:
+          type: object
+          additionalProperties: false
+          required:
+            - valorCent
+            - bidId
+          properties:
+            valorCent:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            bidId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+              nullable: true
+        sequencia:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        versao:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        resultado:
+          type: object
+          additionalProperties: false
+          required:
+            - tipo
+            - valorCent
+            - bidId
+          properties:
+            tipo:
+              type: string
+              enum:
+                - sem_licitacoes
+                - vencedor
+            valorCent:
+              type: integer
+              minimum: 1
+              maximum: 9007199254740991
+              nullable: true
+            bidId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+              nullable: true
+        encerradoEm:
+          type: string
+          format: date-time
+        criadoEm:
+          type: string
+          format: date-time
+        atualizadoEm:
+          type: string
+          format: date-time
+        serverNow:
+          type: string
+          format: date-time
+        moeda:
+          type: string
+          enum:
+            - EUR
+        lider:
+          type: object
+          additionalProperties: false
+          required:
+            - referencia
+            - proprio
+          properties:
+            referencia:
+              type: string
+              pattern: ^p_[A-Za-z0-9_-]{24}$
+            proprio:
+              type: boolean
+          nullable: true
+        reserva:
+          type: object
+          additionalProperties: false
+          required:
+            - estado
+            - reposta
+            - pendente
+          properties:
+            estado:
+              type: string
+              enum:
+                - reservada
+                - afeta_vencedor
+                - libertada
+                - libertacao_pendente
+            reposta:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            pendente:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+        historico:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - tipo
+              - ocorridoEm
+            properties:
+              tipo:
+                type: string
+              ocorridoEm:
+                type: string
+                format: date-time
+      description:
+        'Detalhe autenticado: pseudónimo HMAC por leilão e indicação própria; nunca users._id/email. Apenas
+        o proprietário recebe reserva e histórico de transições minimizado. Vencedor mantém lote afeto, sem order/pagamento
+        automático.'
+      example:
+        id: 507f1f77bcf86cd799439012
+        produtoId: 507f1f77bcf86cd799439011
+        produtor:
+          perfilId: 507f1f77bcf86cd799439013
+          nome: Produção fictícia
+        titulo: Lote agrícola fictício
+        descricao: Exemplo de lote para teste.
+        lote:
+          nome: Produto fictício
+          quantidade: 500
+          unidadeVenda:
+            modalidade: peso
+            unidadeBase: g
+            quantidadeReferencia: 1000
+            quantidadeMinima: 250
+            incrementoCompra: 50
+        precoBaseCent: 30000
+        incrementoCent: 100
+        iniciaEm: '2026-12-01T12:00:00Z'
+        terminaEm: '2026-12-01T18:00:00Z'
+        estado: ativo
+        licitacaoAtual:
+          valorCent: 30000
+          bidId: null
+        sequencia: 0
+        versao: 0
+        criadoEm: '2026-12-01T12:00:00Z'
+        atualizadoEm: '2026-12-01T12:00:00Z'
+        serverNow: '2026-12-01T12:00:01Z'
+        moeda: EUR
+        lider: null
+        reserva:
+          estado: reservada
+          reposta: 0
+          pendente: 0
+        historico:
+          - tipo: criado
+            ocorridoEm: '2026-12-01T12:00:00Z'
+    RestBid:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - leilaoId
+        - valorCent
+        - sequencia
+        - aceiteEm
+        - participante
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        leilaoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        valorCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        sequencia:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        aceiteEm:
+          type: string
+          format: date-time
+        participante:
+          type: object
+          additionalProperties: false
+          required:
+            - referencia
+            - proprio
+          properties:
+            referencia:
+              type: string
+              pattern: ^p_[A-Za-z0-9_-]{24}$
+            proprio:
+              type: boolean
+      description:
+        'Oferta aceite imutável: valor total em EUR/cêntimos, sequência monotónica, instante $$NOW da operação
+        atómica, participante pseudónimo.'
+    RestBidWrite:
+      type: object
+      additionalProperties: false
+      required:
+        - valorCent
+      properties:
+        valorCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+    RestBidReceipt:
+      type: object
+      additionalProperties: false
+      required:
+        - origem
+        - licitacao
+        - leilao
+      properties:
+        origem:
+          type: string
+          enum:
+            - nova
+            - replay
+        licitacao:
+          $ref: '#/components/schemas/RestBid'
+        leilao:
+          $ref: '#/components/schemas/RestAuctionDetail'
+    RestAuctionPage:
+      type: object
+      additionalProperties: false
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestAuctionSummary'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalPaginas:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+    RestOwnAuctionPage:
+      type: object
+      additionalProperties: false
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestAuctionDetail'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalPaginas:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+    RestBidPage:
+      type: object
+      additionalProperties: false
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+        - sequenciaSnapshot
+        - versaoSnapshot
+        - serverNow
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestBid'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalPaginas:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        sequenciaSnapshot:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        versaoSnapshot:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        serverNow:
+          type: string
+          format: date-time
+      description:
+        Uma leitura snapshot de cabeça e bids, ordenada por sequência. Total é a sequência dessa observação;
+        não se promete snapshot estável entre páginas pedidas em momentos diferentes.
     CatalogUnit:
       type: object
       additionalProperties: false

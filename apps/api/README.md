@@ -1,3 +1,13 @@
+# API — leilões e licitações da Fase 6A
+
+O runtime prepara `auctions`/`bids`, índices e recuperação temporal antes de abrir HTTP. Inicia manutenção periódica de um segundo e aguarda o seu encerramento antes de fechar a ligação MongoDB. Mantêm-se as variáveis existentes, JWT real e replica set; sem dependências adicionais.
+
+Endpoints: `GET/POST /api/auctions`, `GET/PUT /api/auctions/:id`, `POST /api/auctions/:id/cancel`, `GET/POST /api/auctions/:id/bids` e `GET /api/me/producer/auctions`. Só o primeiro GET é público. Criação e licitação exigem `Idempotency-Key`; PUT/cancelamento exigem `If-Match` do detalhe. A licitação é o preço total do lote em cêntimos; primeira oferta mínima = base + incremento.
+
+Ver [guia técnico e revisão isolada](../../docs/api/phase-6a-auctions.md) e [OpenAPI](../../docs/api/openapi.yaml). Não há conversão automática do resultado em encomenda, pagamento, sala Socket.IO ou nova interface React. Os registos anteriores abaixo preservam o âmbito de cada fase.
+
+---
+
 # API — gestão de encomendas do produtor da Fase 5F
 
 Disponíveis com JWT, conta ativa e papel atual produtor: `GET /api/me/producer/orders`, `GET /api/me/producer/orders/:id` e `PATCH /api/me/producer/orders/:id/status`. A propriedade é a conta produtora guardada na encomenda, nunca um ID escolhido no cliente. Aprovação e condições comerciais atuais não reescrevem nem bloqueiam automaticamente encomendas históricas próprias; esta fase não concede novos poderes de vender/publicar.

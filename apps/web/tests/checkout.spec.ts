@@ -16,6 +16,8 @@ async function login(page: import('@playwright/test').Page) {
   await page.getByLabel('Email', { exact: true }).fill(fixtureUser.email);
   await page.getByLabel('Palavra-passe', { exact: true }).fill(fixturePassword);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  // A navegação seguinte só pode começar depois de o login e o redirecionamento terminarem.
+  await expect(page).not.toHaveURL(/\/entrar(?:\?|$)/);
 }
 async function fields(page: import('@playwright/test').Page) {
   await page.getByLabel('Pagamento · Origem de teste', { exact: true }).selectOption('dinheiro');

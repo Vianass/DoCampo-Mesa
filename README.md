@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 6A — backend REST de leilões e licitações, implementação local.** Produtores aprovados podem reservar um lote, agendar, consultar, editar antes do início e cancelar antes da primeira oferta. Compradores autenticados licitam com controlo transacional de prazo, incremento, liderança e histórico. Há resumo público e detalhe/histórico autenticados. O encerramento conserva o vencedor e o lote reservado; não cria encomenda nem pagamento. Sem nova interface React ou Socket.IO. Ver [contratos, decisões aprovadas, testes e limitações](docs/api/phase-6a-auctions.md).
+
 **Fase 5F — gestão real de encomendas pelo produtor, implementação local.** A área autenticada permite consultar, filtrar e avançar encomendas próprias até pronta, com concorrência protegida e histórico persistido. O comprador pode atualizar a consulta para ver os novos estados. Os indicadores contam dados reais e separam encomendas concluídas de pagamentos recebidos. Ver [contratos e limites](docs/api/frontend-integration.md).
 
 **Fase 5E — checkout real no React, implementação local.** O percurso Cesta → Checkout → Confirmação utiliza a API e MongoDB, com escolhas de receção/pagamento por produtor e encomendas próprias na área do comprador. Reutiliza o checkout transacional de 4B/5D, mantém o JWT apenas em memória e recupera tentativas com a mesma chave/pedido. Não há pagamentos online. Ver [contrato, recuperação e limitações](docs/api/frontend-integration.md).

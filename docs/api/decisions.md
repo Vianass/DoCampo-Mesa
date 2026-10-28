@@ -1,5 +1,7 @@
 # Decisões de entrada — análise Q01–Q16
 
+> **Atualização vigente — Fase 6A (28-10-2026):** Q07 e Q08 aprovadas no âmbito abaixo; Q09 aprovada quanto à consulta REST. Implementação local de leilões/licitações autorizada, sem operações Git de publicação, Socket.IO, encomenda automática ou pagamento. Os registos das fases anteriores conservam o seu contexto histórico. Ver [implementação e limites da Fase 6A](phase-6a-auctions.md).
+
 > Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.
 
 Complementa, sem substituir ou alterar, [decisions.md da Fase 0](../architecture/decisions.md). **O01–O16 aprovadas funcionalmente para orders; revisão documental em 15c85e9, sem código. OR01–OR12 continuam propostas. C01/C02/C04/C06 foram aprovadas explicitamente no âmbito registado abaixo. Q01/Q03/Q04/Q06/Q14 têm aprovação funcional registada em 2026-10-16; T32-01–T32-06 aprovadas em 2026-10-17 nos limites do registo; A01–A03 aprovadas para o bloco users/producers implementado localmente; restantes Q, C03/C05 e detalhes residuais continuam pendentes.** As experiências demonstrativas anteriores continuam aprovadas no seu âmbito e não são modificadas. A autorização documental não resolve automaticamente as questões.
@@ -77,6 +79,8 @@ Esta escolha permite preparação privada antes da aprovação e ultrapassa a re
 
 ## Q07 — Stock do lote, resultado e conversão
 
+**Decisão aprovada expressamente na Fase 6A:** reservar a quantidade do produto ao criar o leilão; libertar ao cancelar ou terminar sem ofertas; conservar o lote afeto ao vencedor quando existir oferta vencedora. **Não criar encomenda nem pagamento automaticamente.** A recomendação histórica de conversão imediata abaixo não foi adotada nesta fase. Reserva, cancelamento e libertação usam transações e o mesmo controlo de stock do checkout. Reposição impossível por limite de stock, ausência do produto ou mudança da unidade fica registada como pendente, sem perda nem conversão silenciosa. O fluxo comercial posterior à vitória continua dependente de nova decisão/autorização.
+
 **Problema:** ligação do leilão ao catálogo e efeito do vencedor. **Documentado:** F0 recomenda reservar se associado, libertar sem ofertas e converter uma vez em encomenda pelo preço total da oferta; depende de aprovação. Os três produtos associados no admin são referências ilustrativas, sem reserva.
 
 **Alternativas e balanço:** lote independente simplifica stock mas exige composição separada; reserva protege disponibilidade mas envolve transação; conversão automática fecha o fluxo comercial mas precisa de modalidade/dados do vencedor; resultado sem order é mais simples mas requer aceitação do processo.
@@ -85,6 +89,8 @@ Esta escolha permite preparação privada antes da aprovação e ultrapassa a re
 
 ## Q08 — Tempo, edição e extensão do leilão
 
+**Decisão aprovada expressamente na Fase 6A:** prazo fixo, sem extensões automáticas; elegibilidade avaliada pelo relógio do MongoDB na atualização atómica. Edição apenas antes do início; cancelamento apenas antes da primeira oferta e antes do fim. Uma oferta elegível antes do fim pode terminar o commit depois desse instante. O instante de chegada ao browser/API e a hora de resposta não decidem a aceitação. O preço base não cria oferta: mínimo inicial = base + incremento. Estados implementados: `agendado`, `ativo`, `terminado`, `cancelado`; não são necessários rascunho ou pausa nesta fase.
+
 **Problema:** instante de elegibilidade, edição após início e extensões. **Documentado:** F0 propõe prazo fixo avaliado na operação atómica do banco; mínimo inicial base + incremento é académico.
 
 **Alternativas e balanço:** receção no servidor é simples de explicar mas não ordena escritas concorrentes; avaliação atómica dá predicado consistente mas commit pode terminar depois do prazo; regra de commit tem complexidade adicional; extensão automática expande âmbito. **Backend:** relógio autoritativo, CAS, agendador e testes de limite. **Frontend:** contagem estimada e edição condicionada.
@@ -92,6 +98,8 @@ Esta escolha permite preparação privada antes da aprovação e ultrapassa a re
 **Recomendação P:** prazo fixo e elegibilidade na avaliação atómica, bloquear alterações comerciais após início. **Necessária:** antes de criação/ciclo temporal dependentes (3.6/5). O contrato não declara que o relógio do browser ou do ack decide o resultado.
 
 ## Q09 — Observadores e presença
+
+**Decisão REST aprovada expressamente na Fase 6A:** resumo público; detalhe e histórico apenas para contas autenticadas e ativas, sem identidade privada dos compradores. Ofertas usam pseudónimo por leilão e indicação de participação própria. Consultar não concede direito de licitar; este exige capacidade comprador e proíbe auto-licitação por identidade. **Presença, salas e contagem de participantes continuam pendentes para a Fase 6B**; não se aprova aqui a recomendação de utilizadores únicos nem se implementam sockets.
 
 **Problema:** acesso anónimo e contagem de participantes. **Documentado:** destaque público ativo é obrigatório; F0 recomenda sala autenticada e utilizadores únicos, apesar de o exemplo contar sockets.
 
