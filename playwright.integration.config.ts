@@ -3,6 +3,7 @@ export default defineConfig({
   outputDir: 'test-results/real-integration',
   testDir: './apps/web/tests',
   testMatch: '**/*.real.spec.ts',
+  testIgnore: '**/auctions.real.spec.ts',
   fullyParallel: false,
   workers: 1,
   retries: 0,

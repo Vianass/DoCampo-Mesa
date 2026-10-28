@@ -2,6 +2,10 @@ import process from 'node:process';
 import console from 'node:console';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createConnection } from 'mongoose';
+import { createServer } from 'node:http';
+import { createAuctionService } from '../../../api/src/modules/auctions/auction.service.ts';
+import { attachAuctionSockets } from '../../../api/src/realtime/auction.socket.ts';
+import { auctionReview } from './auction-review.mjs';
 import { createApp } from '../../../api/src/app.ts';
 import { parseAuthEnvironment } from '../../../api/src/config/auth-environment.ts';
 import { createAuthService } from '../../../api/src/modules/auth/auth.service.ts';
@@ -24,15 +28,23 @@ const connection = await createConnection(
 let server;
 let stopping;
 let producerReviewData;
+let auctionReviewData;
+let realtime;
+let stopAuctions;
+const reviewAuctions = process.env.DOCAMPO_AUCTION_REVIEW === '1';
 const checkoutReview = process.env.DOCAMPO_CHECKOUT_REVIEW === '1';
 const reviewProducer = process.env.DOCAMPO_PRODUCER_REVIEW === '1';
 function stop() {
   return (stopping ??= (async () => {
-    server?.close();
+    await realtime?.close();
+    await stopAuctions?.();
+    if (server?.listening)
+      await new Promise((resolve, reject) => server.close((e) => (e ? reject(e) : resolve())));
     try {
       await connection.dropDatabase();
     } finally {
       await producerReviewData?.cleanup();
+      await auctionReviewData?.cleanup();
       await connection.close();
     }
     console.log('Base efémera desta execução removida.');
@@ -44,7 +56,7 @@ try {
     throw Error('Replica set de teste necessário.');
   const authConfig = parseAuthEnvironment({
     NODE_ENV: 'test',
-    JWT_TTL_SECONDS: checkoutReview || reviewProducer ? '900' : '60',
+    JWT_TTL_SECONDS: checkoutReview || reviewProducer || reviewAuctions ? '900' : '60',
     JWT_SECRET: randomBytes(48).toString('base64url'),
     CORS_ORIGINS: 'http://127.0.0.1:5183',
   });
@@ -52,6 +64,8 @@ try {
     catalog = createCatalogService(connection, authConfig.secret);
   await auth.prepare();
   await catalog.prepare();
+  const auctions = createAuctionService(connection, authConfig.secret);
+  await auctions.prepare();
   const orders = createOrdersService(connection);
   const preparation = createCheckoutPreparationService(connection);
   const producerOrders = createProducerOrdersService(connection, authConfig.secret);
@@ -80,15 +94,29 @@ try {
       'Contas fictícias de revisão (ficheiro privado temporário): ' + producerReviewData.file,
     );
   }
-  server = createApp({
-    auth,
-    catalog,
-    orders,
-    preparation,
-    producerOrders,
-    security: authConfig,
-    rateLimit: { ipLimit: 1000, accountLimit: 1000 },
-  }).listen(3011, '127.0.0.1', () =>
+  if (reviewAuctions) {
+    auctionReviewData = await auctionReview(connection, auctions);
+    console.log('Revisão de leilões — ficheiro privado temporário: ' + auctionReviewData.file);
+  }
+  server = createServer(
+    createApp({
+      auth,
+      catalog,
+      orders,
+      preparation,
+      producerOrders,
+      auctions,
+      security: authConfig,
+      rateLimit: { ipLimit: 1000, accountLimit: 1000 },
+    }),
+  );
+  realtime = attachAuctionSockets(server, auctions, auth, authConfig, {
+    enabled: true,
+    syncIntervalMs: 100,
+    authIntervalMs: 1000,
+  });
+  stopAuctions = auctions.startLifecycle();
+  server.listen(3011, '127.0.0.1', () =>
     console.log(
       'API real isolada pronta; MongoDB ' +
         hello.setName +
