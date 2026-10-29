@@ -192,6 +192,7 @@ export function App() {
       <Route path="area" element={<DemoRoute />}>
         <Route element={<PrivateLayout />}>
           <Route index element={<PrivateIndex />} />
+          <Route path="candidatura-produtor" element={<PrivateNotFoundPage />} />
           <Route path="comprador" element={<DemoRoute role="comprador" />}>
             <Route element={<BuyerArea />}>
               <Route index element={buyerPage(<BuyerDashboardPage />)} />

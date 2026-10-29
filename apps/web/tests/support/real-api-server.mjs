@@ -13,6 +13,7 @@ import { createCatalogService } from '../../../api/src/modules/catalog/catalog.s
 import { createOrdersService } from '../../../api/src/modules/orders/orders.service.ts';
 import { createCheckoutPreparationService } from '../../../api/src/modules/orders/checkout-preparation.service.ts';
 import { createProducerOrdersService } from '../../../api/src/modules/orders/producer-orders.service.ts';
+import { createProducerApplicationService } from '../../../api/src/modules/producer-applications/producer-application.service.ts';
 import { createProducerModel } from '../../../api/src/modules/producers/producer.model.ts';
 import { seedCatalog } from '../../../api/src/development/catalog-seed.ts';
 import { products, producers } from '../../src/data/market.ts';
@@ -34,6 +35,7 @@ let stopAuctions;
 const reviewAuctions = process.env.DOCAMPO_AUCTION_REVIEW === '1';
 const checkoutReview = process.env.DOCAMPO_CHECKOUT_REVIEW === '1';
 const reviewProducer = process.env.DOCAMPO_PRODUCER_REVIEW === '1';
+const reviewApplication = process.env.DOCAMPO_APPLICATION_REVIEW === '1';
 function stop() {
   return (stopping ??= (async () => {
     await realtime?.close();
@@ -56,7 +58,8 @@ try {
     throw Error('Replica set de teste necessário.');
   const authConfig = parseAuthEnvironment({
     NODE_ENV: 'test',
-    JWT_TTL_SECONDS: checkoutReview || reviewProducer || reviewAuctions ? '900' : '60',
+    JWT_TTL_SECONDS:
+      checkoutReview || reviewProducer || reviewAuctions || reviewApplication ? '900' : '60',
     JWT_SECRET: randomBytes(48).toString('base64url'),
     CORS_ORIGINS: 'http://127.0.0.1:5183',
   });
@@ -71,6 +74,8 @@ try {
   const producerOrders = createProducerOrdersService(connection, authConfig.secret);
   await orders.prepare();
   await preparation.prepare();
+  const producerApplications = createProducerApplicationService(connection, authConfig.secret);
+  await producerApplications.prepare();
   const result = await seedCatalog(connection, { products, producers }, 'http://127.0.0.1:5183');
   const second = await seedCatalog(connection, { products, producers }, 'http://127.0.0.1:5183');
   if (second.inserted !== 0) throw Error('Seed não idempotente.');
@@ -106,6 +111,7 @@ try {
       preparation,
       producerOrders,
       auctions,
+      producerApplications,
       security: authConfig,
       rateLimit: { ipLimit: 1000, accountLimit: 1000 },
     }),

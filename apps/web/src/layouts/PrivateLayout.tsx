@@ -9,6 +9,7 @@ import { demonstrationSite } from '../features/auth/demo-mode';
 import { AccountArea } from '../features/private-area/AccountArea';
 import { roleLabels } from '../features/auth/types';
 import { privateSections, roleHome } from '../features/private-area/navigation';
+import { applicationPath } from '../features/producer-application/model';
 
 export function PrivateLayout() {
   const { session: account, demonstration, endDemonstration, logout } = useAuth();
@@ -42,6 +43,8 @@ export function PrivateLayout() {
         ? requested
         : session.user.papeis[0]!;
   const home = roleHome(role);
+  const sharedApplication = !demonstrationSite && location.pathname === applicationPath;
+  const contextLabel = sharedApplication ? 'Candidatura a produtor' : roleLabels[role];
   return (
     <div className="private-shell">
       <a className="skip-link" href="#area-conteudo">
@@ -83,7 +86,7 @@ export function PrivateLayout() {
                   ? session.user.nome
                   : 'Área pessoal'}
             </span>
-            <strong>{roleLabels[role]}</strong>
+            <strong>{contextLabel}</strong>
           </p>
           <button
             ref={button}
@@ -118,16 +121,28 @@ export function PrivateLayout() {
             <NavLink to={home} end onClick={() => setOpen(false)}>
               <span aria-hidden="true">00</span>Visão geral
             </NavLink>
-            {privateSections[role].map((section, index) => (
-              <NavLink
-                key={section.slug}
-                to={`${home}/${section.slug}`}
-                onClick={() => setOpen(false)}
-              >
-                <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-                {section.label}
+            {sharedApplication && (
+              <NavLink to={applicationPath} onClick={() => setOpen(false)}>
+                <span aria-hidden="true">01</span>Candidatura a produtor
               </NavLink>
-            ))}
+            )}
+            {!sharedApplication &&
+              privateSections[role].map((section, index) => (
+                <NavLink
+                  key={section.slug}
+                  to={
+                    !demonstrationSite && role === 'produtor' && section.slug === 'candidatura'
+                      ? applicationPath
+                      : `${home}/${section.slug}`
+                  }
+                  onClick={() => setOpen(false)}
+                >
+                  <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                  {!demonstrationSite && role === 'produtor' && section.slug === 'candidatura'
+                    ? 'Estatuto de produtor'
+                    : section.label}
+                </NavLink>
+              ))}
             {role === 'comprador' && (
               <Link to="/carrinho" onClick={() => setOpen(false)}>
                 <Icon name="basket" />A minha cesta
@@ -160,7 +175,7 @@ export function PrivateLayout() {
         </footer>
       </Container>
       <div className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
-        {demonstrationSite ? 'Área de demonstração' : 'Área pessoal'}: {roleLabels[role]}. Página:{' '}
+        {demonstrationSite ? 'Área de demonstração' : 'Área pessoal'}: {contextLabel}. Página:{' '}
         {location.pathname.split('/').filter(Boolean).join(', ')}.
       </div>
     </div>

@@ -103,7 +103,7 @@ export default function RegistrationPage() {
         <p className="auth-prototype-note">
           {demonstrationSite
             ? 'Prévia do registo. Usa apenas dados fictícios; não são enviados nem guardados e nenhuma conta será criada.'
-            : 'O registo público cria uma conta compradora. A candidatura de produtor é um percurso separado, ainda não disponível neste formulário. Não são atribuídos outros papéis pelo registo.'}
+            : 'O registo público cria uma conta compradora. Depois de entrares, podes apresentar a candidatura de produtor na tua área pessoal. O registo não atribui outros papéis.'}
         </p>
         {demonstrationSite && (
           <fieldset className="auth-role-choice">

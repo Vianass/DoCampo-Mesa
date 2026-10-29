@@ -106,6 +106,10 @@ export async function requestJson<T>(
           'AUTO_LICITACAO_PROIBIDA',
           'EDICAO_INDISPONIVEL',
           'CANCELAMENTO_INDISPONIVEL',
+          'CANDIDATURA_NAO_ENCONTRADA',
+          'CANDIDATURA_CONFLITO',
+          'CANDIDATURA_INVALIDA',
+          'HISTORICO_DEMASIADO_GRANDE',
         ];
         if (known.includes(value?.codigo)) codigo = value.codigo;
         if (value?.repetirComMesmaChave === true) repeat = true;

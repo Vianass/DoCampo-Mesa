@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 7B — candidatura de produtores no React, implementação local para revisão.** Formulário autenticado, consulta de estado, reapresentação e histórico reais em `/area/candidatura-produtor`. A aprovação atualiza as capacidades através de `/auth/me`, mantendo o JWT em memória e a autoridade do backend. Sem administração no React. Ver [arquitetura, testes, revisão e limitações](docs/api/phase-7b-react-producer-applications.md).
+
 **Fase 7A — candidaturas e aprovação de produtores, implementação backend local para revisão.** Submissão e consulta próprias, listagem/detalhe administrativos, decisões transacionais e reapresentação com histórico privado. Aprovação acumula o papel de produtor sem publicar produtos ou configurar vendas. Frontend e demonstrações existentes preservados; integração React futura. Ver [contratos, segurança, testes e limitações](docs/api/phase-7a-producer-applications.md).
 
 **Fase 6C — interface React dos leilões em tempo real, implementação local para revisão.** Catálogo público REST, salas autenticadas com JWT em memória, ofertas confirmadas, recuperação de tentativas, relógio sincronizado e gestão dos próprios leilões pelo produtor. Demonstração isolada com dois compradores, API/Socket.IO/MongoDB reais; sem encomendas ou pagamentos automáticos. Ver [arquitetura, revisão visual, testes e limitações](docs/api/phase-6c-react-auctions.md).

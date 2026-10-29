@@ -7,6 +7,11 @@ import { privateSections, roleHome } from './navigation';
 import { lazy, Suspense } from 'react';
 import { LoadingSkeleton } from '../../components/LoadingSkeleton';
 import { AccountIdentity } from './AccountIdentity';
+import { ApplicationEntry } from '../producer-application/ApplicationEntry';
+import { applicationPath } from '../producer-application/model';
+const ProducerApplicationPage = lazy(
+  () => import('../producer-application/ProducerApplicationPage'),
+);
 const ProducerAuctionsArea = lazy(() => import('../auctions/ProducerAuctionsArea'));
 const BuyerAuctionsArea = lazy(() => import('../auctions/BuyerAuctionsArea'));
 const OrdersArea = lazy(() => import('../orders/OrdersArea'));
@@ -17,6 +22,18 @@ export function AccountArea() {
   if (session.kind !== 'authenticated') return null;
   const pieces = location.pathname.split('/').filter(Boolean),
     role = pieces[1];
+  if (location.pathname === applicationPath)
+    return (
+      <Suspense fallback={<LoadingSkeleton label="A carregar a candidatura" count={2} />}>
+        <ProducerApplicationPage />
+      </Suspense>
+    );
+  if (
+    role === 'produtor' &&
+    pieces[2] === 'candidatura' &&
+    session.user.papeis.includes('produtor')
+  )
+    return <Navigate replace to={applicationPath} />;
   if (!role) return <Navigate replace to={roleHome(session.user.papeis[0]!)} />;
   if (!isRole(role) || !session.user.papeis.includes(role))
     return (
@@ -65,6 +82,9 @@ export function AccountArea() {
         <p>Bem-vindo, {session.user.nome}.</p>
       </header>
       <AccountIdentity user={session.user} />
+      {role === 'comprador' && !pieces[2] && !session.user.papeis.includes('produtor') && (
+        <ApplicationEntry />
+      )}
       <section className="private-unavailable" aria-labelledby="account-activity-title">
         <p className="eyebrow">Um caminho em construção</p>
         <h2 id="account-activity-title">

@@ -12,6 +12,7 @@ import { AuthProvider } from './features/auth/AuthProvider';
 import { BuyerProvider } from './features/buyer/BuyerProvider';
 import { AdminProvider } from './features/admin/AdminProvider';
 import { ProducerProvider } from './features/producer/ProducerProvider';
+import { ApplicationProvider } from './features/producer-application/ApplicationProvider';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Elemento raiz da aplicação não encontrado.');
@@ -23,7 +24,9 @@ createRoot(root).render(
           <BuyerProvider>
             <ProducerProvider>
               <AdminProvider>
-                <App />
+                <ApplicationProvider>
+                  <App />
+                </ApplicationProvider>
               </AdminProvider>
             </ProducerProvider>
           </BuyerProvider>

@@ -35,8 +35,10 @@ export function ProducerSelect({
 export function ProducerTextarea({
   label,
   error,
+  hint,
+  'aria-describedby': describedBy,
   ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; error?: string }) {
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; error?: string; hint?: string }) {
   const id = useId();
   return (
     <div className="producer-field">
@@ -46,8 +48,17 @@ export function ProducerTextarea({
         id={id}
         className="form-control"
         aria-invalid={!!error}
-        aria-describedby={error ? id + '-error' : undefined}
+        aria-describedby={
+          [describedBy, hint ? id + '-hint' : undefined, error ? id + '-error' : undefined]
+            .filter(Boolean)
+            .join(' ') || undefined
+        }
       />
+      {hint && (
+        <p id={id + '-hint'} className="form-field__hint">
+          {hint}
+        </p>
+      )}
       {error && (
         <p id={id + '-error'} className="producer-field-error">
           {error}

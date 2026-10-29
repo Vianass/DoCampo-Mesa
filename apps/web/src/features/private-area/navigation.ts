@@ -143,6 +143,7 @@ export function demoDestination(raw: string | null, role: Role) {
 }
 
 export function accountDestination(raw: string | null, papeis: readonly Role[]) {
+  if (raw === '/area/candidatura-produtor' && papeis.length) return raw;
   if (raw === '/leiloes' || (raw && /^\/leiloes\/[a-fA-F0-9]{24}$/.test(raw))) return raw;
   if ((raw === '/checkout' || raw === '/checkout/confirmacao') && papeis.includes('comprador'))
     return raw;
