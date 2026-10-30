@@ -1,4 +1,6 @@
 import { createAdminAuctionsService } from '../../../api/src/modules/admin-auctions/admin-auctions.service.ts';
+import { createReviewsService } from '../../../api/src/modules/reviews/reviews.service.ts';
+import { reviewsReview } from './reviews-review.mjs';
 import { createAdminOrdersService } from '../../../api/src/modules/admin-orders/admin-orders.service.ts';
 import process from 'node:process';
 import console from 'node:console';
@@ -35,6 +37,7 @@ let stopping;
 let producerReviewData;
 let auctionReviewData;
 let adminApplicationReviewData;
+let reviewsReviewData;
 let realtime;
 let stopAuctions;
 const reviewAuctions = process.env.DOCAMPO_AUCTION_REVIEW === '1';
@@ -42,6 +45,7 @@ const checkoutReview = process.env.DOCAMPO_CHECKOUT_REVIEW === '1';
 const reviewProducer = process.env.DOCAMPO_PRODUCER_REVIEW === '1';
 const reviewApplication = process.env.DOCAMPO_APPLICATION_REVIEW === '1';
 const reviewAdminApplications = process.env.DOCAMPO_ADMIN_APPLICATION_REVIEW === '1';
+const reviewReviews = process.env.DOCAMPO_REVIEWS_REVIEW === '1';
 function stop() {
   return (stopping ??= (async () => {
     await realtime?.close();
@@ -54,6 +58,7 @@ function stop() {
       await producerReviewData?.cleanup();
       await auctionReviewData?.cleanup();
       await adminApplicationReviewData?.cleanup();
+      await reviewsReviewData?.cleanup();
       await connection.close();
     }
     console.log('Base efémera desta execução removida.');
@@ -70,7 +75,8 @@ try {
       reviewProducer ||
       reviewAuctions ||
       reviewApplication ||
-      reviewAdminApplications
+      reviewAdminApplications ||
+      reviewReviews
         ? '900'
         : '60',
     JWT_SECRET: randomBytes(48).toString('base64url'),
@@ -88,6 +94,15 @@ try {
   await orders.prepare();
   await preparation.prepare();
   const adminAuctions = createAdminAuctionsService(connection, authConfig.secret);
+  const reviews = createReviewsService(connection, authConfig.secret);
+  await reviews.prepare();
+  if (reviewReviews) {
+    reviewsReviewData = await reviewsReview(connection, reviews);
+    console.log(
+      'Revisão de avaliações — contas históricas fictícias em ficheiro privado: ' +
+        reviewsReviewData.file,
+    );
+  }
   const admin = createAdminService(connection, authConfig.secret);
   await admin.prepare();
   const producerApplications = createProducerApplicationService(connection, authConfig.secret);
@@ -137,6 +152,7 @@ try {
       producerApplications,
       admin,
       adminAuctions,
+      reviews,
       adminOrders: createAdminOrdersService(connection),
       adminLimits: { ipLimit: 100000, accountLimit: 100000 },
       security: authConfig,

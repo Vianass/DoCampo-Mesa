@@ -193,12 +193,15 @@ test('produtos relacionados usam categoria do servidor, excluem o atual e mantê
 test('perfil real não associa avaliações demonstrativas ou pontuações', async ({ page }) => {
   await page.goto('/produtores/fdbe9e7dd68e7983981d7b7e');
   await expect(
-    page.getByRole('heading', { name: 'Avaliações ainda não disponíveis.' }),
-  ).toBeVisible();
+    page.getByRole('heading', { name: 'Ainda sem palavras à mesa.', exact: true }),
+  ).toHaveCount(2);
   await expect(
     page.locator('.producer-rating-link,.producer-reviews-summary,.review-card'),
   ).toHaveCount(0);
-  await expect(page.locator('#producer-reviews')).toContainText('Não se atribuem classificações');
+  await expect(page.locator('#producer-reviews .reviews-summary')).toHaveText([
+    /Sem classificação · 0 avaliações publicadas/,
+    /Sem classificação · 0 avaliações publicadas/,
+  ]);
   await expect(page.locator('form')).toHaveCount(0);
 });
 
@@ -207,8 +210,8 @@ test('perfil sem avaliações ou certificação mostra ausência sem criar class
 }) => {
   await page.goto('/produtores/fdbe9e7dd68e7983981d7b7e');
   await expect(
-    page.getByRole('heading', { name: 'Avaliações ainda não disponíveis.' }),
-  ).toBeVisible();
+    page.getByRole('heading', { name: 'Ainda sem palavras à mesa.', exact: true }),
+  ).toHaveCount(2);
   await expect(
     page.locator('.producer-reviews-summary,.review-card,.producer-certification'),
   ).toHaveCount(0);

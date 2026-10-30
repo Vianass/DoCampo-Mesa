@@ -1,0 +1,109 @@
+@use 'tokens' as t;
+.real-reviews {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  .review-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    margin-block: 1.5rem;
+  }
+  .review-card__text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .review-distribution {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    div {
+      min-width: 4.5rem;
+    }
+    dd {
+      margin: 0;
+    }
+  }
+  .review-stars {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-block: 1rem;
+    label {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      min-height: 44px;
+      padding: 0.5rem;
+      border: 1px solid t.$line;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+    label:has(:checked) {
+      background: t.$forest;
+      color: white;
+    }
+    label:focus-within {
+      outline: 2px solid t.$forest;
+      outline-offset: 3px;
+    }
+    input {
+      accent-color: t.$forest;
+    }
+  }
+  fieldset {
+    min-width: 0;
+  }
+  legend {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .review-confirmation {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    min-height: 44px;
+    margin-block: 1rem;
+    input {
+      margin-top: 0.4rem;
+      flex-shrink: 0;
+    }
+  }
+  .reviews-filters {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+    margin-block: 1.5rem;
+    align-items: start;
+  }
+  .review-targets {
+    padding-left: 1rem;
+    li {
+      margin-block: 1.5rem;
+    }
+  }
+  .review-dependency {
+    border-left: 2px solid t.$forest;
+    padding: 1rem;
+    max-width: 70ch;
+  }
+  @media (min-width: 768px) {
+    .review-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .reviews-filters {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .review-stars {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1280px) {
+    .reviews-filters {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+}
+.public-reviews {
+  margin-block: 4rem;
+}

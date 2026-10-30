@@ -1,4 +1,6 @@
 import type { AdminAuctionsService } from './modules/admin-auctions/admin-auctions.service.js';
+import type { ReviewsService } from './modules/reviews/reviews.service.js';
+import { reviewsRoutes } from './modules/reviews/reviews.routes.js';
 import type { AdminOrdersService } from './modules/admin-orders/admin-orders.service.js';
 import express from 'express';
 import { ApiError } from './http/api-error.js';
@@ -38,6 +40,7 @@ export function createApp(
     admin?: AdminService;
     adminOrders?: AdminOrdersService;
     adminAuctions?: AdminAuctionsService;
+    reviews?: ReviewsService;
     adminLimits?: AuctionRateOptions;
     security?: HttpSecurityConfiguration;
     rateLimit?: AuthRateLimitOptions;
@@ -55,6 +58,7 @@ export function createApp(
   app.use(httpSecurity(security));
   app.use(express.json({ limit: '100kb', inflate: false }));
   if (options.auth) app.use('/api/auth', authRoutes(options.auth, options.rateLimit));
+  if (options.reviews) app.use('/api', reviewsRoutes(options.reviews, options.auth));
   if (options.catalog) app.use('/api', catalogRoutes(options.catalog, options.auth));
   if (options.orders)
     app.use('/api/orders', ordersRoutes(options.orders, options.auth, options.preparation));
@@ -73,6 +77,7 @@ export function createApp(
         options.adminLimits,
         options.adminOrders,
         options.adminAuctions,
+        options.reviews,
       ),
     );
   app.use('/api', technicalRoutes());

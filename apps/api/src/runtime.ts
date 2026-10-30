@@ -1,4 +1,5 @@
 import { createAdminAuctionsService } from './modules/admin-auctions/admin-auctions.service.js';
+import { createReviewsService } from './modules/reviews/reviews.service.js';
 import { createAdminOrdersService } from './modules/admin-orders/admin-orders.service.js';
 import { createServer } from 'node:http';
 import { createApp } from './app.js';
@@ -42,6 +43,9 @@ export async function startApi(
     throw new Error('Ligação de autenticação indisponível.');
   }
   const auth = authentication ? createAuthService(database.connection!, authentication) : undefined;
+  const reviews = authentication
+    ? createReviewsService(database.connection!, authentication.secret)
+    : undefined;
   const catalog = authentication
     ? createCatalogService(database.connection!, authentication.secret)
     : undefined;
@@ -65,6 +69,7 @@ export async function startApi(
     if (admin) await admin.prepare();
     if (auth) await auth.prepare();
     if (catalog) await catalog.prepare();
+    if (reviews) await reviews.prepare();
     if (orders) await orders.prepare();
     if (preparation) await preparation.prepare();
     if (producerApplications) await producerApplications.prepare();
@@ -92,6 +97,7 @@ export async function startApi(
             producerApplications,
             admin,
             adminAuctions,
+            reviews,
             adminOrders: auth ? createAdminOrdersService(database.connection!) : undefined,
             security: authentication,
           }

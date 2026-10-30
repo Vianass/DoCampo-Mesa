@@ -15,6 +15,7 @@ import { RemoteError } from '../features/market/RemoteError';
 import { DetailLoadingPage } from '../features/market/DetailLoadingPage';
 import { CatalogPagination } from '../features/catalog/CatalogPagination';
 import { CommercialInfo } from '../features/market/CommercialInfo';
+import { PublicReviews } from '../features/reviews/PublicReviews';
 export default function ProducerDetailPage() {
   const { id = '' } = useParams();
   const [params, setParams] = useSearchParams();
@@ -92,8 +93,8 @@ export default function ProducerDetailPage() {
             ))}
           </ul>
           <p className="profile-demo-note">
-            Informação publicada pelo produtor. Histórias adicionais, métodos, certificações e
-            avaliações não são disponibilizados nesta fase.
+            Informação publicada pelo produtor. Histórias adicionais, métodos e certificações não
+            são disponibilizados nesta fase.
           </p>
         </header>
         <section className="producer-story-section" aria-labelledby="producer-story-title">
@@ -167,7 +168,7 @@ export default function ProducerDetailPage() {
           </div>
           <EmptyState
             title="Conhecer sem inventar."
-            description="Mapa, certificações e avaliações serão apresentados quando existirem dados públicos verificados e contratos próprios."
+            description="Mapa e certificações serão apresentados quando existirem dados públicos verificados e contratos próprios."
           />
         </section>
         <section
@@ -180,9 +181,19 @@ export default function ProducerDetailPage() {
             eyebrow="A mesa também conta histórias"
             title="Palavras de quem se aproxima."
           />
-          <EmptyState
-            title="Avaliações ainda não disponíveis."
-            description="As avaliações ainda não estão disponíveis nesta fase. Não se atribuem classificações nem se associam avaliações demonstrativas a este perfil."
+          <PublicReviews
+            key={producer.id + 'produtor'}
+            id={producer.id}
+            kind="producers"
+            alvoTipo="produtor"
+            title="Avaliações diretas deste produtor."
+          />
+          <PublicReviews
+            key={producer.id + 'produto'}
+            id={producer.id}
+            kind="producers"
+            alvoTipo="produto"
+            title="Avaliações dos produtos desta origem."
           />
         </section>
       </Container>

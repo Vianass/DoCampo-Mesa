@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 9 — avaliações verificadas e moderação, implementação local para revisão.** Produtos e produtores avaliados separadamente a partir de compras históricas concluídas, comentários imutáveis, médias públicas reais, ocultação/restauro com ETag e auditoria. O fluxo normal ainda depende da futura confirmação de receção para ganhar elegibilidade. Ver [contratos, decisões e limitações](docs/api/phase-9-reviews-moderation.md).
+
 **Fase 8C — supervisão administrativa de leilões reais, implementação local para revisão.** Pesquisa/filtros e paginação global, detalhe/histórico, indicadores e acompanhamento Socket.IO de leitura, com REST/MongoDB como fonte de verdade. Ver [arquitetura, contratos e limites](docs/api/phase-8c-admin-auction-supervision.md).
 
 **Fase 8B — supervisão administrativa de encomendas reais, implementação local para revisão.** Consulta global, filtros e paginação no MongoDB, snapshots e históricos separados, sem comandos operacionais. Ver [arquitetura, contratos e limites](docs/api/phase-8b-admin-order-supervision.md).

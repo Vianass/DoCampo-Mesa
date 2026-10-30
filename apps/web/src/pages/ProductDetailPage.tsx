@@ -19,6 +19,7 @@ import { DetailLoadingPage } from '../features/market/DetailLoadingPage';
 import { CommercialInfo } from '../features/market/CommercialInfo';
 import type { Product } from '../types/market';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { PublicReviews } from '../features/reviews/PublicReviews';
 function RelatedProducts({ product }: { product: Product }) {
   const query = new URLSearchParams({ categoria: product.categoryId!, porPagina: '12' }).toString();
   const remote = useRemote(query, (signal) => catalogApi.products(query, signal));
@@ -183,6 +184,12 @@ export default function ProductDetailPage() {
             <CommercialInfo value={dto.comercial} />
           </div>
         </section>
+        <PublicReviews
+          key={product.id}
+          id={product.id}
+          kind="products"
+          title="Palavras sobre este produto."
+        />
         <RelatedProducts product={product} />
       </Container>
     </div>

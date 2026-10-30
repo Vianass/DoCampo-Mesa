@@ -1,4 +1,6 @@
 import type { AdminAuctionsService } from '../admin-auctions/admin-auctions.service.js';
+import type { ReviewsService } from '../reviews/reviews.service.js';
+import { adminReviewRoutes } from '../reviews/reviews.routes.js';
 import { adminAuctionQuery } from '../admin-auctions/admin-auctions.validation.js';
 import type { AdminOrdersService } from '../admin-orders/admin-orders.service.js';
 import {
@@ -20,6 +22,7 @@ export function adminRoutes(
   limits: AuctionRateOptions = {},
   orders?: AdminOrdersService,
   auctions?: AdminAuctionsService,
+  reviews?: ReviewsService,
 ) {
   const router = Router(),
     access = auth ? createAccessControl(auth) : undefined;
@@ -42,6 +45,14 @@ export function adminRoutes(
     rate.account(access!.principal(req).id, res);
     next();
   });
+  if (reviews)
+    router.use(
+      '/reviews',
+      adminReviewRoutes(reviews, (req) => {
+        if (!access) throw unauthorized();
+        return access.principal(req);
+      }),
+    );
   if (auctions) {
     router.get(
       '/auctions',

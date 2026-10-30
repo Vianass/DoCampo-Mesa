@@ -117,6 +117,8 @@ Esta escolha permite preparação privada antes da aprovação e ultrapassa a re
 
 ## Q10 — Avaliações e denúncias
 
+**Âmbito aprovado na Fase 9:** uma avaliação por encomenda/produto e uma direta por encomenda/produtor, após estado persistido `concluida` com evidência; 1–5, comentário obrigatório de 1–1000 caracteres, conteúdo imutável e publicação inicial imediata. Médias separadas, pseudónimo limitado e ocultação/restauro com motivo/auditoria. O fluxo atual chega a `pronta`; não se acrescenta conclusão artificial. Denúncias e detalhes residuais não ficam aprovados por inferência. Ver [registo e limitações da Fase 9](phase-9-reviews-moderation.md).
+
 **Problema:** escala, alvo, unicidade, edição, denunciante e identidade. **Documentado:** ambos os alvos, produto e produtor, após entrega são obrigatórios; F0 recomenda uma avaliação por encomenda/alvo, 1–5 e denúncia autenticada. Mocks só criam avaliação de produtor com limite de 1000 caracteres, provisório.
 
 **Alternativas e balanço:** uma por utilizador/alvo é simples mas perde experiências de compras repetidas; por encomenda mantém vínculo; edição exige histórico/política; anonimato protege denunciante mas dificulta abuso. **Backend:** elegibilidade, índices parciais, limites e moderação. **Frontend:** suportar também alvo produto e feedback, sem transformar mocks em compra verificada.
@@ -132,6 +134,8 @@ Esta escolha permite preparação privada antes da aprovação e ultrapassa a re
 **Recomendação P:** localização consentida para publicação, integração simples após verificar termos/limites. Nenhum fornecedor novo é aprovado aqui. **Necessária:** antes da integração real de mapa; 3.3 pode manter ausência explícita de coordenadas.
 
 ## Q12 — Remoção e moderação de conteúdos
+
+**Âmbito aprovado na Fase 9:** apenas ocultar/restaurar avaliações, com autorização administrativa, motivo, autoria, data, versionamento/ETag e preservação integral do conteúdo e decisões. Sem reescrita de comentários/classificações, eliminação ou poderes genéricos sobre outros conteúdos. Ver [contrato da Fase 9](phase-9-reviews-moderation.md).
 
 **Parcialmente resolvida por T32-05:** arquivo retira produtos da venda preservando histórico; publicado com stock zero pode permanecer visível sem compra. Estados de produto são rascunho/publicado/arquivado. **Problema residual:** restauro, DELETE físico, moderação de outros conteúdos e poderes administrativos. **Documentado:** DELETE 204 e moderação são obrigatórios; F0 recomenda arquivo de produtos referenciados e ocultação com autoria/data. Protótipo não permite apagar contas ou alterar encomendas.
 

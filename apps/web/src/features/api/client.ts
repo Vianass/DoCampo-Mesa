@@ -115,6 +115,12 @@ export async function requestJson<T>(
           'AUTODESATIVACAO_PROIBIDA',
           'ULTIMO_ADMINISTRADOR',
           'ESTADO_CONFLITO',
+          'AVALIACAO_DUPLICADA',
+          'COMPRA_NAO_ELEGIVEL',
+          'AVALIACAO_INVALIDA',
+          'PRODUTO_NAO_COMPRADO',
+          'AVALIACAO_NAO_ENCONTRADA',
+          'DECISAO_INVALIDA',
         ];
         if (known.includes(value?.codigo)) codigo = value.codigo;
         if (value?.repetirComMesmaChave === true) repeat = true;

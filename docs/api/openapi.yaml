@@ -2,7 +2,7 @@
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.8.2-local-admin-auctions
+  version: 0.9.0-local-reviews
   description:
     'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração React local; A Fase 5F acrescenta consulta e avanço operacional de encomendas pelo produtor autenticado, com ETag, auditoria e indicadores; A Fase 6A implementa leilões e licitações REST transacionais, sem encomenda automática, pagamentos ou Socket.IO; não existe publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
@@ -37,6 +37,12 @@ x-admin-auction-realtime:
   payload: apenas-consultar-true-sem-dados-comerciais
   authority: REST-MongoDB
   recovery: consulta-periodica-15-segundos-e-reconexao
+x-local-reviews: phase-9-reviews-moderation.md
+x-review-eligibility: concluida-com-evidencia-persistida-sem-atalhos-ou-pagamento-integrado
+x-review-limitations:
+  - Confirmação operacional de receção ainda não implementada; o fluxo normal chega a pronta.
+  - Denúncias por utilizadores e moderação genérica de outros conteúdos permanecem propostas, fora deste âmbito.
+  - Sem edição/eliminação de avaliações; histórico com até 1000 decisões, nunca truncado.
 x-base-commit: 807aa68
 x-preserved-phase0: true
 x-model-preparation-base: 68f41ec
@@ -1463,149 +1469,271 @@ paths:
       tags:
         - Avaliações
       summary: Consultar avaliações públicas do produto
-      description: Consultar avaliações públicas do produto. Operação proposta; não implementada.
-      security: []
-      x-authorized-roles:
-        - visitante
-        - comprador
-        - produtor
-        - administrador
-      x-decision-dependencies:
-        - Q10
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
+      description:
+        Implementado localmente na Fase 9. MongoDB é a fonte de verdade. Sem edição ou eliminação de conteúdo.
+        Sem transição artificial das encomendas. Operações privadas exigem conta ativa e papel atual no backend. Consultas
+        públicas incluem apenas avaliações publicadas; páginas são observações independentes. Comentários são texto
+        simples, não HTML.
+      x-implementation-stage: '9'
+      x-contract-status: implementado-localmente
       parameters:
-        - { $ref: '#/components/parameters/Id' }
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/PageSize'
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+          description: ''
+        - in: query
+          name: pagina
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+          description: ''
+        - in: query
+          name: porPagina
+          required: false
+          schema:
+            type: integer
+            enum:
+              - 12
+              - 24
+              - 36
+            default: 12
+          description: ''
+        - in: query
+          name: ordem
+          required: false
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+          description: Ordenação por criação e ID na mesma direção.
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: 'Resultado confirmado, Cache-Control: no-store.'
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Review'
-        '400':
-          $ref: '#/components/responses/Error400'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '500':
-          $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
-  /producers/{id}/reviews:
-    get:
-      operationId: listProducerReviews
-      tags:
-        - Avaliações
-      summary: Consultar avaliações públicas do produtor
-      description: Consultar avaliações públicas do produtor. Operação proposta; não implementada.
-      security: []
-      x-authorized-roles:
-        - visitante
-        - comprador
-        - produtor
-        - administrador
-      x-decision-dependencies:
-        - Q10
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
-      parameters:
-        - { $ref: '#/components/parameters/Id' }
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/PageSize'
-      responses:
-        '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Review'
-        '400':
-          $ref: '#/components/responses/Error400'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '500':
-          $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
-  /me/reviews:
-    get:
-      operationId: listOwnReviews
-      tags:
-        - Avaliações
-      summary: Consultar avaliações próprias
-      description: Consultar avaliações próprias. Operação proposta; não implementada.
-      security:
-        - bearerAuth: []
-      x-authorized-roles: *id006
-      x-decision-dependencies:
-        - Q10
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
-      parameters:
-        - { $ref: '#/components/parameters/Q' }
-        - { $ref: '#/components/parameters/Page' }
-        - { $ref: '#/components/parameters/PageSize' }
-      responses:
-        '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OwnReview'
+                $ref: '#/components/schemas/PublicReviewPage9'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
           $ref: '#/components/responses/Error503'
+      security: []
+  /producers/{id}/reviews:
+    get:
+      operationId: listProducerReviews
+      tags:
+        - Avaliações
+      summary: Consultar avaliações públicas do produtor ou dos seus produtos, separadamente
+      description:
+        Implementado localmente na Fase 9. MongoDB é a fonte de verdade. Sem edição ou eliminação de conteúdo.
+        Sem transição artificial das encomendas. Operações privadas exigem conta ativa e papel atual no backend. Consultas
+        públicas incluem apenas avaliações publicadas; páginas são observações independentes. Comentários são texto
+        simples, não HTML.
+      x-implementation-stage: '9'
+      x-contract-status: implementado-localmente
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+          description: ''
+        - in: query
+          name: pagina
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+          description: ''
+        - in: query
+          name: porPagina
+          required: false
+          schema:
+            type: integer
+            enum:
+              - 12
+              - 24
+              - 36
+            default: 12
+          description: ''
+        - in: query
+          name: ordem
+          required: false
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+          description: Ordenação por criação e ID na mesma direção.
+        - in: query
+          name: alvoTipo
+          required: false
+          schema:
+            type: string
+            enum:
+              - produto
+              - produtor
+            default: produtor
+          description: Nunca misturar as médias de produtos e do produtor.
+      responses:
+        '200':
+          description: 'Resultado confirmado, Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicReviewPage9'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      security: []
+  /me/reviews:
+    get:
+      operationId: listOwnReviews
+      tags:
+        - Avaliações
+      summary: Consultar avaliações próprias, incluindo ocultas
+      description:
+        Implementado localmente na Fase 9. MongoDB é a fonte de verdade. Sem edição ou eliminação de conteúdo.
+        Sem transição artificial das encomendas. Operações privadas exigem conta ativa e papel atual no backend. Consultas
+        públicas incluem apenas avaliações publicadas; páginas são observações independentes. Comentários são texto
+        simples, não HTML.
+      x-implementation-stage: '9'
+      x-contract-status: implementado-localmente
+      parameters:
+        - in: query
+          name: pagina
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+          description: ''
+        - in: query
+          name: porPagina
+          required: false
+          schema:
+            type: integer
+            enum:
+              - 12
+              - 24
+              - 36
+            default: 12
+          description: ''
+        - in: query
+          name: ordem
+          required: false
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+          description: Ordenação por criação e ID na mesma direção.
+      responses:
+        '200':
+          description: 'Resultado confirmado, Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnReviewPage9'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      security:
+        - bearerAuth: []
   /reviews:
     post:
       operationId: createReview
       tags:
         - Avaliações
-      summary: Avaliar produto ou produtor após entrega
+      summary: Avaliar produto comprado ou produtor da encomenda concluída
       description:
-        Validar encomenda entregue do autor e alvo da sua encomenda. Escala, unicidade e edição
-        aguardam Q10. Não confundir entrega fictícia do frontend com evidência persistida.
-      security:
-        - bearerAuth: []
-      x-authorized-roles: *id006
-      x-decision-dependencies:
-        - Q10
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReviewWrite'
+        Implementado localmente na Fase 9. MongoDB é a fonte de verdade. Sem edição ou eliminação de conteúdo.
+        Sem transição artificial das encomendas. Operações privadas exigem conta ativa e papel atual no backend. Consultas
+        públicas incluem apenas avaliações publicadas; páginas são observações independentes. Comentários são texto
+        simples, não HTML.
+      x-implementation-stage: '9'
+      x-contract-status: implementado-localmente
+      parameters: []
       responses:
         '201':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: 'Resultado confirmado, Cache-Control: no-store.'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OwnReview'
+                $ref: '#/components/schemas/OwnReview9'
           headers:
             Location:
-              description: URI do recurso criado. Para checkout, forma final depende de Q02.
+              description: /api/me/reviews/{id}
               schema:
                 type: string
         '400':
@@ -1614,12 +1742,30 @@ paths:
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
         '409':
           $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
           $ref: '#/components/responses/Error503'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreate9'
   /reviews/{id}/reports:
     post:
       operationId: reportReview
@@ -3926,6 +4072,464 @@ paths:
           $ref: '#/components/responses/Error500'
         '503':
           $ref: '#/components/responses/Error503'
+  /me/reviews/{id}:
+    get:
+      operationId: getOwnReview
+      tags:
+        - Avaliações
+      summary: Consultar uma avaliação própria
+      description:
+        Implementado localmente na Fase 9. MongoDB é a fonte de verdade. Sem edição ou eliminação de conteúdo.
+        Sem transição artificial das encomendas. Operações privadas exigem conta ativa e papel atual no backend. Consultas
+        públicas incluem apenas avaliações publicadas; páginas são observações independentes. Comentários são texto
+        simples, não HTML.
+      x-implementation-stage: '9'
+      x-contract-status: implementado-localmente
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+          description: ''
+      responses:
+        '200':
+          description: 'Resultado confirmado, Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnReview9'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      security:
+        - bearerAuth: []
+  /me/review-eligibility:
+    get:
+      operationId: getReviewEligibility
+      tags:
+        - Avaliações
+      summary: Consultar compras e elegibilidade para avaliação
+      description:
+        Implementado localmente na Fase 9. MongoDB é a fonte de verdade. Sem edição ou eliminação de conteúdo.
+        Sem transição artificial das encomendas. Operações privadas exigem conta ativa e papel atual no backend. Consultas
+        públicas incluem apenas avaliações publicadas; páginas são observações independentes. Comentários são texto
+        simples, não HTML.
+      x-implementation-stage: '9'
+      x-contract-status: implementado-localmente
+      parameters:
+        - in: query
+          name: pagina
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+          description: ''
+        - in: query
+          name: porPagina
+          required: false
+          schema:
+            type: integer
+            enum:
+              - 12
+              - 24
+              - 36
+            default: 12
+          description: ''
+        - in: query
+          name: ordem
+          required: false
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+          description: Ordenação por criação e ID na mesma direção.
+      responses:
+        '200':
+          description: 'Resultado confirmado, Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewEligibilityPage9'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      security:
+        - bearerAuth: []
+  /admin/reviews:
+    get:
+      operationId: listAdminReviews
+      tags:
+        - Administração
+      summary: Consultar avaliações para moderação
+      description:
+        Implementado localmente na Fase 9. MongoDB é a fonte de verdade. Sem edição ou eliminação de conteúdo.
+        Sem transição artificial das encomendas. Operações privadas exigem conta ativa e papel atual no backend. Consultas
+        públicas incluem apenas avaliações publicadas; páginas são observações independentes. Comentários são texto
+        simples, não HTML.
+      x-implementation-stage: '9'
+      x-contract-status: implementado-localmente
+      parameters:
+        - in: query
+          name: pagina
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+          description: ''
+        - in: query
+          name: porPagina
+          required: false
+          schema:
+            type: integer
+            enum:
+              - 12
+              - 24
+              - 36
+            default: 12
+          description: ''
+        - in: query
+          name: ordem
+          required: false
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+          description: Ordenação por criação e ID na mesma direção.
+        - in: query
+          name: estado
+          required: false
+          schema:
+            type: string
+            enum:
+              - publicada
+              - oculta
+          description: ''
+        - in: query
+          name: classificacao
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          description: ''
+        - in: query
+          name: produto
+          required: false
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+          description: ''
+        - in: query
+          name: produtor
+          required: false
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+          description: ID do perfil público do produtor, não a conta users.
+        - in: query
+          name: identificador
+          required: false
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+          description: ID exato da avaliação; sem pesquisa por comentário ou regex.
+        - in: query
+          name: alvoTipo
+          required: false
+          schema:
+            type: string
+            enum:
+              - produto
+              - produtor
+          description: ''
+      responses:
+        '200':
+          description: 'Resultado confirmado, Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminReviewPage9'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      security:
+        - bearerAuth: []
+  /admin/reviews/{id}:
+    get:
+      operationId: getAdminReview
+      tags:
+        - Administração
+      summary: Consultar avaliação e ETag de moderação
+      description:
+        Implementado localmente na Fase 9. MongoDB é a fonte de verdade. Sem edição ou eliminação de conteúdo.
+        Sem transição artificial das encomendas. Operações privadas exigem conta ativa e papel atual no backend. Consultas
+        públicas incluem apenas avaliações publicadas; páginas são observações independentes. Comentários são texto
+        simples, não HTML.
+      x-implementation-stage: '9'
+      x-contract-status: implementado-localmente
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+          description: ''
+      responses:
+        '200':
+          description: 'Resultado confirmado, Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminReview9'
+          headers:
+            ETag:
+              description: ETag forte da versão/estado atuais.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      security:
+        - bearerAuth: []
+  /admin/reviews/{id}/history:
+    get:
+      operationId: getReviewModerationHistory
+      tags:
+        - Administração
+      summary: Consultar histórico imutável de decisões
+      description:
+        Implementado localmente na Fase 9. MongoDB é a fonte de verdade. Sem edição ou eliminação de conteúdo.
+        Sem transição artificial das encomendas. Operações privadas exigem conta ativa e papel atual no backend. Consultas
+        públicas incluem apenas avaliações publicadas; páginas são observações independentes. Comentários são texto
+        simples, não HTML.
+      x-implementation-stage: '9'
+      x-contract-status: implementado-localmente
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+          description: ''
+        - in: query
+          name: pagina
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+          description: ''
+        - in: query
+          name: porPagina
+          required: false
+          schema:
+            type: integer
+            enum:
+              - 12
+              - 24
+              - 36
+            default: 12
+          description: ''
+        - in: query
+          name: ordem
+          required: false
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+          description: Ordenação por criação e ID na mesma direção.
+      responses:
+        '200':
+          description: 'Resultado confirmado, Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewDecisionPage9'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      security:
+        - bearerAuth: []
+  /admin/reviews/{id}/moderation:
+    patch:
+      operationId: moderateReview
+      tags:
+        - Administração
+      summary: Ocultar ou restaurar, com motivo, ETag e auditoria
+      description:
+        Implementado localmente na Fase 9. MongoDB é a fonte de verdade. Sem edição ou eliminação de conteúdo.
+        Sem transição artificial das encomendas. Operações privadas exigem conta ativa e papel atual no backend. Consultas
+        públicas incluem apenas avaliações publicadas; páginas são observações independentes. Comentários são texto
+        simples, não HTML.
+      x-implementation-stage: '9'
+      x-contract-status: implementado-localmente
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+          description: ''
+        - in: header
+          name: If-Match
+          required: true
+          schema:
+            type: string
+            pattern: ^"[A-Za-z0-9_-]{43}"$
+          description: ETag forte atual recebido na consulta; obrigatório para decidir.
+      responses:
+        '200':
+          description: 'Resultado confirmado, Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminReview9'
+          headers:
+            ETag:
+              description: ETag forte da versão/estado atuais.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewDecision9'
 components:
   securitySchemes:
     bearerAuth:
@@ -10008,3 +10612,667 @@ components:
       description:
         Uma leitura snapshot de cabeça e bids, ordenada por sequência. Total é a sequência dessa observação;
         não se promete snapshot estável entre páginas pedidas em momentos diferentes.
+
+    PublicReview9:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - alvoTipo
+        - alvoNome
+        - produtorPerfilId
+        - classificacao
+        - comentario
+        - criadaEm
+        - autorPublico
+        - compraVerificada
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+        alvoNome:
+          type: string
+        produtoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        produtorPerfilId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        classificacao:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comentario:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        criadaEm:
+          type: string
+          format: date-time
+        autorPublico:
+          type: string
+          description: Pseudónimo HMAC específico desta avaliação. Não é nome, email ou ID privado.
+        compraVerificada:
+          type: boolean
+          enum:
+            - true
+
+    OwnReview9:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - alvoTipo
+        - alvoNome
+        - produtorPerfilId
+        - classificacao
+        - comentario
+        - criadaEm
+        - autorPublico
+        - compraVerificada
+        - encomendaId
+        - estado
+        - versao
+        - atualizadaEm
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+        alvoNome:
+          type: string
+        produtoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        produtorPerfilId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        classificacao:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comentario:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        criadaEm:
+          type: string
+          format: date-time
+        autorPublico:
+          type: string
+          description: Pseudónimo HMAC específico desta avaliação. Não é nome, email ou ID privado.
+        compraVerificada:
+          type: boolean
+          enum:
+            - true
+        encomendaId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        estado:
+          type: string
+          enum:
+            - publicada
+            - oculta
+        versao:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        atualizadaEm:
+          type: string
+          format: date-time
+
+    AdminReview9:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - alvoTipo
+        - alvoNome
+        - produtorPerfilId
+        - classificacao
+        - comentario
+        - criadaEm
+        - autorPublico
+        - compraVerificada
+        - encomendaId
+        - estado
+        - versao
+        - atualizadaEm
+        - produtorContaId
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+        alvoNome:
+          type: string
+        produtoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        produtorPerfilId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        classificacao:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comentario:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        criadaEm:
+          type: string
+          format: date-time
+        autorPublico:
+          type: string
+          description: Pseudónimo HMAC específico desta avaliação. Não é nome, email ou ID privado.
+        compraVerificada:
+          type: boolean
+          enum:
+            - true
+        encomendaId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        estado:
+          type: string
+          enum:
+            - publicada
+            - oculta
+        versao:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        atualizadaEm:
+          type: string
+          format: date-time
+        produtorContaId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+
+    PublicReviewPage9:
+      type: object
+      additionalProperties: false
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+        - resumo
+      properties:
+        itens:
+          type: array
+          maxItems: 36
+          items:
+            $ref: '#/components/schemas/PublicReview9'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalPaginas:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        resumo:
+          type: object
+          additionalProperties: false
+          required:
+            - numeroAvaliacoes
+            - media
+            - distribuicao
+          properties:
+            numeroAvaliacoes:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            media:
+              type: number
+              minimum: 1
+              maximum: 5
+              nullable: true
+            distribuicao:
+              type: object
+              additionalProperties: false
+              required:
+                - '1'
+                - '2'
+                - '3'
+                - '4'
+                - '5'
+              properties:
+                '1':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '2':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '3':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '4':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '5':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+
+    OwnReviewPage9:
+      type: object
+      additionalProperties: false
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+        - resumo
+      properties:
+        itens:
+          type: array
+          maxItems: 36
+          items:
+            $ref: '#/components/schemas/OwnReview9'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalPaginas:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        resumo:
+          type: object
+          additionalProperties: false
+          required:
+            - numeroAvaliacoes
+            - media
+            - distribuicao
+          properties:
+            numeroAvaliacoes:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            media:
+              type: number
+              minimum: 1
+              maximum: 5
+              nullable: true
+            distribuicao:
+              type: object
+              additionalProperties: false
+              required:
+                - '1'
+                - '2'
+                - '3'
+                - '4'
+                - '5'
+              properties:
+                '1':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '2':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '3':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '4':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '5':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+
+    AdminReviewPage9:
+      type: object
+      additionalProperties: false
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+        - resumo
+      properties:
+        itens:
+          type: array
+          maxItems: 36
+          items:
+            $ref: '#/components/schemas/AdminReview9'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalPaginas:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        resumo:
+          type: object
+          additionalProperties: false
+          required:
+            - numeroAvaliacoes
+            - media
+            - distribuicao
+          properties:
+            numeroAvaliacoes:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            media:
+              type: number
+              minimum: 1
+              maximum: 5
+              nullable: true
+            distribuicao:
+              type: object
+              additionalProperties: false
+              required:
+                - '1'
+                - '2'
+                - '3'
+                - '4'
+                - '5'
+              properties:
+                '1':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '2':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '3':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '4':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                '5':
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+
+    ReviewCreate9:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - encomendaId
+            - classificacao
+            - comentario
+            - alvoTipo
+            - produtoId
+          properties:
+            encomendaId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+            classificacao:
+              type: integer
+              minimum: 1
+              maximum: 5
+            comentario:
+              type: string
+              minLength: 1
+              maxLength: 1000
+              description: Texto NFC normalizado e sem controlos perigosos. Apresentado como texto, nunca HTML.
+            alvoTipo:
+              type: string
+              enum:
+                - produto
+            produtoId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+        - type: object
+          additionalProperties: false
+          required:
+            - encomendaId
+            - classificacao
+            - comentario
+            - alvoTipo
+          properties:
+            encomendaId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+            classificacao:
+              type: integer
+              minimum: 1
+              maximum: 5
+            comentario:
+              type: string
+              minLength: 1
+              maxLength: 1000
+              description: Texto NFC normalizado e sem controlos perigosos. Apresentado como texto, nunca HTML.
+            alvoTipo:
+              type: string
+              enum:
+                - produtor
+
+    ReviewDecision9:
+      type: object
+      additionalProperties: false
+      required:
+        - estado
+        - motivo
+      properties:
+        estado:
+          type: string
+          enum:
+            - publicada
+            - oculta
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 2000
+
+    ReviewDecisionEvent9:
+      type: object
+      additionalProperties: false
+      required:
+        - administradorId
+        - ocorridoEm
+        - anterior
+        - estado
+        - motivo
+        - versao
+      properties:
+        administradorId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        ocorridoEm:
+          type: string
+          format: date-time
+        anterior:
+          type: string
+          enum:
+            - publicada
+            - oculta
+        estado:
+          type: string
+          enum:
+            - publicada
+            - oculta
+        motivo:
+          type: string
+        versao:
+          type: integer
+          minimum: 1
+
+    ReviewDecisionPage9:
+      type: object
+      additionalProperties: false
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+        - versaoSnapshot
+      properties:
+        itens:
+          type: array
+          maxItems: 36
+          items:
+            $ref: '#/components/schemas/ReviewDecisionEvent9'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalPaginas:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        versaoSnapshot:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+
+    ReviewEligibilityTarget9:
+      type: object
+      additionalProperties: false
+      required:
+        - alvoTipo
+        - nome
+        - avaliacaoId
+      properties:
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+        nome:
+          type: string
+        produtoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        avaliacaoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+          nullable: true
+
+    ReviewEligibleOrder9:
+      type: object
+      additionalProperties: false
+      required:
+        - encomendaId
+        - estadoEncomenda
+        - elegivel
+        - alvos
+      properties:
+        encomendaId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        estadoEncomenda:
+          type: string
+          enum:
+            - pendente
+            - confirmada
+            - em_preparacao
+            - pronta
+            - concluida
+            - cancelada
+        elegivel:
+          type: boolean
+        alvos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewEligibilityTarget9'
+
+    ReviewEligibilityPage9:
+      type: object
+      additionalProperties: false
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+      properties:
+        itens:
+          type: array
+          maxItems: 36
+          items:
+            $ref: '#/components/schemas/ReviewEligibleOrder9'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalPaginas:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991

@@ -133,6 +133,19 @@ export function mockCatalogResponse(url: URL) {
       adapted.sort((a, b) => a.name.localeCompare(b.name, 'pt', { sensitivity: 'base' }));
     return adapted.map((item) => list.find((v) => v.id === item.id)!);
   }
+  if (/^\/(products|producers)\/[a-f0-9]{24}\/reviews$/.test(path)) {
+    const [, kind, id] = path.split('/');
+    if (!(kind === 'products' ? productDtos : producerDtos).some((item) => item.id === id))
+      return undefined;
+    return {
+      ...envelope([], p),
+      resumo: {
+        numeroAvaliacoes: 0,
+        media: null,
+        distribuicao: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
+      },
+    };
+  }
   if (path === '/products') return envelope(selection(), p);
   if (path.startsWith('/products/'))
     return productDtos.find((item) => item.id === path.split('/').at(-1));

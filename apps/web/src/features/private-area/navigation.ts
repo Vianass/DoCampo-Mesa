@@ -120,7 +120,7 @@ export function demoDestination(raw: string | null, role: Role) {
   if (
     role === 'comprador' &&
     raw &&
-    /^\/area\/comprador\/(encomendas|licitacoes)\/[a-z0-9-]+$/.test(raw)
+    /^\/area\/comprador\/(encomendas|licitacoes|avaliacoes)\/[a-z0-9-]+$/.test(raw)
   )
     return raw;
   if (

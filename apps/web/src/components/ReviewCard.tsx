@@ -5,7 +5,13 @@ const dateFormat = new Intl.DateTimeFormat('pt-PT', {
   timeZone: 'Europe/Lisbon',
 });
 
-export function ReviewCard({ review }: { review: ProducerReview }) {
+export function ReviewCard({
+  review,
+  verified = false,
+}: {
+  review: Pick<ProducerReview, 'displayName' | 'rating' | 'text' | 'createdAt'>;
+  verified?: boolean;
+}) {
   return (
     <article className="review-card" aria-label={`Avaliação de ${review.displayName}`}>
       <div className="review-card__top">
@@ -16,7 +22,7 @@ export function ReviewCard({ review }: { review: ProducerReview }) {
           </span>
           <span>{review.rating}/5</span>
         </p>
-        <span className="review-card__demo">Demonstração</span>
+        <span className="review-card__demo">{verified ? 'Compra verificada' : 'Demonstração'}</span>
       </div>
       <p className="review-card__text">{review.text}</p>
       <footer>
