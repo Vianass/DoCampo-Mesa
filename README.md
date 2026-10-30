@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 7C — análise administrativa de candidaturas, implementação local para revisão.** Listagem, detalhe, aprovação e rejeição reais, confirmação acessível e concorrência por ETag, com API como autoridade. Inclui recuperação coerente de páginas indisponíveis e correção de contraste nas transições dos botões administrativos. Ver [arquitetura, testes, revisão e limitações](docs/api/phase-7c-admin-producer-applications.md).
+
 **Fase 7B — candidatura de produtores no React, implementação local para revisão.** Formulário autenticado, consulta de estado, reapresentação e histórico reais em `/area/candidatura-produtor`. A aprovação atualiza as capacidades através de `/auth/me`, mantendo o JWT em memória e a autoridade do backend. Sem administração no React. Ver [arquitetura, testes, revisão e limitações](docs/api/phase-7b-react-producer-applications.md).
 
 **Fase 7A — candidaturas e aprovação de produtores, implementação backend local para revisão.** Submissão e consulta próprias, listagem/detalhe administrativos, decisões transacionais e reapresentação com histórico privado. Aprovação acumula o papel de produtor sem publicar produtos ou configurar vendas. Frontend e demonstrações existentes preservados; integração React futura. Ver [contratos, segurança, testes e limitações](docs/api/phase-7a-producer-applications.md).

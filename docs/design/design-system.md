@@ -558,3 +558,13 @@ Mobile First: cartões numa coluna a 320/430 px, duas a partir de 768 px; o deta
 Não há anúncios por segundo: o relógio tem `aria-live="off"`; confirmações pessoais e resultados usam mensagens discretas. Há foco visível herdado, resumo de erros focável, labels, estados de carregamento/vazio/erro e respeito por movimento reduzido. A zero, «A confirmar…» precede o resultado do servidor. Sem ligação, a última confirmação é identificada e a submissão fica indisponível. A recuperação de uma tentativa pendente é uma ação distinta de enviar uma nova oferta.
 
 As seis larguras 320/430/768/1024/1280/1440 px são verificadas com dados reais de revisão. Capturas de catálogo, detalhe, gestão e formulário ficam nos artefactos ignorados do Playwright; a inspeção humana complementa os testes de overflow, controlos e erros JavaScript. Não se declara certificação de acessibilidade ou cobertura de todos os motores de navegador.
+
+## Fase 7C — análise administrativa de candidaturas
+
+A [interface real de candidaturas](../api/phase-7c-admin-producer-applications.md) conserva a introdução editorial, paleta, tipografia e navegação privada. A administração demonstrativa permanece separada. A visão geral real acrescenta apenas a entrada contextual e o total pendente devolvido pelo serviço, sem métricas fictícias ou redesenho geral.
+
+Os resumos usam cartões, filtros identificados e paginação do servidor. O detalhe reutiliza a leitura da candidatura; identificadores de auditoria e histórico são expansíveis. A decisão fica numa superfície própria, com aprovação explícita e motivo obrigatório apenas para rejeitar. O `dialog` nativo contém o foco e começa na ação de continuar a análise. Confirmações ficam desativadas enquanto o serviço decide.
+
+Uma decisão confirmada foca o título; erros focam um grupo de recuperação com um único texto assertive, distinto do nome do grupo. O motivo inválido foca o campo com erro associado. Conflitos mostram o estado relido, sem sucesso presumido. Cartões e filtros empilham em telemóvel; controlos de pelo menos 44 px, texto com quebra e estados por escrito preservam a utilização nas seis larguras existentes. A verificação audível com VoiceOver exige uma sessão manual própria; não é inferida da árvore de acessibilidade.
+
+As correções finais V7C-01/V7C-02 conservam filtros ao recuperar a última página real disponível, sem apresentar contadores de páginas impossíveis. A URL é substituída, sem criar uma entrada adicional no histórico. Os botões desta área, entrada e diálogos mudam de cor sem interpolação, mantendo os estados finais e o contorno de foco existentes; a regra não afeta o Button global ou outras áreas. O contraste é verificado também durante foco, hover, active e envio desativado.

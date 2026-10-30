@@ -9,6 +9,8 @@ import { LoadingSkeleton } from '../../components/LoadingSkeleton';
 import { AccountIdentity } from './AccountIdentity';
 import { ApplicationEntry } from '../producer-application/ApplicationEntry';
 import { applicationPath } from '../producer-application/model';
+import { AdminApplicationEntry } from '../admin-applications/AdminApplicationEntry';
+const AdminApplicationsArea = lazy(() => import('../admin-applications/AdminApplicationsArea'));
 const ProducerApplicationPage = lazy(
   () => import('../producer-application/ProducerApplicationPage'),
 );
@@ -41,6 +43,14 @@ export function AccountArea() {
         <h1>Este percurso não está na tua área.</h1>
         <Button to="/area">Voltar à minha área</Button>
       </section>
+    );
+  if (role === 'administrador' && pieces[2] === 'candidaturas')
+    return (
+      <Suspense
+        fallback={<LoadingSkeleton label="A carregar candidaturas administrativas" count={2} />}
+      >
+        <AdminApplicationsArea />
+      </Suspense>
     );
   if (role === 'produtor' && pieces[2] === 'leiloes')
     return (
@@ -85,29 +95,34 @@ export function AccountArea() {
       {role === 'comprador' && !pieces[2] && !session.user.papeis.includes('produtor') && (
         <ApplicationEntry />
       )}
+      {role === 'administrador' && !pieces[2] && <AdminApplicationEntry />}
       <section className="private-unavailable" aria-labelledby="account-activity-title">
         <p className="eyebrow">Um caminho em construção</p>
         <h2 id="account-activity-title">
           {section
             ? 'Esta funcionalidade ainda não está disponível nesta área.'
-            : 'A tua atividade ficará aqui.'}
+            : role === 'administrador'
+              ? 'Outras secções, em preparação.'
+              : 'A tua atividade ficará aqui.'}
         </h2>
         <p>
-          A ligação dos dados privados à tua conta será disponibilizada numa próxima etapa. Não
-          apresentamos encomendas, avaliações, candidaturas ou indicadores fictícios como sendo
-          teus.
+          {role === 'administrador' && !section
+            ? 'A análise de candidaturas utiliza dados reais. As restantes secções continuam em preparação, sem indicadores ou operações fictícias apresentados como reais.'
+            : 'A ligação dos dados privados à tua conta será disponibilizada numa próxima etapa. Não apresentamos encomendas, avaliações, candidaturas ou indicadores fictícios como sendo teus.'}
         </p>
         {!section && (
           <div className="buyer-dashboard-grid">
-            {privateSections[role].map((item) => (
-              <article key={item.slug} className="private-prototype">
-                <h3>{item.label}</h3>
-                <p>{item.description}</p>
-                <Link className="editorial-text-link" to={`${roleHome(role)}/${item.slug}`}>
-                  Consultar disponibilidade <Icon name="arrow" />
-                </Link>
-              </article>
-            ))}
+            {privateSections[role]
+              .filter((item) => role !== 'administrador' || item.slug !== 'candidaturas')
+              .map((item) => (
+                <article key={item.slug} className="private-prototype">
+                  <h3>{item.label}</h3>
+                  <p>{item.description}</p>
+                  <Link className="editorial-text-link" to={`${roleHome(role)}/${item.slug}`}>
+                    Consultar disponibilidade <Icon name="arrow" />
+                  </Link>
+                </article>
+              ))}
           </div>
         )}
         <p>

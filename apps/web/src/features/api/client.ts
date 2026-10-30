@@ -109,6 +109,7 @@ export async function requestJson<T>(
           'CANDIDATURA_NAO_ENCONTRADA',
           'CANDIDATURA_CONFLITO',
           'CANDIDATURA_INVALIDA',
+          'CANDIDATO_INELEGIVEL',
           'HISTORICO_DEMASIADO_GRANDE',
         ];
         if (known.includes(value?.codigo)) codigo = value.codigo;

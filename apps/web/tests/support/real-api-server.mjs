@@ -18,6 +18,7 @@ import { createProducerModel } from '../../../api/src/modules/producers/producer
 import { seedCatalog } from '../../../api/src/development/catalog-seed.ts';
 import { products, producers } from '../../src/data/market.ts';
 import { producerReview } from './producer-review.mjs';
+import { adminApplicationReview } from './admin-application-review.mjs';
 // Apenas MongoDB de teste em loopback; nenhuma .env, credencial ou base de desenvolvimento.
 const connection = await createConnection(
   'mongodb://127.0.0.1:27019/?replicaSet=rs-dcm-test&directConnection=true',
@@ -30,12 +31,14 @@ let server;
 let stopping;
 let producerReviewData;
 let auctionReviewData;
+let adminApplicationReviewData;
 let realtime;
 let stopAuctions;
 const reviewAuctions = process.env.DOCAMPO_AUCTION_REVIEW === '1';
 const checkoutReview = process.env.DOCAMPO_CHECKOUT_REVIEW === '1';
 const reviewProducer = process.env.DOCAMPO_PRODUCER_REVIEW === '1';
 const reviewApplication = process.env.DOCAMPO_APPLICATION_REVIEW === '1';
+const reviewAdminApplications = process.env.DOCAMPO_ADMIN_APPLICATION_REVIEW === '1';
 function stop() {
   return (stopping ??= (async () => {
     await realtime?.close();
@@ -47,6 +50,7 @@ function stop() {
     } finally {
       await producerReviewData?.cleanup();
       await auctionReviewData?.cleanup();
+      await adminApplicationReviewData?.cleanup();
       await connection.close();
     }
     console.log('Base efémera desta execução removida.');
@@ -59,7 +63,13 @@ try {
   const authConfig = parseAuthEnvironment({
     NODE_ENV: 'test',
     JWT_TTL_SECONDS:
-      checkoutReview || reviewProducer || reviewAuctions || reviewApplication ? '900' : '60',
+      checkoutReview ||
+      reviewProducer ||
+      reviewAuctions ||
+      reviewApplication ||
+      reviewAdminApplications
+        ? '900'
+        : '60',
     JWT_SECRET: randomBytes(48).toString('base64url'),
     CORS_ORIGINS: 'http://127.0.0.1:5183',
   });
@@ -76,6 +86,13 @@ try {
   await preparation.prepare();
   const producerApplications = createProducerApplicationService(connection, authConfig.secret);
   await producerApplications.prepare();
+  if (reviewAdminApplications) {
+    adminApplicationReviewData = await adminApplicationReview(connection, producerApplications);
+    console.log(
+      'Revisão administrativa — contas fictícias em ficheiro privado temporário: ' +
+        adminApplicationReviewData.file,
+    );
+  }
   const result = await seedCatalog(connection, { products, producers }, 'http://127.0.0.1:5183');
   const second = await seedCatalog(connection, { products, producers }, 'http://127.0.0.1:5183');
   if (second.inserted !== 0) throw Error('Seed não idempotente.');

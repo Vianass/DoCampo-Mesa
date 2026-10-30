@@ -1,0 +1,210 @@
+@use 'tokens' as t;
+.admin-applications,
+.admin-application-entry,
+.admin-decision-dialog {
+  min-width: 0;
+  .market-button {
+    max-width: 100%;
+    min-height: 48px;
+    white-space: normal;
+    // A mudança de foco não deve interpolar cores de texto e fundo com baixo contraste.
+    transition: none;
+  }
+}
+.admin-application-entry {
+  border-block: 1px solid t.$line;
+  padding-block: 28px;
+  margin-block: 28px;
+  h2 {
+    font-size: 2rem;
+  }
+  p {
+    line-height: 1.8;
+  }
+}
+.admin-applications {
+  #admin-list-title {
+    margin-block: 28px 14px;
+  }
+  .admin-application-paper > h2 {
+    margin-block: 14px 20px;
+  }
+  .admin-application-paper {
+    border: 1px solid t.$line;
+    border-radius: t.$radius-card;
+    padding: clamp(18px, 3vw, 28px);
+    background: t.$white;
+    margin-block: 24px;
+    min-width: 0;
+  }
+  .admin-application-cards {
+    display: grid;
+    gap: 20px;
+    margin-block: 24px;
+    .admin-application-paper {
+      margin: 0;
+    }
+    h3 {
+      margin-block: 16px;
+      font: 1.65rem/1.2 t.$font-heading;
+    }
+  }
+  .admin-application-filters {
+    display: grid;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .producer-field > label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .form-select,
+  .form-control {
+    min-width: 0;
+    width: 100%;
+    min-height: 48px;
+  }
+  .form-field__hint {
+    margin-top: 8px;
+  }
+  .producer-field-error {
+    color: #7f4027;
+  }
+  .application-data {
+    display: grid;
+    gap: 22px;
+    margin-block: 28px 0;
+    > div {
+      min-width: 0;
+    }
+    dt {
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: t.$muted;
+      margin-bottom: 6px;
+    }
+    dd {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      line-height: 1.8;
+    }
+  }
+  .admin-application-reason {
+    border-left: 2px solid t.$terracotta;
+    padding-left: 18px;
+    margin: 24px 0;
+    white-space: pre-wrap;
+  }
+  summary {
+    cursor: pointer;
+    min-height: 44px;
+    padding-block: 10px;
+    font-weight: 600;
+  }
+  .admin-application-audit {
+    margin-top: 28px;
+    border-top: 1px solid t.$line;
+    padding-top: 12px;
+  }
+  .admin-application-history article {
+    border-top: 1px solid t.$line;
+    padding-top: 24px;
+    margin-top: 24px;
+  }
+  .admin-decision-panel {
+    background: t.$cream;
+    padding: clamp(18px, 3vw, 28px);
+    border: 1px solid t.$line;
+    border-radius: t.$radius-card;
+    margin-block: 24px;
+    fieldset {
+      display: grid;
+      gap: 28px;
+      min-width: 0;
+    }
+  }
+  .admin-rejection {
+    border-top: 1px solid t.$line;
+    padding-top: 28px;
+    .market-button {
+      margin-top: 18px;
+    }
+  }
+  .admin-application-feedback {
+    border: 1px solid t.$line;
+    border-left: 3px solid t.$terracotta;
+    border-radius: t.$radius-small;
+    padding: 18px;
+    margin-block: 24px;
+  }
+  .admin-application-feedback--success {
+    border-left-color: t.$forest;
+    background: t.$cream;
+  }
+  .admin-application-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    margin-block: 28px;
+  }
+  .admin-application-terminal {
+    border-top: 1px solid t.$line;
+    padding-top: 24px;
+    color: t.$muted;
+  }
+  @media (min-width: 768px) {
+    .admin-application-filters {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .admin-application-cards,
+    .application-data {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .application-data__description {
+      grid-column: 1/-1;
+    }
+  }
+}
+.admin-decision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-block: 18px;
+}
+.admin-decision-dialog {
+  width: min(480px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  border: 1px solid t.$line;
+  border-radius: t.$radius-card;
+  padding: clamp(20px, 4vw, 32px);
+  color: t.$graphite;
+  background: t.$white;
+  overflow-wrap: anywhere;
+  h2 {
+    font: 2rem/1.15 t.$font-heading;
+  }
+  p,
+  blockquote {
+    line-height: 1.8;
+  }
+  blockquote {
+    border-left: 2px solid t.$terracotta;
+    padding: 12px 16px;
+    max-height: min(28dvh, 240px);
+    overflow: auto;
+    white-space: pre-wrap;
+  }
+  .market-button {
+    max-width: 100%;
+    white-space: normal;
+    min-height: 48px;
+  }
+  &::backdrop {
+    background: rgb(20 40 32 / 0.45);
+  }
+}
