@@ -1,3 +1,4 @@
+import { createAdminAuctionsService } from './modules/admin-auctions/admin-auctions.service.js';
 import { createAdminOrdersService } from './modules/admin-orders/admin-orders.service.js';
 import { createServer } from 'node:http';
 import { createApp } from './app.js';
@@ -75,6 +76,9 @@ export async function startApi(
     await database.close();
     throw new Error('Não foi possível preparar a autenticação.');
   }
+  const adminAuctions = authentication
+    ? createAdminAuctionsService(database.connection!, authentication.secret)
+    : undefined;
   const server = createServer(
     createApp(
       authentication
@@ -87,6 +91,7 @@ export async function startApi(
             auctions,
             producerApplications,
             admin,
+            adminAuctions,
             adminOrders: auth ? createAdminOrdersService(database.connection!) : undefined,
             security: authentication,
           }
@@ -95,7 +100,7 @@ export async function startApi(
   );
   const sockets =
     auctions && auth && authentication && realtime.enabled
-      ? attachAuctionSockets(server, auctions, auth, authentication, realtime)
+      ? attachAuctionSockets(server, auctions, auth, authentication, realtime, {}, adminAuctions)
       : undefined;
   try {
     await new Promise<void>((resolve, reject) => {

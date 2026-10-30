@@ -230,6 +230,11 @@ export function createAuctionModel(connection: Connection): Model<AuctionRecord>
   schema.pre('deleteOne', { document: true, query: false }, function () {
     throw Error('Não eliminar o histórico de leilões.');
   });
+  schema.index({ createdAt: -1, _id: -1 });
+  schema.index({ estado: 1, createdAt: -1, _id: -1 });
+  schema.index({ produtor: 1, createdAt: -1, _id: -1 });
+  schema.index({ produto: 1, createdAt: -1, _id: -1 });
+  schema.index({ iniciaEm: 1, createdAt: -1, _id: -1 });
   schema.index({ produtor: 1, createdAt: -1 });
   schema.index({ estado: 1, terminaEm: 1 });
   schema.index({ estado: 1, iniciaEm: 1 });

@@ -1,3 +1,4 @@
+import type { AdminAuctionsService } from './modules/admin-auctions/admin-auctions.service.js';
 import type { AdminOrdersService } from './modules/admin-orders/admin-orders.service.js';
 import express from 'express';
 import { ApiError } from './http/api-error.js';
@@ -36,6 +37,7 @@ export function createApp(
     auctionLimits?: AuctionRateOptions;
     admin?: AdminService;
     adminOrders?: AdminOrdersService;
+    adminAuctions?: AdminAuctionsService;
     adminLimits?: AuctionRateOptions;
     security?: HttpSecurityConfiguration;
     rateLimit?: AuthRateLimitOptions;
@@ -65,7 +67,13 @@ export function createApp(
   if (options.admin)
     app.use(
       '/api/admin',
-      adminRoutes(options.admin, options.auth, options.adminLimits, options.adminOrders),
+      adminRoutes(
+        options.admin,
+        options.auth,
+        options.adminLimits,
+        options.adminOrders,
+        options.adminAuctions,
+      ),
     );
   app.use('/api', technicalRoutes());
   app.use((_request, _response, next) => {

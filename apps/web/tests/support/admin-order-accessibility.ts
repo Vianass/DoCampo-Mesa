@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 /** Verificação calculada no Chrome; não substitui avaliação audível ou certificação WCAG. */
-export async function inspectOrderContrast(page: Page) {
-  const samples = await page.locator('.admin-orders').evaluate((root) => {
+export async function inspectOrderContrast(page: Page, selector = '.admin-orders') {
+  const samples = await page.locator(selector).evaluate((root) => {
     const rgba = (s: string) => {
       const a = s.match(/[\d.]+/g)?.map(Number) ?? [];
       return a.length >= 3 ? [...a.slice(0, 3), a[3] ?? 1] : [0, 0, 0, 0];

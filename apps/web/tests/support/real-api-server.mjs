@@ -1,3 +1,4 @@
+import { createAdminAuctionsService } from '../../../api/src/modules/admin-auctions/admin-auctions.service.ts';
 import { createAdminOrdersService } from '../../../api/src/modules/admin-orders/admin-orders.service.ts';
 import process from 'node:process';
 import console from 'node:console';
@@ -86,6 +87,7 @@ try {
   const producerOrders = createProducerOrdersService(connection, authConfig.secret);
   await orders.prepare();
   await preparation.prepare();
+  const adminAuctions = createAdminAuctionsService(connection, authConfig.secret);
   const admin = createAdminService(connection, authConfig.secret);
   await admin.prepare();
   const producerApplications = createProducerApplicationService(connection, authConfig.secret);
@@ -134,17 +136,26 @@ try {
       auctions,
       producerApplications,
       admin,
+      adminAuctions,
       adminOrders: createAdminOrdersService(connection),
       adminLimits: { ipLimit: 100000, accountLimit: 100000 },
       security: authConfig,
       rateLimit: { ipLimit: 1000, accountLimit: 1000 },
     }),
   );
-  realtime = attachAuctionSockets(server, auctions, auth, authConfig, {
-    enabled: true,
-    syncIntervalMs: 100,
-    authIntervalMs: 1000,
-  });
+  realtime = attachAuctionSockets(
+    server,
+    auctions,
+    auth,
+    authConfig,
+    {
+      enabled: true,
+      syncIntervalMs: 100,
+      authIntervalMs: 1000,
+    },
+    {},
+    adminAuctions,
+  );
   stopAuctions = auctions.startLifecycle();
   server.listen(3011, '127.0.0.1', () =>
     console.log(

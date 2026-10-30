@@ -28,6 +28,9 @@ export default function AdminDashboard() {
           Atualizar indicadores
         </Button>
         <Button to={usersPath}>Gerir utilizadores</Button>
+        <Button variant="secondary" to="/area/administrador/leiloes">
+          Supervisionar leilões
+        </Button>
         <Button variant="secondary" to="/area/administrador/encomendas">
           Supervisionar encomendas
         </Button>
@@ -83,7 +86,9 @@ export default function AdminDashboard() {
         <p>A moderação e os serviços serão disponibilizados nas fases próprias.</p>
         <div className="admin-quick-links">
           {privateSections.administrador
-            .filter((s) => !['utilizadores', 'candidaturas', 'encomendas'].includes(s.slug))
+            .filter(
+              (s) => !['utilizadores', 'candidaturas', 'encomendas', 'leiloes'].includes(s.slug),
+            )
             .map((s) => (
               <Button key={s.slug} variant="text" to={'/area/administrador/' + s.slug}>
                 {s.label}

@@ -1,3 +1,5 @@
+import type { AdminAuctionsService } from '../modules/admin-auctions/admin-auctions.service.js';
+import { createAdminAuctionPublication } from './admin-auction.publication.js';
 import type { Server as HttpServer } from 'node:http';
 import { Server, type Socket } from 'socket.io';
 import { decodeJwt } from 'jose';
@@ -10,7 +12,7 @@ import { unauthorized } from '../modules/auth/auth.service.js';
 import { createSocketLimits, type SocketLimits } from './auction.limits.js';
 import { createAuctionPublication } from './auction.publication.js';
 import { allowSocketRequest, socketPeer, safeSocketError } from './socket.security.js';
-import { roomRequest, bidRequest, handshakeAuth } from './auction.protocol.js';
+import { roomRequest, bidRequest, handshakeAuth, adminWatchRequest } from './auction.protocol.js';
 import type { ClientEvents, ServerEvents, Reply, BidAccepted } from './auction.protocol.js';
 
 type AuctionSocket = Socket<ClientEvents, ServerEvents>;
@@ -32,9 +34,11 @@ export function attachAuctionSockets(
   security: AuthConfiguration,
   config: RealtimeConfiguration,
   options: SocketLimits = {},
+  oversight?: Pick<AdminAuctionsService, 'versions'>,
 ) {
   const limits = createSocketLimits(options),
     sessions = new WeakMap<AuctionSocket, Session>();
+  const administrators = new Set<AuctionSocket>();
   const rooms = new Map<string, Set<AuctionSocket>>(),
     jobs = new Set<Promise<void>>();
   let stopped = false,
@@ -75,6 +79,30 @@ export function attachAuctionSockets(
       throw error;
     }
   }
+  async function administrator(socket: AuctionSocket) {
+    const user = await identity(socket);
+    if (!user.papeis.includes('administrador'))
+      throw new ApiError(403, 'ACESSO_PROIBIDO', 'Não tens acesso a esta subscrição.');
+  }
+  const adminPublication = oversight
+    ? createAdminAuctionPublication(service, oversight, {
+        active: () => administrators.size > 0,
+        async emit() {
+          await Promise.all(
+            [...administrators].map(async (socket) => {
+              try {
+                await administrator(socket);
+                if (socket.connected && administrators.has(socket))
+                  socket.emit('admin:auctions:changed', { consultar: true });
+              } catch (error) {
+                administrators.delete(socket);
+                fail(socket, error, true);
+              }
+            }),
+          );
+        },
+      })
+    : undefined;
   function remove(socket: AuctionSocket, id: string) {
     const s = sessions.get(socket);
     s?.joined.delete(id);
@@ -171,13 +199,20 @@ export function attachAuctionSockets(
       next(e);
     }
   });
-  const known = new Set(['auction:join', 'auction:leave', 'auction:state', 'auction:bid']);
+  const known = new Set([
+    'auction:join',
+    'auction:leave',
+    'auction:state',
+    'auction:bid',
+    ...(oversight ? ['admin:auctions:watch'] : []),
+  ]);
   namespace.on('connection', (socket) => {
     const s = sessions.get(socket)!;
     const exp = decodeJwt(s.token).exp! * 1000;
     s.expiry = setTimeout(() => fail(socket, unauthorized(), true), Math.max(0, exp - Date.now()));
     s.expiry.unref();
     socket.once('disconnect', () => {
+      administrators.delete(socket);
       clearTimeout(s.expiry);
       s.release();
       const previous = [...s.joined];
@@ -227,6 +262,14 @@ export function attachAuctionSockets(
         .then(async () => {
           try {
             const user = await identity(socket);
+            if (event === 'admin:auctions:watch') {
+              if (!oversight || !adminWatchRequest.safeParse(args[0]).success)
+                throw new ApiError(400, 'PEDIDO_INVALIDO', 'Verifica os campos da subscrição.');
+              await administrator(socket);
+              administrators.add(socket);
+              ack!({ ok: true, data: { subscrito: true } });
+              return;
+            }
             const parsed = (event === 'auction:bid' ? bidRequest : roomRequest).safeParse(args[0]);
             if (!parsed.success)
               throw new ApiError(400, 'PEDIDO_INVALIDO', 'Verifica os campos do evento.');
@@ -348,6 +391,8 @@ export function attachAuctionSockets(
         namespace.disconnectSockets(true);
         await Promise.allSettled([...jobs]);
         await authCheck;
+        await adminPublication?.close();
+        administrators.clear();
         await publication.close();
         rooms.clear();
         await new Promise<void>((resolve, reject) =>

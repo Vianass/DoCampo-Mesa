@@ -1,3 +1,5 @@
+import type { AdminAuctionsService } from '../admin-auctions/admin-auctions.service.js';
+import { adminAuctionQuery } from '../admin-auctions/admin-auctions.validation.js';
 import type { AdminOrdersService } from '../admin-orders/admin-orders.service.js';
 import {
   adminOrderQuery,
@@ -17,6 +19,7 @@ export function adminRoutes(
   auth?: AuthService,
   limits: AuctionRateOptions = {},
   orders?: AdminOrdersService,
+  auctions?: AdminAuctionsService,
 ) {
   const router = Router(),
     access = auth ? createAccessControl(auth) : undefined;
@@ -39,6 +42,34 @@ export function adminRoutes(
     rate.account(access!.principal(req).id, res);
     next();
   });
+  if (auctions) {
+    router.get(
+      '/auctions',
+      validate(adminAuctionQuery, (req) => req.query),
+      async (req, res) =>
+        res.json(await auctions.list(access!.principal(req), res.locals.validated)),
+    );
+    router.get(
+      '/auctions/:id',
+      validate(orderParams, (req) => req.params),
+      validate(emptyOrderQuery, (req) => req.query),
+      async (req, res) =>
+        res.json(await auctions.detail(access!.principal(req), String(req.params.id))),
+    );
+    router.get(
+      '/auctions/:id/bids',
+      validate(orderParams, (req) => req.params),
+      validate(orderListQuery, (req) => req.query),
+      async (req, res) =>
+        res.json(
+          await auctions.history(
+            access!.principal(req),
+            String(req.params.id),
+            res.locals.validated,
+          ),
+        ),
+    );
+  }
   if (orders) {
     router.get(
       '/orders',

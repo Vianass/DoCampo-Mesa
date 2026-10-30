@@ -1,3 +1,5 @@
+import { createAdminAuctionsService } from '../../src/modules/admin-auctions/admin-auctions.service.js';
+import { createAdminService } from '../../src/modules/admin/admin.service.js';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { io, type Socket as Client } from 'socket.io-client';
@@ -15,7 +17,13 @@ import { seedAuctionActors } from './auction-fixtures.js';
 
 export type RealtimeClient = Client<ServerEvents, ClientEvents>;
 export async function realtimeFixture(
-  options: { limits?: SocketLimits; syncIntervalMs?: number; production?: boolean } = {},
+  options: {
+    limits?: SocketLimits;
+    syncIntervalMs?: number;
+    production?: boolean;
+    adminSupervision?: boolean;
+    lifecycle?: boolean;
+  } = {},
 ) {
   const configuration = parseEnvironment({
     NODE_ENV: 'test',
@@ -32,10 +40,19 @@ export async function realtimeFixture(
     service = createAuctionService(connection, security.secret);
   await auth.prepare();
   await service.prepare();
+  const adminAuctions = options.adminSupervision
+    ? createAdminAuctionsService(connection, security.secret)
+    : undefined;
+  const admin = options.adminSupervision
+    ? createAdminService(connection, security.secret)
+    : undefined;
+  await admin?.prepare();
   const server = createServer(
     createApp({
       auth,
       auctions: service,
+      admin,
+      adminAuctions,
       security,
       auctionLimits: { ipLimit: 100000, accountLimit: 100000 },
     }),
@@ -53,6 +70,7 @@ export async function realtimeFixture(
       bidsPerAccount: 100000,
       ...options.limits,
     },
+    adminAuctions,
   );
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);
@@ -62,7 +80,7 @@ export async function realtimeFixture(
   if (!address || typeof address === 'string') throw Error('Porta de teste ausente.');
   const url = 'http://127.0.0.1:' + address.port;
   const clients = new Set<RealtimeClient>(),
-    stopLifecycle = service.startLifecycle();
+    stopLifecycle = options.lifecycle === false ? async () => undefined : service.startLifecycle();
   return {
     configuration,
     connection,

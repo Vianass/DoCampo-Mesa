@@ -34,13 +34,16 @@ export interface BidAccepted {
   licitacao: Awaited<ReturnType<AuctionService['bid']>>['body']['licitacao'];
   estado: AuctionSnapshot;
 }
+export const adminWatchRequest = z.strictObject({});
 export interface ClientEvents {
+  'admin:auctions:watch': (body: Record<string, never>, ack: Ack<{ subscrito: true }>) => void;
   'auction:join': (body: RoomRequest, ack: Ack<AuctionSnapshot>) => void;
   'auction:leave': (body: RoomRequest, ack: Ack<RoomRequest>) => void;
   'auction:state': (body: RoomRequest, ack: Ack<AuctionSnapshot>) => void;
   'auction:bid': (body: BidRequest, ack: Ack<BidAccepted>) => void;
 }
 export interface ServerEvents {
+  'admin:auctions:changed': (hint: { consultar: true }) => void;
   'auction:updated': (state: AuctionSnapshot) => void;
   'auction:ended': (state: AuctionSnapshot) => void;
   'auction:presence': (presence: { leilaoId: string; ligacoes: number }) => void;

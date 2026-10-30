@@ -1,0 +1,92 @@
+@use 'tokens' as t;
+.admin-auctions {
+  .admin-auction-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin-block: 1.5rem;
+    align-items: start;
+  }
+  small,
+  time {
+    display: block;
+  }
+  dl {
+    margin-block: 1.5rem;
+    display: grid;
+    gap: 1rem;
+  }
+  dd {
+    margin: 0;
+  }
+  .admin-auction-card h3 {
+    font-size: 1.6rem;
+  }
+  .admin-auction-card dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-auction-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    margin-block: 1.5rem;
+    align-items: start;
+  }
+  .admin-auction-detail .admin-application-paper {
+    margin: 0;
+  }
+  .admin-auction-numbers > div:first-child dd {
+    font: 2.5rem/1.2 t.$font-heading;
+    color: t.$forest;
+  }
+  .admin-auction-numbers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-auction-numbers > div:first-child {
+    grid-column: 1/-1;
+  }
+  .admin-auction-bids {
+    padding-left: 1.5rem;
+    li {
+      padding-block: 1.2rem;
+      border-top: 1px solid t.$line;
+    }
+  }
+  .admin-auction-connection {
+    color: t.$forest;
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+  input[type='date'] {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .auction-photo {
+    aspect-ratio: 4/3;
+    min-width: 0;
+  }
+  .auction-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .admin-auction-result {
+    margin-block: 1.5rem;
+  }
+  @media (min-width: 768px) {
+    .admin-auction-filters {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      > .market-button {
+        margin-top: 1.75rem;
+      }
+    }
+  }
+  @media (min-width: 1280px) {
+    .admin-auction-filters {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .admin-auction-detail {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+  }
+}

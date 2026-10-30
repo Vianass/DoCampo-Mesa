@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 8C — supervisão administrativa de leilões reais, implementação local para revisão.** Pesquisa/filtros e paginação global, detalhe/histórico, indicadores e acompanhamento Socket.IO de leitura, com REST/MongoDB como fonte de verdade. Ver [arquitetura, contratos e limites](docs/api/phase-8c-admin-auction-supervision.md).
+
 **Fase 8B — supervisão administrativa de encomendas reais, implementação local para revisão.** Consulta global, filtros e paginação no MongoDB, snapshots e históricos separados, sem comandos operacionais. Ver [arquitetura, contratos e limites](docs/api/phase-8b-admin-order-supervision.md).
 
 **Fase 8A — dashboard administrativo e gestão real de utilizadores, implementação local para revisão.** Indicadores MongoDB, consulta/pesquisa de contas e desativação/reativação com motivo, auditoria e concorrência. Sem eliminação ou alteração de papéis. Ver [arquitetura, contratos, segurança e testes](docs/api/phase-8a-admin-dashboard-users.md).
