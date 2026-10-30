@@ -18,6 +18,7 @@ import { createProducerModel } from '../../../api/src/modules/producers/producer
 import { seedCatalog } from '../../../api/src/development/catalog-seed.ts';
 import { products, producers } from '../../src/data/market.ts';
 import { producerReview } from './producer-review.mjs';
+import { createAdminService } from '../../../api/src/modules/admin/admin.service.ts';
 import { adminApplicationReview } from './admin-application-review.mjs';
 // Apenas MongoDB de teste em loopback; nenhuma .env, credencial ou base de desenvolvimento.
 const connection = await createConnection(
@@ -84,6 +85,8 @@ try {
   const producerOrders = createProducerOrdersService(connection, authConfig.secret);
   await orders.prepare();
   await preparation.prepare();
+  const admin = createAdminService(connection, authConfig.secret);
+  await admin.prepare();
   const producerApplications = createProducerApplicationService(connection, authConfig.secret);
   await producerApplications.prepare();
   if (reviewAdminApplications) {
@@ -129,6 +132,8 @@ try {
       producerOrders,
       auctions,
       producerApplications,
+      admin,
+      adminLimits: { ipLimit: 100000, accountLimit: 100000 },
       security: authConfig,
       rateLimit: { ipLimit: 1000, accountLimit: 1000 },
     }),

@@ -56,11 +56,15 @@ function newAccount(overrides: Record<string, unknown> = {}) {
 }
 
 describe('users/producers em MongoDB real e isolado', () => {
-  it('regista exclusivamente os dois modelos e os índices únicos aprovados', async () => {
+  it('regista os dois modelos e os índices únicos e de consulta aprovados', async () => {
     expect(database!.connection.modelNames().sort()).toEqual(['ProducerProfile', 'User']);
     const users = await User.listIndexes();
     const producers = await Producer.listIndexes();
-    expect(users).toHaveLength(2);
+    expect(users).toHaveLength(4);
+    expect(users).toContainEqual(expect.objectContaining({ key: { createdAt: -1, _id: 1 } }));
+    expect(users).toContainEqual(
+      expect.objectContaining({ key: { papeis: 1, ativo: 1, createdAt: -1, _id: 1 } }),
+    );
     expect(producers).toHaveLength(3);
     expect(producers).toContainEqual(
       expect.objectContaining({

@@ -13,6 +13,7 @@ import { BuyerProvider } from './features/buyer/BuyerProvider';
 import { AdminProvider } from './features/admin/AdminProvider';
 import { ProducerProvider } from './features/producer/ProducerProvider';
 import { ApplicationProvider } from './features/producer-application/ApplicationProvider';
+import { AdminUsersProvider } from './features/admin-users/AdminUsersProvider';
 import { AdminApplicationsProvider } from './features/admin-applications/AdminApplicationsProvider';
 
 const root = document.getElementById('root');
@@ -27,7 +28,9 @@ createRoot(root).render(
               <AdminProvider>
                 <ApplicationProvider>
                   <AdminApplicationsProvider>
-                    <App />
+                    <AdminUsersProvider>
+                      <App />
+                    </AdminUsersProvider>
                   </AdminApplicationsProvider>
                 </ApplicationProvider>
               </AdminProvider>

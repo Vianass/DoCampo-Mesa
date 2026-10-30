@@ -2,7 +2,7 @@
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.7.0-local-producer-applications
+  version: 0.8.0-local-admin-users
   description:
     'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração React local; A Fase 5F acrescenta consulta e avanço operacional de encomendas pelo produtor autenticado, com ETag, auditoria e indicadores; A Fase 6A implementa leilões e licitações REST transacionais, sem encomenda automática, pagamentos ou Socket.IO; não existe publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
@@ -27,6 +27,7 @@ tags:
   - name: Administração
 x-contract-status: aprovacao-parcial-com-fundacao-local
 x-local-implementation: foundation-implementation.md
+x-local-admin-users: phase-8a-admin-dashboard-users.md
 x-base-commit: 807aa68
 x-preserved-phase0: true
 x-model-preparation-base: 68f41ec
@@ -2247,46 +2248,116 @@ paths:
           $ref: '#/components/responses/Error500'
         '503':
           $ref: '#/components/responses/Error503'
-  /admin/users:
+  /admin/dashboard:
     get:
-      operationId: listAdminUsers
+      operationId: getAdminDashboard
       tags:
         - Administração
-      summary: Consultar utilizadores e papéis
-      description: Consultar utilizadores e papéis. Operação proposta; não implementada.
+      summary: Consultar indicadores reais do mercado
+      description:
+        Fase 8A implementada localmente. Conta e papel administrativo atuais verificados; Cache-Control
+        no-store.
       security:
         - bearerAuth: []
       x-authorized-roles: &id008
         - administrador
-      x-decision-dependencies:
-        - Q01
-        - Q13
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
-      parameters:
-        - { $ref: '#/components/parameters/Q' }
-        - { $ref: '#/components/parameters/Page' }
-        - { $ref: '#/components/parameters/PageSize' }
-        - name: papel
-          in: query
-          schema:
-            $ref: '#/components/schemas/Role'
-          description: Papel a consultar; não concede alteração.
+      x-contract-status: implementado-local
+      x-implementation-stage: 8A
+      parameters: []
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Resultado real, apenas para administradores ativos.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/UserSummary'
+                $ref: '#/components/schemas/AdminDashboard8A'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags:
+        - Administração
+      summary: Pesquisar e consultar contas reais
+      description:
+        Fase 8A implementada localmente. Conta e papel administrativo atuais verificados; Cache-Control
+        no-store.
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - administrador
+      x-contract-status: implementado-local
+      x-implementation-stage: 8A
+      parameters:
+        - $ref: '#/components/parameters/CatalogPage'
+        - $ref: '#/components/parameters/CatalogPageSize'
+        - name: ordem
+          in: query
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+        - name: pesquisa
+          in: query
+          description: Substring literal de nome ou email, NFC e trim. Não aceita regex ou operadores MongoDB.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum:
+              - ativo
+              - inativo
+        - name: papel
+          in: query
+          schema:
+            $ref: '#/components/schemas/Role'
+      responses:
+        '200':
+          description: Resultado real, apenas para administradores ativos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserPage8A'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -2296,25 +2367,30 @@ paths:
       operationId: getAdminUser
       tags:
         - Administração
-      summary: Consultar utilizador na projeção administrativa mínima
-      description: Consultar utilizador na projeção administrativa mínima. Operação proposta; não implementada.
+      summary: Consultar conta e capacidades atuais
+      description:
+        Fase 8A implementada localmente. Conta e papel administrativo atuais verificados; Cache-Control
+        no-store.
       security:
         - bearerAuth: []
-      x-authorized-roles: *id008
-      x-decision-dependencies:
-        - Q01
-        - Q13
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
+      x-authorized-roles:
+        - administrador
+      x-contract-status: implementado-local
+      x-implementation-stage: 8A
       parameters:
-        - { $ref: '#/components/parameters/Id' }
+        - $ref: '#/components/parameters/AdminUserId8A'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Resultado real, apenas para administradores ativos.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserSummary'
+                $ref: '#/components/schemas/AdminUserDetail8A'
+          headers:
+            ETag:
+              description: ETag forte opaco do estado atual; reenviar intacto em If-Match.
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -2323,10 +2399,136 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
           $ref: '#/components/responses/Error503'
+  /admin/users/{id}/audit:
+    get:
+      operationId: listAdminUserAudit
+      tags:
+        - Administração
+      summary: Consultar histórico paginado de alterações de acesso
+      description:
+        Fase 8A implementada localmente. Conta e papel administrativo atuais verificados; Cache-Control
+        no-store.
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - administrador
+      x-contract-status: implementado-local
+      x-implementation-stage: 8A
+      parameters:
+        - $ref: '#/components/parameters/AdminUserId8A'
+        - $ref: '#/components/parameters/CatalogPage'
+        - $ref: '#/components/parameters/CatalogPageSize'
+        - name: ordem
+          in: query
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+      responses:
+        '200':
+          description: Resultado real, apenas para administradores ativos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAccountAuditPage8A'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /admin/users/{id}/state:
+    patch:
+      operationId: changeAdminUserState
+      tags:
+        - Administração
+      summary: Desativar ou reativar conta com motivo e auditoria
+      description:
+        'Motivo obrigatório em ambas as transições; não altera papéis, não elimina contas nem aprova produtores.
+        Proíbe autodesativação e preserva o último administrador ativo. Estado e auditoria na mesma transação. 428
+        sem versão, 412 se mudou, 409 para estado já aplicado/proteção, 503 resultado indeterminado: consultar o estado
+        antes de repetir. JWT anterior é recusado enquanto inativo; reativação não implica revogação permanente de
+        JWT não expirado. Rate limiting local por IP e conta, 429 com Retry-After.'
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - administrador
+      x-contract-status: implementado-local
+      x-implementation-stage: 8A
+      parameters:
+        - $ref: '#/components/parameters/AdminUserId8A'
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: ^"[A-Za-z0-9_-]{43}"$
+      responses:
+        '200':
+          description: Resultado real, apenas para administradores ativos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserDetail8A'
+          headers:
+            ETag:
+              description: ETag forte opaco do estado atual; reenviar intacto em If-Match.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminAccountStateInput8A'
   /admin/producers:
     get:
       operationId: listAdminProducers
@@ -3356,6 +3558,14 @@ components:
         JWT com expiração exigido pelo enunciado; papéis/propriedade/aprovação são verificados no
         servidor, não pelo Swagger.
   parameters:
+    AdminUserId8A:
+      name: id
+      in: path
+      required: true
+      description: ID estável da conta users._id; não é o ID do perfil produtor.
+      schema:
+        type: string
+        pattern: ^[a-fA-F0-9]{24}$
     CatalogId:
       name: id
       in: path
@@ -3596,7 +3806,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Error428:
-      description: If-Match obrigatório para PUT/DELETE.
+      description: ETag atual obrigatório em If-Match nas operações condicionais.
       content:
         application/json:
           schema:
@@ -8482,3 +8692,222 @@ components:
         Alvo pretendido. O produtor só avança pendente → confirmada → em_preparacao → pronta. Salto,
         repetição, cancelamento, conclusão direta e reabertura devolvem 409. Não aceita pagamento, owner,
         snapshots, versão ou permissões livres.
+    AdminDashboard8A:
+      type: object
+      additionalProperties: false
+      required:
+        - observadoEm
+        - totalUtilizadores
+        - compradoresAtivos
+        - produtoresAprovados
+        - candidaturasPendentes
+        - produtosPublicados
+        - encomendas
+        - leiloesAtivos
+      properties:
+        observadoEm:
+          type: string
+          format: date-time
+        totalUtilizadores:
+          type: integer
+          minimum: 0
+        compradoresAtivos:
+          type: integer
+          minimum: 0
+        produtoresAprovados:
+          type: integer
+          minimum: 0
+        candidaturasPendentes:
+          type: integer
+          minimum: 0
+        produtosPublicados:
+          type: integer
+          minimum: 0
+        encomendas:
+          type: integer
+          minimum: 0
+        leiloesAtivos:
+          type: integer
+          minimum: 0
+      description:
+        Snapshot MongoDB. Total de contas inclui inativas; compradores ativos; perfis aprovados com conta
+        ativa e papel produtor; candidaturas pendentes independentemente da atividade; produtos publicados elegíveis
+        incluem stock zero; todas as encomendas sem equivalência a pagamento; leilões por estado e prazo $$NOW, sem
+        depender apenas do agendador. Papéis podem sobrepor-se. Atualização explícita, sem monitorização em tempo real.
+    AdminUserSummary8A:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - nome
+        - email
+        - papeis
+        - ativo
+        - registadoEm
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        papeis:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Role'
+        ativo:
+          type: boolean
+        registadoEm:
+          type: string
+          format: date-time
+    AdminUserDetail8A:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - nome
+        - email
+        - papeis
+        - ativo
+        - registadoEm
+        - capacidades
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        papeis:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Role'
+        ativo:
+          type: boolean
+        registadoEm:
+          type: string
+          format: date-time
+        capacidades:
+          type: object
+          additionalProperties: false
+          required:
+            - comprar
+            - vender
+            - administrar
+          properties:
+            comprar:
+              type: boolean
+            vender:
+              type: boolean
+            administrar:
+              type: boolean
+    AdminUserPage8A:
+      type: object
+      additionalProperties: false
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUserSummary8A'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+        totalPaginas:
+          type: integer
+          minimum: 0
+    AdminAccountAudit8A:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - administradorId
+        - ativoAnterior
+        - ativoAtual
+        - motivo
+        - ocorridoEm
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        administradorId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        ativoAnterior:
+          type: boolean
+        ativoAtual:
+          type: boolean
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        ocorridoEm:
+          type: string
+          format: date-time
+    AdminAccountAuditPage8A:
+      type: object
+      additionalProperties: false
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminAccountAudit8A'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+        totalPaginas:
+          type: integer
+          minimum: 0
+    AdminAccountStateInput8A:
+      type: object
+      additionalProperties: false
+      required:
+        - ativo
+        - motivo
+      properties:
+        ativo:
+          type: boolean
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Normalizado NFC e trim; limite em caracteres Unicode.

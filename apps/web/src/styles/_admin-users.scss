@@ -1,0 +1,98 @@
+@use 'tokens' as t;
+.admin-users {
+  .account-identity {
+    display: block;
+    min-width: 0;
+  }
+  min-width: 0;
+  .admin-real-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-block: 28px;
+    > div {
+      background: t.$white;
+      border: 1px solid t.$line;
+      border-radius: t.$radius-card;
+      padding: clamp(16px, 2.5vw, 26px);
+      min-width: 0;
+    }
+    dt {
+      font-size: 0.82rem;
+      font-weight: 400;
+      line-height: 1.6;
+      color: t.$muted;
+    }
+    dd {
+      font: 2.5rem/1.2 t.$font-heading;
+      margin: 14px 0 0;
+      color: t.$forest;
+    }
+  }
+  .admin-user-search {
+    display: grid;
+    gap: 16px;
+    align-items: end;
+    margin-block: 28px;
+    .form-field {
+      margin: 0;
+    }
+  }
+  .admin-user-cards {
+    display: grid;
+    gap: 20px;
+    margin-block: 24px;
+    .admin-application-paper {
+      margin: 0;
+    }
+  }
+  .admin-user-cards h3 {
+    font: 1.6rem/1.3 t.$font-heading;
+    margin-block: 18px;
+  }
+  .admin-user-email,
+  dd,
+  blockquote,
+  .admin-account-audit p {
+    overflow-wrap: anywhere;
+  }
+  .admin-account-audit {
+    padding-left: 22px;
+    li {
+      padding-block: 18px;
+      border-top: 1px solid t.$line;
+    }
+    blockquote {
+      border-left: 2px solid t.$terracotta;
+      padding-left: 16px;
+      white-space: pre-wrap;
+    }
+  }
+  .admin-help {
+    font-size: 0.85rem;
+    line-height: 1.8;
+    color: t.$muted;
+  }
+  .admin-quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .form-control {
+    min-height: 48px;
+  }
+  @media (min-width: 768px) {
+    .admin-real-metrics {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .admin-user-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .admin-user-search {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .admin-application-filters {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}

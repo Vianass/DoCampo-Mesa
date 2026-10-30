@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 8A — dashboard administrativo e gestão real de utilizadores, implementação local para revisão.** Indicadores MongoDB, consulta/pesquisa de contas e desativação/reativação com motivo, auditoria e concorrência. Sem eliminação ou alteração de papéis. Ver [arquitetura, contratos, segurança e testes](docs/api/phase-8a-admin-dashboard-users.md).
+
 **Fase 7C — análise administrativa de candidaturas, implementação local para revisão.** Listagem, detalhe, aprovação e rejeição reais, confirmação acessível e concorrência por ETag, com API como autoridade. Inclui recuperação coerente de páginas indisponíveis e correção de contraste nas transições dos botões administrativos. Ver [arquitetura, testes, revisão e limitações](docs/api/phase-7c-admin-producer-applications.md).
 
 **Fase 7B — candidatura de produtores no React, implementação local para revisão.** Formulário autenticado, consulta de estado, reapresentação e histórico reais em `/area/candidatura-produtor`. A aprovação atualiza as capacidades através de `/auth/me`, mantendo o JWT em memória e a autoridade do backend. Sem administração no React. Ver [arquitetura, testes, revisão e limitações](docs/api/phase-7b-react-producer-applications.md).

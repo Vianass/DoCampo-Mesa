@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ConfirmationDialog } from '../../components/ConfirmationDialog';
 import { Button } from '../../components/Button';
 import { ProducerTextarea } from '../producer/ProducerFields';
 import { useAdminApplications } from './useAdminApplications';
@@ -6,24 +7,12 @@ import { rejectionReason, type Decision } from './contracts';
 export function AdminApplicationDecision() {
   const { state, editReason, validateReason, decide } = useAdminApplications();
   const [choice, setChoice] = useState<Decision>();
-  const dialog = useRef<HTMLDialogElement>(null),
-    panel = useRef<HTMLElement>(null),
-    trigger = useRef<HTMLElement | null>(null);
+  const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     if (state.reasonError) panel.current?.querySelector('textarea')?.focus();
   }, [state.reasonError]);
-  useEffect(() => {
-    if (choice && dialog.current && !dialog.current.open) {
-      dialog.current.showModal();
-      dialog.current.querySelector<HTMLButtonElement>('[data-cancel]')?.focus();
-    }
-  }, [choice]);
-  useEffect(() => {
-    if (state.busy && dialog.current?.open) dialog.current.focus({ preventScroll: true });
-  }, [state.busy]);
   function confirm(decision: Decision) {
     if (decision === 'rejeitado' && !validateReason()) return;
-    trigger.current = document.activeElement as HTMLElement;
     setChoice(decision);
   }
   return (
@@ -63,78 +52,30 @@ export function AdminApplicationDecision() {
           </div>
         </fieldset>
       </form>
-      <dialog
-        className="admin-decision-dialog"
-        ref={dialog}
-        aria-labelledby="admin-confirmation-title"
-        aria-describedby="admin-confirmation-description"
-        aria-busy={state.busy}
-        onKeyDown={(event) => {
-          if (event.key !== 'Tab' || event.ctrlKey || event.metaKey || event.altKey) return;
-          const controls = Array.from(
-            event.currentTarget.querySelectorAll<HTMLElement>(
-              'button:not(:disabled),[tabindex="0"]',
-            ),
-          ).filter((element) => element.getClientRects().length);
-          const first = controls[0],
-            last = controls.at(-1);
-          if (!first) {
-            event.preventDefault();
-            event.currentTarget.focus();
-          } else if (event.shiftKey && document.activeElement === first) {
-            event.preventDefault();
-            last?.focus();
-          } else if (!event.shiftKey && document.activeElement === last) {
-            event.preventDefault();
-            first.focus();
-          }
-        }}
-        onCancel={(event) => {
-          if (state.busy) event.preventDefault();
-        }}
-        onClose={() => {
-          setChoice(undefined);
-          if (trigger.current?.isConnected) trigger.current.focus();
+      <ConfirmationDialog
+        open={!!choice}
+        busy={state.busy}
+        title={choice === 'aprovado' ? 'Aprovar esta candidatura?' : 'Rejeitar esta candidatura?'}
+        description={
+          <>
+            {state.data?.nomePublico}.{' '}
+            {choice === 'aprovado'
+              ? 'O serviço atribuirá as capacidades de produtor.'
+              : 'O motivo ficará disponível ao candidato para rever a sua candidatura.'}
+          </>
+        }
+        confirmLabel={choice === 'aprovado' ? 'Confirmar aprovação' : 'Confirmar rejeição'}
+        onClose={() => setChoice(undefined)}
+        onConfirm={() => {
+          if (choice) void decide(choice);
         }}
       >
-        <p className="eyebrow">Confirmar decisão</p>
-        <h2 id="admin-confirmation-title">
-          {choice === 'aprovado' ? 'Aprovar esta candidatura?' : 'Rejeitar esta candidatura?'}
-        </h2>
-        <p id="admin-confirmation-description">
-          {state.data?.nomePublico}.{' '}
-          {choice === 'aprovado'
-            ? 'O serviço atribuirá as capacidades de produtor.'
-            : 'O motivo ficará disponível ao candidato para rever a sua candidatura.'}
-        </p>
         {choice === 'rejeitado' && (
           <blockquote tabIndex={0} role="region" aria-label="Motivo da rejeição a confirmar">
             {rejectionReason(state.reason)}
           </blockquote>
         )}
-        <div className="admin-decision-actions">
-          <Button
-            data-cancel
-            disabled={state.busy}
-            variant="secondary"
-            onClick={() => dialog.current?.close()}
-          >
-            Continuar análise
-          </Button>
-          <Button
-            disabled={state.busy}
-            onClick={() => {
-              if (choice) void decide(choice);
-            }}
-          >
-            {state.busy
-              ? 'A confirmar decisão…'
-              : choice === 'aprovado'
-                ? 'Confirmar aprovação'
-                : 'Confirmar rejeição'}
-          </Button>
-        </div>
-      </dialog>
+      </ConfirmationDialog>
     </section>
   );
 }

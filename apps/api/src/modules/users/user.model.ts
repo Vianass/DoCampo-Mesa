@@ -96,6 +96,8 @@ export function createUserModel(connection: Connection): Model<UserRecord> {
     },
   );
   schema.index({ emailNormalizado: 1 }, { unique: true });
+  schema.index({ createdAt: -1, _id: 1 });
+  schema.index({ papeis: 1, ativo: 1, createdAt: -1, _id: 1 });
   requireDocumentValidation(schema);
   protectDocumentRevision(schema);
   return connection.model<UserRecord>('User', schema);

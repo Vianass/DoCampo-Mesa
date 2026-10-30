@@ -9,7 +9,8 @@ import { LoadingSkeleton } from '../../components/LoadingSkeleton';
 import { AccountIdentity } from './AccountIdentity';
 import { ApplicationEntry } from '../producer-application/ApplicationEntry';
 import { applicationPath } from '../producer-application/model';
-import { AdminApplicationEntry } from '../admin-applications/AdminApplicationEntry';
+const AdminDashboard = lazy(() => import('../admin-users/AdminDashboard'));
+const AdminUsersArea = lazy(() => import('../admin-users/AdminUsersArea'));
 const AdminApplicationsArea = lazy(() => import('../admin-applications/AdminApplicationsArea'));
 const ProducerApplicationPage = lazy(
   () => import('../producer-application/ProducerApplicationPage'),
@@ -43,6 +44,12 @@ export function AccountArea() {
         <h1>Este percurso não está na tua área.</h1>
         <Button to="/area">Voltar à minha área</Button>
       </section>
+    );
+  if (role === 'administrador' && (!pieces[2] || pieces[2] === 'utilizadores'))
+    return (
+      <Suspense fallback={<LoadingSkeleton label="A carregar administração real" count={2} />}>
+        {pieces[2] ? <AdminUsersArea /> : <AdminDashboard />}
+      </Suspense>
     );
   if (role === 'administrador' && pieces[2] === 'candidaturas')
     return (
@@ -95,7 +102,6 @@ export function AccountArea() {
       {role === 'comprador' && !pieces[2] && !session.user.papeis.includes('produtor') && (
         <ApplicationEntry />
       )}
-      {role === 'administrador' && !pieces[2] && <AdminApplicationEntry />}
       <section className="private-unavailable" aria-labelledby="account-activity-title">
         <p className="eyebrow">Um caminho em construção</p>
         <h2 id="account-activity-title">

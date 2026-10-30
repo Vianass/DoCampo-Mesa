@@ -38,6 +38,20 @@ export async function mockAdministrativeApplications(page: Page, count = 1) {
     postGate: undefined as Promise<void> | undefined,
     conflictOutcome: 'aprovado' as ApplicationStatus,
   };
+  await page.route('**/api/admin/dashboard', async (route) =>
+    route.fulfill({
+      json: {
+        observadoEm: '2026-10-30T10:00:00Z',
+        totalUtilizadores: 1,
+        compradoresAtivos: 0,
+        produtoresAprovados: 0,
+        candidaturasPendentes: api.items.filter((i) => i.estado === 'pendente').length,
+        produtosPublicados: 0,
+        encomendas: 0,
+        leiloesAtivos: 0,
+      },
+    }),
+  );
   await page.route('**/api/admin/producer-applications**', async (route) => {
     const url = new URL(route.request().url()),
       segments = url.pathname.split('/'),

@@ -20,6 +20,9 @@ import type { AuctionRateOptions } from './modules/auctions/auction-rate-limit.j
 import { producerApplicationRoutes } from './modules/producer-applications/producer-application.routes.js';
 import type { ProducerApplicationService } from './modules/producer-applications/producer-application.service.js';
 
+import { adminRoutes } from './modules/admin/admin.routes.js';
+import type { AdminService } from './modules/admin/admin.service.js';
+
 export function createApp(
   options: {
     auth?: AuthService;
@@ -30,6 +33,8 @@ export function createApp(
     auctions?: AuctionService;
     producerApplications?: ProducerApplicationService;
     auctionLimits?: AuctionRateOptions;
+    admin?: AdminService;
+    adminLimits?: AuctionRateOptions;
     security?: HttpSecurityConfiguration;
     rateLimit?: AuthRateLimitOptions;
   } = {},
@@ -55,6 +60,8 @@ export function createApp(
     app.use('/api', auctionRoutes(options.auctions, options.auth, options.auctionLimits));
   if (options.producerApplications)
     app.use('/api', producerApplicationRoutes(options.producerApplications, options.auth));
+  if (options.admin)
+    app.use('/api/admin', adminRoutes(options.admin, options.auth, options.adminLimits));
   app.use('/api', technicalRoutes());
   app.use((_request, _response, next) => {
     next(new ApiError(404, 'ROTA_NAO_ENCONTRADA', 'O recurso pedido não está disponível.'));

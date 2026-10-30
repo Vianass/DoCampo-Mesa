@@ -11,6 +11,7 @@ import { createCheckoutPreparationService } from './modules/orders/checkout-prep
 import { createProducerOrdersService } from './modules/orders/producer-orders.service.js';
 import { createAuctionService } from './modules/auctions/auction.service.js';
 import { createProducerApplicationService } from './modules/producer-applications/producer-application.service.js';
+import { createAdminService } from './modules/admin/admin.service.js';
 import { attachAuctionSockets } from './realtime/auction.socket.js';
 import {
   parseRealtimeEnvironment,
@@ -55,7 +56,11 @@ export async function startApi(
   const producerApplications = authentication
     ? createProducerApplicationService(database.connection!, authentication.secret)
     : undefined;
+  const admin = authentication
+    ? createAdminService(database.connection!, authentication.secret)
+    : undefined;
   try {
+    if (admin) await admin.prepare();
     if (auth) await auth.prepare();
     if (catalog) await catalog.prepare();
     if (orders) await orders.prepare();
@@ -80,6 +85,7 @@ export async function startApi(
             producerOrders,
             auctions,
             producerApplications,
+            admin,
             security: authentication,
           }
         : undefined,
