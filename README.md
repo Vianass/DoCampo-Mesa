@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 8B — supervisão administrativa de encomendas reais, implementação local para revisão.** Consulta global, filtros e paginação no MongoDB, snapshots e históricos separados, sem comandos operacionais. Ver [arquitetura, contratos e limites](docs/api/phase-8b-admin-order-supervision.md).
+
 **Fase 8A — dashboard administrativo e gestão real de utilizadores, implementação local para revisão.** Indicadores MongoDB, consulta/pesquisa de contas e desativação/reativação com motivo, auditoria e concorrência. Sem eliminação ou alteração de papéis. Ver [arquitetura, contratos, segurança e testes](docs/api/phase-8a-admin-dashboard-users.md).
 
 **Fase 7C — análise administrativa de candidaturas, implementação local para revisão.** Listagem, detalhe, aprovação e rejeição reais, confirmação acessível e concorrência por ETag, com API como autoridade. Inclui recuperação coerente de páginas indisponíveis e correção de contraste nas transições dos botões administrativos. Ver [arquitetura, testes, revisão e limitações](docs/api/phase-7c-admin-producer-applications.md).
@@ -21,6 +23,12 @@
 **Fase 5C — autenticação JWT no React, implementação local.** Registo comprador, login, identidade confirmada por `/auth/me`, áreas pessoais por capacidades e logout usam a API existente. O catálogo público da Fase 5B permanece integrado. A sessão fica apenas em memória: atualizar a página ou abrir outro separador exige novo login. Não há refresh tokens nem revogação imediata no logout.
 
 Os dashboards fictícios continuam disponíveis exclusivamente em `/demonstracao/entrar`, num espaço visual separado e sem conceder permissões reais. As áreas autenticadas apresentam a identidade da conta e indicam as funcionalidades privadas ainda não integradas; não lhes associam encomendas, avaliações ou indicadores fictícios. A cesta da demonstração tem armazenamento separado da cesta pública.
+
+## Fase 8B — supervisão de encomendas reais
+
+A administração permite consultar encomendas globais, combinar filtros, paginar no servidor e consultar snapshots e históricos operacionais/de pagamento. Os indicadores representam encomendas do conjunto filtrado, sem alegar receita recebida. Esta fase não concede poderes operacionais ao administrador. Ver [arquitetura, endpoints, testes e limitações](docs/api/phase-8b-admin-order-supervision.md).
+
+Revisão em ambiente isolado: `npx playwright test admin-orders.real --config playwright.integration.config.ts`. Para guardar capturas fora do repositório, definir `DOCAMPO_ADMIN_ORDER_SCREENSHOTS` com um caminho temporário absoluto. Os cenários usam contas fictícias, checkout real e MongoDB de teste; não exigem credenciais de produção.
 
 ## Arranque integrado local
 

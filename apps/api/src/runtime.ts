@@ -1,3 +1,4 @@
+import { createAdminOrdersService } from './modules/admin-orders/admin-orders.service.js';
 import { createServer } from 'node:http';
 import { createApp } from './app.js';
 import type { ApiConfiguration } from './config/environment.js';
@@ -86,6 +87,7 @@ export async function startApi(
             auctions,
             producerApplications,
             admin,
+            adminOrders: auth ? createAdminOrdersService(database.connection!) : undefined,
             security: authentication,
           }
         : undefined,

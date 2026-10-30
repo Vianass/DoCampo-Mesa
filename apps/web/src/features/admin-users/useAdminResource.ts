@@ -7,6 +7,7 @@ export function useAdminResource<T>(
   path: string,
   parse: (v: unknown, m: JsonResponseMetadata) => T,
   revision = 0,
+  missingMessage = 'Este utilizador não está disponível.',
 ) {
   const { session, request } = useAuth(),
     owner =
@@ -46,12 +47,12 @@ export function useAdminResource<T>(
               error instanceof ApiFailure && error.status === 403
                 ? 'A tua conta não tem acesso administrativo.'
                 : error instanceof ApiFailure && error.status === 404
-                  ? 'Este utilizador não está disponível.'
+                  ? missingMessage
                   : 'Não foi possível consultar estes dados. Tenta novamente.',
           });
       });
     return () => controller.abort();
-  }, [key, owner, path, parse, request]);
+  }, [key, owner, path, parse, request, missingMessage]);
   const current = owner && state.key === key ? state : undefined;
   return {
     data: current?.data,

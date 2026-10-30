@@ -480,6 +480,11 @@ export function createOrderModel(connection: Connection): Model<OrderRecord> {
   schema.pre(['deleteOne', 'deleteMany', 'findOneAndDelete'], function () {
     throw new Error('Eliminação de encomendas/auditoria indisponível neste bloco.');
   });
+  schema.index({ createdAt: -1, _id: -1 });
+  schema.index({ estado: 1, createdAt: -1, _id: -1 });
+  schema.index({ 'pagamento.estado': 1, createdAt: -1, _id: -1 });
+  schema.index({ produtor: 1, createdAt: -1, _id: -1 });
+  schema.index({ comprador: 1, createdAt: -1, _id: -1 });
   schema.index({ comprador: 1, createdAt: -1 });
   schema.index({ produtor: 1, estado: 1, createdAt: -1 });
   schema.index({ operacaoCompraId: 1, produtor: 1 }, { unique: true });

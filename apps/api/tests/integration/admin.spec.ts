@@ -223,8 +223,18 @@ describe('administração com MongoDB real', () => {
       u = await actor(['comprador']);
     const tag = (await detail(a, u.id)).headers.etag;
     const results = await Promise.all([change(a, u.id, false, tag), change(b, u.id, false, tag)]);
-    expect(results.map((r) => r.status).sort()).toEqual([200, 412]);
-    expect(await events()).toHaveLength(1);
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+    const rejected = results.find((r) => r.status !== 200)!;
+    // O orçamento transacional pode terminar antes da releitura do ETag.
+    // Ambos os resultados fazem parte do contrato; a decisão nunca duplica.
+    expect([409, 412]).toContain(rejected.status);
+    expect(rejected.body.codigo).toBe(
+      rejected.status === 409 ? 'ESTADO_CONFLITO' : 'PRECONDICAO_FALHOU',
+    );
+    const audit = await events();
+    expect(audit).toHaveLength(1);
+    expect(audit[0]!.administradorId).toEqual(results[0]!.status === 200 ? a.id : b.id);
+    expect((await createUserModel(c()).findById(u.id).orFail()).ativo).toBe(false);
   });
   it.each([undefined, '*', '"' + 'a'.repeat(43) + '"'])(
     'rejeita If-Match inválido/desatualizado %s',

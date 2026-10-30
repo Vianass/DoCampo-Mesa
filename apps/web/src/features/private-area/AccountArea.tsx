@@ -9,6 +9,7 @@ import { LoadingSkeleton } from '../../components/LoadingSkeleton';
 import { AccountIdentity } from './AccountIdentity';
 import { ApplicationEntry } from '../producer-application/ApplicationEntry';
 import { applicationPath } from '../producer-application/model';
+const AdminOrdersArea = lazy(() => import('../admin-orders/AdminOrdersArea'));
 const AdminDashboard = lazy(() => import('../admin-users/AdminDashboard'));
 const AdminUsersArea = lazy(() => import('../admin-users/AdminUsersArea'));
 const AdminApplicationsArea = lazy(() => import('../admin-applications/AdminApplicationsArea'));
@@ -49,6 +50,14 @@ export function AccountArea() {
     return (
       <Suspense fallback={<LoadingSkeleton label="A carregar administração real" count={2} />}>
         {pieces[2] ? <AdminUsersArea /> : <AdminDashboard />}
+      </Suspense>
+    );
+  if (role === 'administrador' && pieces[2] === 'encomendas')
+    return (
+      <Suspense
+        fallback={<LoadingSkeleton label="A carregar supervisão de encomendas" count={2} />}
+      >
+        <AdminOrdersArea />
       </Suspense>
     );
   if (role === 'administrador' && pieces[2] === 'candidaturas')

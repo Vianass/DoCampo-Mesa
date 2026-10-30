@@ -574,3 +574,9 @@ As correções finais V7C-01/V7C-02 conservam filtros ao recuperar a última pá
 O [dashboard e gestão de utilizadores](../api/phase-8a-admin-dashboard-users.md) reutiliza a navegação privada e a linguagem editorial administrativa. Indicadores em grelha de duas colunas mobile/três desktop, com definições explícitas; contas em cartões adaptativos, pesquisa nome/email, filtros e paginação do servidor. O detalhe apresenta dados mínimos, capacidades e histórico paginado.
 
 Desativação/reativação exige motivo e confirmação nativa; o `ConfirmationDialog` partilhado com a Fase 7C conserva foco, cancelamento seguro e leitura de motivos longos. Ações nunca são otimistas, não editam papéis e tratam conflitos/resultado incerto com consulta explícita. Erros, loading, vazio, foco e anúncios reutilizam os padrões existentes. Estilos próprios limitados à área, com transições de botões protegidas pelo padrão administrativo já corrigido. Sem redesenhar comprador/produtor/candidaturas.
+
+## Fase 8B — supervisão de encomendas
+
+A [supervisão administrativa](../api/phase-8b-admin-order-supervision.md) reutiliza o layout e dashboard real, cartões adaptativos e componentes de encomendas aprovados. Filtros globais identificam IDs completos e dias UTC inclusivos; indicadores descrevem o conjunto filtrado, sem promessa de receita. Listagem essencial, participantes mínimos, detalhe por snapshots e histórico paginado por domínio mantêm a hierarquia editorial.
+
+Em telemóvel os filtros empilham e as referências longas têm linhas próprias; tablet/desktop usam duas/três colunas nos filtros. Sem tabela larga ou comandos operacionais. Loading, vazio, erro/retry e perda de permissões usam os padrões administrativos existentes. Labels, foco, teclado, um único alerta por falha e contraste calculado são verificados nas seis larguras. Capturas e árvores AX ficam fora do Git. VoiceOver audível continua a exigir avaliação manual própria.

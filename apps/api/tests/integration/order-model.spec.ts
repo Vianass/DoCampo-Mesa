@@ -58,7 +58,15 @@ describe('persistência orders em MongoDB real, sem checkout', () => {
       (await database!.connection.db!.listCollections().toArray()).map((item) => item.name),
     ).toEqual(['orders']);
     const indexes = await Order.listIndexes();
-    expect(indexes).toHaveLength(6);
+    expect(indexes).toHaveLength(11);
+    for (const key of [
+      { createdAt: -1, _id: -1 },
+      { estado: 1, createdAt: -1, _id: -1 },
+      { 'pagamento.estado': 1, createdAt: -1, _id: -1 },
+      { produtor: 1, createdAt: -1, _id: -1 },
+      { comprador: 1, createdAt: -1, _id: -1 },
+    ])
+      expect(indexes).toContainEqual(expect.objectContaining({ key }));
     expect(indexes).toContainEqual(
       expect.objectContaining({ key: { comprador: 1, createdAt: -1 } }),
     );

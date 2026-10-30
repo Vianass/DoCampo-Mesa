@@ -240,7 +240,7 @@ describe('integridade, índices e documentos antigos', () => {
       }),
     ).toBe(0);
     const indexes = await Order.listIndexes();
-    expect(indexes).toHaveLength(6);
+    expect(indexes).toHaveLength(11);
     expect(indexes).toContainEqual(
       expect.objectContaining({
         key: { 'idempotencia.chave': 1 },

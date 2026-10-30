@@ -1,3 +1,4 @@
+import type { AdminOrdersService } from './modules/admin-orders/admin-orders.service.js';
 import express from 'express';
 import { ApiError } from './http/api-error.js';
 import { errorHandler } from './http/error-handler.js';
@@ -34,6 +35,7 @@ export function createApp(
     producerApplications?: ProducerApplicationService;
     auctionLimits?: AuctionRateOptions;
     admin?: AdminService;
+    adminOrders?: AdminOrdersService;
     adminLimits?: AuctionRateOptions;
     security?: HttpSecurityConfiguration;
     rateLimit?: AuthRateLimitOptions;
@@ -61,7 +63,10 @@ export function createApp(
   if (options.producerApplications)
     app.use('/api', producerApplicationRoutes(options.producerApplications, options.auth));
   if (options.admin)
-    app.use('/api/admin', adminRoutes(options.admin, options.auth, options.adminLimits));
+    app.use(
+      '/api/admin',
+      adminRoutes(options.admin, options.auth, options.adminLimits, options.adminOrders),
+    );
   app.use('/api', technicalRoutes());
   app.use((_request, _response, next) => {
     next(new ApiError(404, 'ROTA_NAO_ENCONTRADA', 'O recurso pedido não está disponível.'));

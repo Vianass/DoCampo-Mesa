@@ -1,3 +1,8 @@
+import type { AdminOrdersService } from '../admin-orders/admin-orders.service.js';
+import {
+  adminOrderQuery,
+  adminOrderHistoryQuery,
+} from '../admin-orders/admin-orders.validation.js';
 import { Router, type RequestHandler } from 'express';
 import { ApiError } from '../../http/api-error.js';
 import { validate } from '../../http/validate.js';
@@ -11,6 +16,7 @@ export function adminRoutes(
   service: AdminService,
   auth?: AuthService,
   limits: AuctionRateOptions = {},
+  orders?: AdminOrdersService,
 ) {
   const router = Router(),
     access = auth ? createAccessControl(auth) : undefined;
@@ -33,6 +39,33 @@ export function adminRoutes(
     rate.account(access!.principal(req).id, res);
     next();
   });
+  if (orders) {
+    router.get(
+      '/orders',
+      validate(adminOrderQuery, (req) => req.query),
+      async (req, res) => {
+        res.json(await orders.list(access!.principal(req), res.locals.validated));
+      },
+    );
+    router.get(
+      '/orders/:id',
+      validate(orderParams, (req) => req.params),
+      validate(emptyOrderQuery, (req) => req.query),
+      async (req, res) => {
+        res.json(await orders.detail(access!.principal(req), String(req.params.id)));
+      },
+    );
+    router.get(
+      '/orders/:id/history',
+      validate(orderParams, (req) => req.params),
+      validate(adminOrderHistoryQuery, (req) => req.query),
+      async (req, res) => {
+        res.json(
+          await orders.history(access!.principal(req), String(req.params.id), res.locals.validated),
+        );
+      },
+    );
+  }
   router.get(
     '/dashboard',
     validate(emptyOrderQuery, (req) => req.query),

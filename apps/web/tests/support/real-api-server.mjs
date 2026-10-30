@@ -1,3 +1,4 @@
+import { createAdminOrdersService } from '../../../api/src/modules/admin-orders/admin-orders.service.ts';
 import process from 'node:process';
 import console from 'node:console';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -133,6 +134,7 @@ try {
       auctions,
       producerApplications,
       admin,
+      adminOrders: createAdminOrdersService(connection),
       adminLimits: { ipLimit: 100000, accountLimit: 100000 },
       security: authConfig,
       rateLimit: { ipLimit: 1000, accountLimit: 1000 },
