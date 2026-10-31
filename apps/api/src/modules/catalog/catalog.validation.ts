@@ -88,6 +88,8 @@ export const ownCatalogQuery = z.strictObject({
   ...paging,
   pesquisa: search,
   estado: z.enum(productStates).optional(),
+  stock: z.enum(['baixo', 'esgotado', 'disponivel']).optional(),
+  categoria: category.optional(),
 });
 export type CatalogQuery = z.infer<typeof publicCatalogQuery>;
 export type ProducerQuery = z.infer<typeof publicProducerQuery>;
@@ -126,6 +128,7 @@ export const productWriteFields = {
     .optional(),
   unidadeVenda: unit.optional(),
   stockDisponivel: integer.optional(),
+  limiarStockBaixo: integer.max(10_000_000).optional(),
   ingredientesAplicaveis: z.boolean().optional(),
   ingredientes: z.array(text(500)).max(100).default([]),
   etiquetas: z.array(text(100)).max(50).default([]),

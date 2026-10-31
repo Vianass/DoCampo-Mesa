@@ -1,4 +1,5 @@
 import { mergeCatalog } from './remote';
+import { onCatalogRefresh } from '../api/catalog-events';
 import { adaptProduct, catalogApi } from '../api/catalog';
 import { ApiFailure } from '../api/client';
 import {
@@ -50,6 +51,7 @@ export function CartProvider({
   }, [session.cart]);
   const touches = useRef<Record<string, string>>(readTouches());
   const [remoteRefresh, setRemoteRefresh] = useState(0);
+  useEffect(() => onCatalogRefresh(() => setRemoteRefresh((v) => v + 1)), []);
   function mark(ids: readonly string[]) {
     touches.current = { ...touches.current, ...readTouches() };
     for (const id of ids) touches.current[id] = crypto.randomUUID();

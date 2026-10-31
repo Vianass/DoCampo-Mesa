@@ -2,7 +2,7 @@
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.10.0-local-orders
+  version: 0.11.0-local-producer
   description:
     'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração React local; A Fase 5F acrescenta consulta e avanço operacional de encomendas pelo produtor autenticado, com ETag, auditoria e indicadores; A Fase 6A implementa leilões e licitações REST transacionais, sem encomenda automática, pagamentos ou Socket.IO; não existe publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
@@ -37,6 +37,8 @@ x-admin-auction-realtime:
   payload: apenas-consultar-true-sem-dados-comerciais
   authority: REST-MongoDB
   recovery: consulta-periodica-15-segundos-e-reconexao
+x-local-producer-management: phase-11a-producer-management.md
+x-stock-alert-decision: Limiar opcional por produto, sem valor por defeito; stock zero indisponível.
 x-local-order-realtime: phase-10-orders-realtime.md
 x-order-realtime-namespace: /orders
 x-order-realtime-event: order:updated
@@ -451,30 +453,37 @@ paths:
       operationId: getOwnProducer
       tags:
         - Produtores
-      summary: Consultar perfil e candidatura próprios
-      description: Consultar perfil e candidatura próprios. Operação proposta; não implementada.
+      summary: Consultar perfil e condições da própria loja
       security:
         - bearerAuth: []
-      x-authorized-roles: &id001
+      x-authorized-roles:
         - produtor
-      x-decision-dependencies:
-        - Q01
-        - Q04
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.3'
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11A
+      description:
+        'Identidade e papéis atuais verificados no backend. Cache-Control: no-store. O papel
+        de produtor é necessário; candidatura pendente sem esse papel não concede acesso.'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Estado persistido do próprio produtor.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProducerSelf'
+                $ref: '#/components/schemas/ProducerProfileOwn11A'
+          headers:
+            ETag:
+              schema:
+                type: string
+                pattern: ^"[A-Za-z0-9_-]{43}"$
+              description: Revisão opaca do recurso.
         '400':
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -483,43 +492,63 @@ paths:
       operationId: replaceOwnProfile
       tags:
         - Produtores
-      summary: Alterar campos públicos do próprio perfil
-      description: >-
-        Propriedade da conta; Q04 permite editar perfil pendente, sem alterar aprovação/proprietário/certificação. Rejeitado tem consulta da decisão, sem novos direitos implícitos de edição. Não implementado.
+      summary: Substituir campos editáveis do perfil e condições comerciais
       security:
         - bearerAuth: []
-      x-authorized-roles: *id001
-      x-decision-dependencies:
-        - Q04
-        - Q11
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.3'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProfileWrite'
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11A
+      description:
+        'Identidade e papéis atuais verificados no backend. Cache-Control: no-store. O papel
+        de produtor é necessário; candidatura pendente sem esse papel não concede acesso.'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Estado persistido do próprio produtor.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProducerSelf'
+                $ref: '#/components/schemas/ProducerProfileOwn11A'
+          headers:
+            ETag:
+              schema:
+                type: string
+                pattern: ^"[A-Za-z0-9_-]{43}"$
+              description: Revisão opaca do recurso.
         '400':
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
-        '409':
-          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
           $ref: '#/components/responses/Error503'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+      parameters:
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: ^"[A-Za-z0-9_-]{43}"$
+          description: ETag forte atual, único; conflito exige consultar antes de repetir.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProducerProfileWrite11A'
   /me/producer/application:
     x-replaced-by: /me/producer-application
     get:
@@ -533,7 +562,7 @@ paths:
         email/identidade privada de administradores.
       security:
         - bearerAuth: []
-      x-authorized-roles: *id001
+      x-authorized-roles: [produtor]
       x-decision-dependencies:
         - Q04
       x-contract-status: proposta-bloqueada
@@ -888,8 +917,8 @@ paths:
         - Produtos
       summary: Consultar produtos próprios, incluindo rascunhos e arquivos
       description:
-        Owner vem da identidade autenticada. Perfil pendente/aprovado; não permite selecionar conta alheia.
-        Cada item inclui etag opaco para gestão.
+        Owner vem da identidade autenticada. Perfil pendente/aprovado; não permite selecionar
+        conta alheia. Cada item inclui etag opaco para gestão.
       security:
         - bearerAuth: []
       x-authorized-roles:
@@ -902,6 +931,32 @@ paths:
         - $ref: '#/components/parameters/CatalogOrder'
         - $ref: '#/components/parameters/CatalogPage'
         - $ref: '#/components/parameters/CatalogPageSize'
+        - name: stock
+          in: query
+          schema:
+            type: string
+            enum:
+              - baixo
+              - esgotado
+              - disponivel
+          description: Stock livre. Baixo exige limiar configurado e stock positivo; esgotado é zero.
+        - name: categoria
+          in: query
+          schema:
+            type: string
+            enum:
+              - cat-001
+              - cat-002
+              - cat-003
+              - cat-004
+              - cat-005
+              - cat-006
+              - cat-007
+              - cat-008
+              - cat-009
+              - cat-010
+              - cat-011
+              - cat-012
       responses:
         '200':
           description: Resultado da operação.
@@ -924,8 +979,9 @@ paths:
         - Produtos
       summary: Consultar detalhe privado de produto próprio
       description:
-        Inclui estado e ETag forte para editar/arquivar. Owner diferente devolve 403; inexistente 404.
-        Sem revisão operacional ou dados privados de contas.
+        Inclui estado e ETag forte para editar/arquivar. Owner diferente devolve 403; inexistente
+        404. Sem revisão operacional ou dados privados de contas. Fase 11A acrescenta as quantidades ainda
+        afetas a leilões, separadas do stock livre; quantidade é lote menos reposição já persistida.
       security:
         - bearerAuth: []
       x-authorized-roles:
@@ -940,7 +996,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalogProductOwn'
+                $ref: '#/components/schemas/ProducerProductDetail11A'
           headers:
             ETag:
               description: ETag forte opaco do produto próprio; enviar em If-Match ao editar/arquivar.
@@ -1516,7 +1572,7 @@ paths:
         pagamento genericamente. C04 mantém operação ausente.
       security:
         - bearerAuth: []
-      x-authorized-roles: *id001
+      x-authorized-roles: [produtor]
       x-decision-dependencies:
         - Q04
         - Q05
@@ -2450,43 +2506,31 @@ paths:
       operationId: getProducerIndicators
       tags:
         - Produtores
-      summary: Consultar indicadores próprios
-      description: Consultar indicadores próprios. Operação proposta; não implementada.
+      summary: Consultar produtos, alertas de stock e médias separadas
       security:
         - bearerAuth: []
-      x-authorized-roles: *id001
-      x-decision-dependencies:
-        - Q05
-        - Q06
-        - Q15
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
-      parameters:
-        - name: inicio
-          in: query
-          schema:
-            type: string
-            format: date-time
-          description: Período UTC, Q15.
-        - name: fim
-          in: query
-          schema:
-            type: string
-            format: date-time
-          description: Período UTC, Q15.
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11A
+      description:
+        'Identidade e papéis atuais verificados no backend. Cache-Control: no-store. O papel
+        de produtor é necessário; candidatura pendente sem esse papel não concede acesso.'
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Estado persistido do próprio produtor.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Indicators'
+                $ref: '#/components/schemas/ProducerInventoryIndicators11A'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -4618,6 +4662,207 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ReviewDecision9'
+  /me/products/{id}/images:
+    post:
+      operationId: uploadOwnProductImage
+      tags:
+        - Produtores
+      summary: Enviar fotografia validada e normalizada em WebP
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11A
+      description:
+        Até 5 MiB e 16 megapíxeis; JPEG/PNG/WebP estáticos, MIME verificado contra o descodificador,
+        metadados removidos, redimensionado até 1600 px. Duas conversões simultâneas por processo; sem fila
+        ilimitada. Adaptador local só em desenvolvimento/teste; não disponível em produção até integração
+        Cloud.
+      responses:
+        '200':
+          description: Estado persistido do próprio produtor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogProductOwn'
+          headers:
+            ETag:
+              schema:
+                type: string
+                pattern: ^"[A-Za-z0-9_-]{43}"$
+              description: Revisão opaca do recurso.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '413':
+          $ref: '#/components/responses/Error413'
+      parameters:
+        - $ref: '#/components/parameters/CatalogId'
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: ^"[A-Za-z0-9_-]{43}"$
+          description: ETag forte atual, único; conflito exige consultar antes de repetir.
+        - name: substituir
+          in: query
+          schema:
+            type: string
+            enum:
+              - '0'
+              - '1'
+          description: Índice existente a substituir; omitir acrescenta até duas imagens.
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/webp:
+            schema:
+              type: string
+              format: binary
+  /me/producer/image:
+    post:
+      operationId: uploadOwnProducerImage
+      tags:
+        - Produtores
+      summary: Enviar fotografia validada e normalizada em WebP
+      security:
+        - bearerAuth: []
+      x-authorized-roles:
+        - produtor
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11A
+      description:
+        Até 5 MiB e 16 megapíxeis; JPEG/PNG/WebP estáticos, MIME verificado contra o descodificador,
+        metadados removidos, redimensionado até 1600 px. Duas conversões simultâneas por processo; sem fila
+        ilimitada. Adaptador local só em desenvolvimento/teste; não disponível em produção até integração
+        Cloud.
+      responses:
+        '200':
+          description: Estado persistido do próprio produtor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProducerProfileOwn11A'
+          headers:
+            ETag:
+              schema:
+                type: string
+                pattern: ^"[A-Za-z0-9_-]{43}"$
+              description: Revisão opaca do recurso.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '413':
+          $ref: '#/components/responses/Error413'
+      parameters:
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: ^"[A-Za-z0-9_-]{43}"$
+          description: ETag forte atual, único; conflito exige consultar antes de repetir.
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/webp:
+            schema:
+              type: string
+              format: binary
+  /media/{id}:
+    get:
+      operationId: getManagedImage
+      tags:
+        - Produtos
+      summary: Obter bytes da fotografia referenciada
+      security:
+        - {}
+        - bearerAuth: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11A
+      description:
+        'Pública apenas enquanto o produto estiver publicado ou o perfil aprovado e a conta produtora
+        ativa. Rascunho só para o autor autenticado. URL copiada não transfere propriedade. Não há listagem
+        de ficheiros. Cache-Control: no-store; sem adaptador local em produção.'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9-]{36}\.webp$
+      responses:
+        '200':
+          description: WebP normalizado.
+          content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
 components:
   securitySchemes:
     bearerAuth:
@@ -6302,6 +6547,13 @@ components:
           maxItems: 2
           items:
             $ref: '#/components/schemas/CatalogImage'
+        limiarStockBaixo:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          description:
+            Opcional, privado, em g/ml/un da unidade de venda. Sem valor por defeito. Omitir em
+            PUT remove o limiar; zero de stock é sempre indisponível.
       required:
         - nome
     CatalogProductReplace:
@@ -6379,13 +6631,20 @@ components:
             - rascunho
             - publicado
             - arquivado
+        limiarStockBaixo:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          description:
+            Opcional, privado, em g/ml/un da unidade de venda. Sem valor por defeito. Omitir em
+            PUT remove o limiar; zero de stock é sempre indisponível.
       required:
         - nome
         - estadoPublicacao
       description:
-        Substituição completa. Publicação exige descricao, categoriaId, precoCent, unidadeVenda, stockDisponivel,
-        ingredientesAplicaveis e pelo menos uma imagem; regras cruzadas são do modelo existente. Listas omitidas ficam
-        vazias; campos opcionais omitidos são removidos.
+        Substituição completa. Publicação exige descricao, categoriaId, precoCent, unidadeVenda,
+        stockDisponivel, ingredientesAplicaveis e pelo menos uma imagem; regras cruzadas são do modelo existente.
+        Listas omitidas ficam vazias; campos opcionais omitidos são removidos.
     CatalogProductOwn:
       type: object
       additionalProperties: false
@@ -6467,6 +6726,13 @@ components:
         etag:
           type: string
           pattern: ^"[A-Za-z0-9_-]{43}"$
+        limiarStockBaixo:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          description:
+            Opcional, privado, em g/ml/un da unidade de venda. Sem valor por defeito. Omitir em
+            PUT remove o limiar; zero de stock é sempre indisponível.
       required:
         - id
         - nome
@@ -11572,3 +11838,436 @@ components:
         período inicial e histórico minimizado; nunca reconsulta preços atuais ou expõe atores/auditoria privada.
         A propriedade opcional produtor identifica o perfil público atual; não é um snapshot histórico do
         seu nome. Valores/linhas/entrega continuam snapshots.'
+
+    ProducerCommercial11A:
+      type: object
+      additionalProperties: false
+      properties:
+        localLevantamento:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        modalidades:
+          type: object
+          additionalProperties: false
+          properties:
+            levantamento:
+              type: boolean
+            entrega:
+              type: boolean
+          required:
+            - levantamento
+            - entrega
+        taxaEntregaCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        concelhosEntregaIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 120
+          maxItems: 400
+        catalogoConcelhosVersao:
+          type: string
+          minLength: 1
+          maxLength: 120
+        disponibilidade:
+          type: object
+          additionalProperties: false
+          properties:
+            fusoHorario:
+              type: string
+              minLength: 1
+              maxLength: 100
+            levantamento:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                properties:
+                  diaSemana:
+                    type: integer
+                    minimum: 1
+                    maximum: 7
+                  inicio:
+                    type: string
+                    pattern: ^(?:[01]\d|2[0-3]):[0-5]\d$
+                  fim:
+                    type: string
+                    pattern: ^(?:[01]\d|2[0-3]):[0-5]\d$
+                required:
+                  - diaSemana
+                  - inicio
+                  - fim
+              maxItems: 28
+            entrega:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                properties:
+                  diaSemana:
+                    type: integer
+                    minimum: 1
+                    maximum: 7
+                  inicio:
+                    type: string
+                    pattern: ^(?:[01]\d|2[0-3]):[0-5]\d$
+                  fim:
+                    type: string
+                    pattern: ^(?:[01]\d|2[0-3]):[0-5]\d$
+                required:
+                  - diaSemana
+                  - inicio
+                  - fim
+              maxItems: 28
+          required:
+            - fusoHorario
+            - levantamento
+            - entrega
+        metodosPagamento:
+          type: array
+          items:
+            type: string
+            enum:
+              - dinheiro
+              - mb_way
+              - transferencia_bancaria
+          maxItems: 3
+          minItems: 1
+        pagamentoPrivado:
+          type: object
+          additionalProperties: false
+          properties:
+            mbWay:
+              type: object
+              additionalProperties: false
+              properties:
+                contacto:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+              required:
+                - contacto
+            transferenciaBancaria:
+              type: object
+              additionalProperties: false
+              properties:
+                iban:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                titular:
+                  type: string
+                  minLength: 1
+                  maxLength: 160
+              required:
+                - iban
+      required:
+        - modalidades
+        - concelhosEntregaIds
+        - disponibilidade
+        - metodosPagamento
+      nullable: true
+      description:
+        null remove a configuração. Modalidade ativa exige períodos; levantamento exige local,
+        entrega exige taxa explícita e concelhos estáveis. Intervalos sem sobreposição, fuso IANA, métodos
+        sem repetição e IBAN com checksum. Referências de pagamento privadas, sem cobrança.
+
+    ProducerProfileWrite11A:
+      type: object
+      additionalProperties: false
+      required:
+        - nomePublico
+        - localidade
+        - concelho
+        - descricao
+        - telefone
+        - comercial
+      properties:
+        nomePublico:
+          type: string
+          minLength: 1
+          maxLength: 160
+        localidade:
+          type: string
+          minLength: 1
+          maxLength: 120
+        concelho:
+          type: string
+          minLength: 1
+          maxLength: 120
+        descricao:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        telefone:
+          type: string
+          minLength: 1
+          maxLength: 120
+        imagem:
+          type: object
+          additionalProperties: false
+          properties:
+            url:
+              type: string
+              format: uri
+              maxLength: 4096
+            alt:
+              type: string
+              minLength: 1
+              maxLength: 500
+          required:
+            - url
+        comercial:
+          $ref: '#/components/schemas/ProducerCommercial11A'
+      description:
+        Substituição completa dos campos editáveis; comercial é obrigatório e pode ser null. Sem
+        aprovação, histórico, papéis ou proprietário. Textos NFC aparados. URLs apenas HTTP(S) sem credenciais;
+        o frontend utiliza envio binário.
+
+    ProducerProfileOwn11A:
+      type: object
+      additionalProperties: false
+      required:
+        - nomePublico
+        - localidade
+        - concelho
+        - descricao
+        - telefone
+        - comercial
+        - id
+        - etag
+        - estadoAprovacao
+      properties:
+        nomePublico:
+          type: string
+          minLength: 1
+          maxLength: 160
+        localidade:
+          type: string
+          minLength: 1
+          maxLength: 120
+        concelho:
+          type: string
+          minLength: 1
+          maxLength: 120
+        descricao:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        telefone:
+          type: string
+          minLength: 1
+          maxLength: 120
+        imagem:
+          type: object
+          additionalProperties: false
+          properties:
+            url:
+              type: string
+              format: uri
+              maxLength: 4096
+            alt:
+              type: string
+              minLength: 1
+              maxLength: 500
+          required:
+            - url
+        comercial:
+          $ref: '#/components/schemas/ProducerCommercial11A'
+        id:
+          $ref: '#/components/schemas/Id'
+        etag:
+          type: string
+          pattern: ^"[A-Za-z0-9_-]{43}"$
+        estadoAprovacao:
+          type: string
+          enum:
+            - pendente
+            - aprovado
+      description:
+        DTO privado do próprio produtor. Inclui telefone e condições privadas; exclui autor administrativo,
+        histórico e identificadores de contas.
+
+    ProducerInventoryIndicators11A:
+      type: object
+      additionalProperties: false
+      properties:
+        produtos:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+        publicados:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+        semStock:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+        stockBaixo:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+        avaliacoes:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              alvoTipo:
+                type: string
+                enum:
+                  - produto
+                  - produtor
+              total:
+                type: integer
+                minimum: 0
+                maximum: 10000000
+              media:
+                type: number
+                minimum: 1
+                maximum: 5
+                nullable: true
+            required:
+              - alvoTipo
+              - total
+              - media
+      required:
+        - produtos
+        - publicados
+        - semStock
+        - stockBaixo
+        - avaliacoes
+
+    ProducerProductDetail11A:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+          minLength: 1
+        descricao:
+          type: string
+        categoriaId:
+          type: string
+          enum:
+            - cat-001
+            - cat-002
+            - cat-003
+            - cat-004
+            - cat-005
+            - cat-006
+            - cat-007
+            - cat-008
+            - cat-009
+            - cat-010
+            - cat-011
+            - cat-012
+        precoCent:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        unidadeVenda:
+          $ref: '#/components/schemas/CatalogUnitRead'
+        stockDisponivel:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          description: 'Teto do modelo: 10 000 000 em g/ml, 100 000 em unidades/embalagens; sem conversão.'
+        ingredientesAplicaveis:
+          type: boolean
+        ingredientes:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        etiquetas:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        epocaMeses:
+          type: array
+          maxItems: 12
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+            maximum: 12
+        modoProducao:
+          type: string
+        imagens:
+          type: array
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/CatalogImageRead'
+        estadoPublicacao:
+          type: string
+          enum:
+            - rascunho
+            - publicado
+            - arquivado
+        moeda:
+          type: string
+          enum:
+            - EUR
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        etag:
+          type: string
+          pattern: ^"[A-Za-z0-9_-]{43}"$
+        limiarStockBaixo:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          description:
+            Opcional, privado, em g/ml/un da unidade de venda. Sem valor por defeito. Omitir em
+            PUT remove o limiar; zero de stock é sempre indisponível.
+        reservasLeilao:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              quantidade:
+                type: integer
+                minimum: 0
+                maximum: 10000000
+              unidade:
+                type: string
+                enum:
+                  - g
+                  - ml
+                  - un
+              estado:
+                type: string
+                enum:
+                  - reservada
+                  - afeta_vencedor
+                  - libertacao_pendente
+            required:
+              - quantidade
+              - unidade
+              - estado
+      required:
+        - id
+        - nome
+        - estadoPublicacao
+        - moeda
+        - ingredientes
+        - etiquetas
+        - imagens
+        - createdAt
+        - updatedAt
+        - etag
+        - reservasLeilao

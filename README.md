@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 11A — gestão real do produtor, implementação local para revisão.** Produtos, fotografias, perfil e condições da loja persistem na API/MongoDB. Stock livre, reservas e limiares opcionais ficam separados, com concorrência por ETag e integração no catálogo e carrinho. O adaptador de imagens é exclusivo de desenvolvimento; a integração Cloud permanece para a Fase 13. Ver [requisitos, contratos, testes e limitações](docs/api/phase-11a-producer-management.md).
+
 **Fase 10 — confirmação de receção e atualizações privadas em direto, implementação local para revisão.** O comprador confirma explicitamente uma encomenda pronta, com transação, ETag e auditoria, preservando pagamento e stock. Comprador e produtor reconciliam alterações pela API e pelo Socket.IO existente; a compra concluída torna-se elegível para avaliações. Ver [arquitetura, revisão e limitações](docs/api/phase-10-orders-realtime.md). Os registos das fases abaixo descrevem o respetivo estado histórico.
 
 **Fase 9 — avaliações verificadas e moderação, implementação local para revisão.** Produtos e produtores avaliados separadamente a partir de compras históricas concluídas, comentários imutáveis, médias públicas reais, ocultação/restauro com ETag e auditoria. O fluxo normal ainda depende da futura confirmação de receção para ganhar elegibilidade. Ver [contratos, decisões e limitações](docs/api/phase-9-reviews-moderation.md).

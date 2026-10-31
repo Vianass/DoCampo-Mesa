@@ -6,7 +6,7 @@ import { createOrderLiveClient, type OrderConnection } from './order-live-client
 export function OrderUpdatesProvider({ children }: { children: ReactNode }) {
   const { pathname } = useLocation(),
     relevant =
-      /^\/area\/(comprador\/(encomendas|avaliacoes)(\/|$)|produtor(\/?$|\/encomendas(\/|$)))/.test(
+      /^\/area\/(comprador\/(encomendas|avaliacoes)(\/|$)|produtor(\/?$|\/(encomendas|produtos|indicadores)(\/|$)))/.test(
         pathname,
       );
   const { session, socketAuth, trackConnection, revalidate } = useAuth(),

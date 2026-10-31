@@ -33,6 +33,7 @@ export interface ProductRecord {
   moeda: 'EUR';
   unidadeVenda?: SaleUnitRecord;
   stockDisponivel?: number;
+  limiarStockBaixo?: number;
   ingredientesAplicaveis?: boolean;
   ingredientes: string[];
   etiquetas: string[];

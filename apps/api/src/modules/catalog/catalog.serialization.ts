@@ -95,6 +95,7 @@ export function productOwn(product: ProductRecord, key: Uint8Array) {
     moeda: product.moeda,
     unidadeVenda: unitPublic(product.unidadeVenda),
     stockDisponivel: product.stockDisponivel,
+    limiarStockBaixo: product.limiarStockBaixo,
     ingredientesAplicaveis: product.ingredientesAplicaveis,
     ingredientes: product.ingredientes,
     etiquetas: product.etiquetas,

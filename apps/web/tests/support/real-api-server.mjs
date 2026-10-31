@@ -1,4 +1,10 @@
 import { orderReceiptReview } from './order-receipt-review.mjs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createProducerManagementService } from '../../../api/src/modules/producers/producer-management.service.ts';
+import { createImageService } from '../../../api/src/modules/images/image.service.ts';
+import { developmentImageStorage } from '../../../api/src/modules/images/image.storage.ts';
 import { createOrderReceiptService } from '../../../api/src/modules/orders/order-receipt.service.ts';
 import { createOrderNotificationsService } from '../../../api/src/modules/orders/order-notifications.service.ts';
 import { createAdminAuctionsService } from '../../../api/src/modules/admin-auctions/admin-auctions.service.ts';
@@ -44,6 +50,7 @@ let reviewsReviewData;
 let orderReceiptReviewData;
 let realtime;
 let stopAuctions;
+let mediaDirectory;
 const reviewAuctions = process.env.DOCAMPO_AUCTION_REVIEW === '1';
 const checkoutReview = process.env.DOCAMPO_CHECKOUT_REVIEW === '1';
 const reviewProducer = process.env.DOCAMPO_PRODUCER_REVIEW === '1';
@@ -65,6 +72,7 @@ function stop() {
       await adminApplicationReviewData?.cleanup();
       await reviewsReviewData?.cleanup();
       await orderReceiptReviewData?.cleanup();
+      if (mediaDirectory) await rm(mediaDirectory, { recursive: true, force: true });
       await connection.close();
     }
     console.log('Base efémera desta execução removida.');
@@ -91,6 +99,14 @@ try {
   });
   const auth = createAuthService(connection, authConfig),
     catalog = createCatalogService(connection, authConfig.secret);
+  const producerManagement = createProducerManagementService(connection, authConfig.secret);
+  mediaDirectory = await mkdtemp(join(tmpdir(), 'docampo-test-media-'));
+  const images = createImageService(
+    connection,
+    catalog,
+    producerManagement,
+    developmentImageStorage(mediaDirectory, 'http://127.0.0.1:3011/api/media'),
+  );
   await auth.prepare();
   await catalog.prepare();
   const auctions = createAuctionService(connection, authConfig.secret);
@@ -158,6 +174,8 @@ try {
     createApp({
       auth,
       catalog,
+      producerManagement,
+      images,
       orders,
       receipt: createOrderReceiptService(connection, authConfig.secret),
       preparation,

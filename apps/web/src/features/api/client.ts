@@ -20,12 +20,14 @@ export class ApiFailure extends Error {
 export interface JsonRequestOptions {
   base?: string;
   timeoutMs?: number;
-  method?: 'GET' | 'POST' | 'PATCH' | 'PUT';
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   body?: unknown;
   bearer?: string;
   expectedStatus?: number | readonly number[];
   idempotencyKey?: string;
   ifMatch?: string;
+  image?: Blob;
+  responseType?: 'json' | 'blob';
 }
 export interface JsonResponseMetadata {
   etag: string | null;
@@ -68,12 +70,20 @@ export async function requestJson<T>(
       method: options.method ?? 'GET',
       headers: {
         Accept: 'application/json',
-        ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.image
+          ? { 'Content-Type': options.image.type }
+          : options.body !== undefined
+            ? { 'Content-Type': 'application/json' }
+            : {}),
         ...(options.bearer ? { Authorization: 'Bearer ' + options.bearer } : {}),
         ...(options.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : {}),
         ...(options.ifMatch ? { 'If-Match': options.ifMatch } : {}),
       },
-      ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+      ...(options.image
+        ? { body: options.image }
+        : options.body !== undefined
+          ? { body: JSON.stringify(options.body) }
+          : {}),
       credentials: 'omit',
       signal: controller.signal,
     });
@@ -130,6 +140,16 @@ export async function requestJson<T>(
       throw new ApiFailure('http', response.status, codigo, repeat);
     }
     const statuses = options.expectedStatus ?? 200;
+    if (
+      options.responseType === 'blob' &&
+      response.status === statuses &&
+      response.headers.get('content-type')?.startsWith('image/webp')
+    ) {
+      return parse(await response.blob(), { etag: response.headers.get('etag') });
+    }
+    if (response.status === 204 && options.expectedStatus === 204) {
+      return parse(undefined, { etag: response.headers.get('etag') });
+    }
     if (
       !(typeof statuses === 'number'
         ? response.status === statuses

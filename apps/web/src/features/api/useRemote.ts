@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { ApiFailure } from './client';
+import { onCatalogRefresh } from './catalog-events';
 export function useRemote<T>(key: string, load: (signal: AbortSignal) => Promise<T>, delay = 0) {
   const loader = useRef(load);
   useEffect(() => {
     loader.current = load;
   });
   const [attempt, setAttempt] = useState(0);
+  useEffect(() => onCatalogRefresh(() => setAttempt((n) => n + 1)), []);
   const [result, setResult] = useState<{
     key: string;
     attempt: number;

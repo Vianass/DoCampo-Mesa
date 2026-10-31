@@ -161,6 +161,22 @@ export function createCatalogService(connection: Connection, key: Uint8Array) {
       const match = {
         produtor: new Types.ObjectId(user.id),
         ...(query.estado ? { estadoPublicacao: query.estado } : {}),
+        ...(query.categoria ? { categoriaId: query.categoria } : {}),
+        ...(query.stock === 'esgotado'
+          ? { stockDisponivel: 0 }
+          : query.stock === 'disponivel'
+            ? { stockDisponivel: { $gt: 0 } }
+            : query.stock === 'baixo'
+              ? {
+                  $expr: {
+                    $and: [
+                      { $gt: ['$stockDisponivel', 0] },
+                      { $isNumber: '$limiarStockBaixo' },
+                      { $lte: ['$stockDisponivel', '$limiarStockBaixo'] },
+                    ],
+                  },
+                }
+              : {}),
         ...(query.pesquisa
           ? { nome: { $regex: catalogPattern(query.pesquisa), $options: 'i' } }
           : {}),
@@ -197,7 +213,24 @@ export function createCatalogService(connection: Connection, key: Uint8Array) {
     async ownProduct(user: AuthPrincipal, id: string) {
       await profile(user.id);
       const product = await owned(user, id);
-      return productOwn(product.toObject({ transform: false }), key);
+      const reservations = await connection
+        .db!.collection('auctions')
+        .find(
+          {
+            produto: product._id,
+            'reserva.estado': { $in: ['reservada', 'afeta_vencedor', 'libertacao_pendente'] },
+          },
+          { projection: { lote: 1, reserva: 1 }, maxTimeMS: 5000 },
+        )
+        .toArray();
+      return {
+        ...productOwn(product.toObject({ transform: false }), key),
+        reservasLeilao: reservations.map((a) => ({
+          quantidade: a.lote.quantidade - a.reserva.reposta,
+          unidade: a.lote.unidadeVenda.unidadeBase,
+          estado: a.reserva.estado,
+        })),
+      };
     },
     async create(user: AuthPrincipal, input: ProductCreate) {
       const id = new Types.ObjectId();
@@ -219,6 +252,27 @@ export function createCatalogService(connection: Connection, key: Uint8Array) {
         const product = await owned(user, id, session);
         matchTag(product, tag);
         const producer = await guardedProfile(user.id, session);
+        const reserved = await connection.db!.collection('auctions').findOne(
+          {
+            produto: product._id,
+            'reserva.estado': { $in: ['reservada', 'afeta_vencedor', 'libertacao_pendente'] },
+          },
+          { session, projection: { _id: 1 } },
+        );
+        if (
+          reserved &&
+          JSON.stringify(
+            productWriteFields.unidadeVenda.parse(
+              product.toObject({ transform: false }).unidadeVenda,
+            ),
+          ) !== JSON.stringify(productWriteFields.unidadeVenda.parse(input.unidadeVenda))
+        ) {
+          throw new ApiError(
+            409,
+            'UNIDADE_RESERVADA',
+            'Há um lote reservado. Mantém a unidade e as regras de quantidade; edita apenas o stock livre.',
+          );
+        }
         if (
           producer.aprovacao.estado !== 'aprovado' &&
           (product.estadoPublicacao !== 'rascunho' || input.estadoPublicacao !== 'rascunho')

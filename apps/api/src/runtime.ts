@@ -1,4 +1,9 @@
 import { createOrderReceiptService } from './modules/orders/order-receipt.service.js';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createProducerManagementService } from './modules/producers/producer-management.service.js';
+import { createImageService } from './modules/images/image.service.js';
+import { developmentImageStorage } from './modules/images/image.storage.js';
 import { createOrderNotificationsService } from './modules/orders/order-notifications.service.js';
 import { createAdminAuctionsService } from './modules/admin-auctions/admin-auctions.service.js';
 import { createReviewsService } from './modules/reviews/reviews.service.js';
@@ -52,6 +57,31 @@ export async function startApi(
     ? createCatalogService(database.connection!, authentication.secret)
     : undefined;
   const orders = authentication ? createOrdersService(database.connection!) : undefined;
+  const producerManagement = authentication
+    ? createProducerManagementService(database.connection!, authentication.secret)
+    : undefined;
+  if (configuration.environment === 'production' && process.env.MEDIA_STORAGE === 'development') {
+    await database.close();
+    throw new Error('Armazenamento local de imagens proibido em produção.');
+  }
+  let images: ReturnType<typeof createImageService> | undefined;
+  try {
+    images =
+      authentication && catalog && producerManagement && configuration.environment !== 'production'
+        ? createImageService(
+            database.connection!,
+            catalog,
+            producerManagement,
+            developmentImageStorage(
+              process.env.MEDIA_DIRECTORY ?? join(tmpdir(), 'docampo-media-development'),
+              process.env.MEDIA_PUBLIC_BASE ?? `http://127.0.0.1:${configuration.port}/api/media`,
+            ),
+          )
+        : undefined;
+  } catch {
+    await database.close();
+    throw new Error('Configuração de armazenamento de imagens inválida.');
+  }
   const preparation = authentication
     ? createCheckoutPreparationService(database.connection!)
     : undefined;
@@ -92,6 +122,8 @@ export async function startApi(
         ? {
             auth,
             catalog,
+            producerManagement,
+            images,
             orders,
             receipt: createOrderReceiptService(database.connection!, authentication.secret),
             preparation,

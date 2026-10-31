@@ -24,6 +24,10 @@ import type { AuctionService } from './modules/auctions/auction.service.js';
 import type { AuctionRateOptions } from './modules/auctions/auction-rate-limit.js';
 import { producerApplicationRoutes } from './modules/producer-applications/producer-application.routes.js';
 import type { ProducerApplicationService } from './modules/producer-applications/producer-application.service.js';
+import { producerManagementRoutes } from './modules/producers/producer-management.routes.js';
+import type { ProducerManagementService } from './modules/producers/producer-management.service.js';
+import { imageRoutes } from './modules/images/image.routes.js';
+import type { ImageService } from './modules/images/image.service.js';
 
 import { adminRoutes } from './modules/admin/admin.routes.js';
 import type { AdminService } from './modules/admin/admin.service.js';
@@ -38,6 +42,8 @@ export function createApp(
     producerOrders?: ProducerOrdersService;
     auctions?: AuctionService;
     producerApplications?: ProducerApplicationService;
+    producerManagement?: ProducerManagementService;
+    images?: ImageService;
     auctionLimits?: AuctionRateOptions;
     admin?: AdminService;
     adminOrders?: AdminOrdersService;
@@ -62,6 +68,9 @@ export function createApp(
   if (options.auth) app.use('/api/auth', authRoutes(options.auth, options.rateLimit));
   if (options.reviews) app.use('/api', reviewsRoutes(options.reviews, options.auth));
   if (options.catalog) app.use('/api', catalogRoutes(options.catalog, options.auth));
+  if (options.producerManagement)
+    app.use('/api/me/producer', producerManagementRoutes(options.producerManagement, options.auth));
+  if (options.images) app.use('/api', imageRoutes(options.images, options.auth));
   if (options.orders)
     app.use(
       '/api/orders',

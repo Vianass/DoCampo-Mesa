@@ -1,4 +1,5 @@
 import { useOrderUpdates } from '../orders/OrderUpdatesContext';
+import { ProducerInventorySummary } from '../producer-management/ProducerManagementArea';
 import { OrderConnectionNote } from '../orders/OrderConnectionNote';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router';
@@ -202,6 +203,7 @@ export default function ProducerOrdersArea({ overview = false }: { overview?: bo
         </p>
       </header>
       {overview && session.kind === 'authenticated' && <AccountIdentity user={session.user} />}
+      {overview && <ProducerInventorySummary />}
       <OrderConnectionNote />
       <div className="producer-live-toolbar">
         <Button to="/area/produtor/encomendas" variant="text">

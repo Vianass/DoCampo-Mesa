@@ -150,6 +150,7 @@ export function createProductModel(connection: Connection): Model<ProductRecord>
         ...integerField(0),
         required: publishedProduct,
       },
+      limiarStockBaixo: { ...integerField(0), max: 10_000_000, default: undefined },
       revisaoOperacional: { ...integerField(0), required: true, default: 0 },
       ingredientesAplicaveis: {
         type: Boolean,

@@ -23,6 +23,7 @@ const ProducerAuctionsArea = lazy(() => import('../auctions/ProducerAuctionsArea
 const BuyerAuctionsArea = lazy(() => import('../auctions/BuyerAuctionsArea'));
 const OrdersArea = lazy(() => import('../orders/OrdersArea'));
 const ProducerOrdersArea = lazy(() => import('../producer-orders/ProducerOrdersArea'));
+const ProducerManagementArea = lazy(() => import('../producer-management/ProducerManagementArea'));
 export function AccountArea() {
   const { session } = useAuth();
   const location = useLocation();
@@ -102,6 +103,12 @@ export function AccountArea() {
       </Suspense>
     );
   const section = privateSections[role].find((item) => item.slug === pieces[2]);
+  if (role === 'produtor' && ['produtos', 'perfil'].includes(pieces[2] ?? ''))
+    return (
+      <Suspense fallback={<LoadingSkeleton label="A carregar a gestão da produção" count={2} />}>
+        <ProducerManagementArea />
+      </Suspense>
+    );
   if (role === 'produtor' && (!pieces[2] || ['encomendas', 'indicadores'].includes(pieces[2])))
     return (
       <Suspense fallback={<LoadingSkeleton label="A carregar a atividade do produtor" count={2} />}>
