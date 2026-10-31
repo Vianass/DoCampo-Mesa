@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { AuctionCard } from '../components/AuctionCard';
+import { FeaturedAuctions } from '../features/discovery/FeaturedAuctions';
 import { Button } from '../components/Button';
 import { CategoryPill } from '../components/CategoryPill';
 import { Container } from '../components/Container';
@@ -8,7 +8,6 @@ import { Icon } from '../components/Icon';
 import { ProductCard } from '../components/ProductCard';
 import { ProducerCard } from '../components/ProducerCard';
 import { SectionHeading } from '../components/SectionHeading';
-import { auction } from '../data/market';
 import { categories } from '../features/api/catalog-contract';
 import { adaptProduct, adaptProducer, catalogApi } from '../features/api/catalog';
 import { useRemote } from '../features/api/useRemote';
@@ -161,7 +160,7 @@ export function HomePage() {
               </Button>
             }
           />
-          <AuctionCard auction={auction} />
+          <FeaturedAuctions />
         </Container>
       </section>
       <section className="market-section producer-section" aria-labelledby="producers-title">

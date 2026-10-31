@@ -87,6 +87,7 @@ export function createImageService(
         descricao: item.descricao,
         telefone: item.telefone,
         comercial: item.comercial,
+        localizacaoPublica: item.localizacaoPublica,
       };
       return profiles.replace(
         user,

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { LocationFields } from '../discovery/LocationFields';
+import { useLocationDraft } from '../discovery/useLocationDraft';
 import { Link } from 'react-router';
 import { Button } from '../../components/Button';
 import { FormField } from '../../components/FormField';
@@ -117,8 +119,10 @@ export function ProfileForm({
         : euros(profile.comercial.taxaEntregaCent),
     ),
     [validation, setValidation] = useState('');
+  const location = useLocationDraft(profile.localizacaoPublica);
   const mutation = useManagementMutation(),
     dirty =
+      location.dirty ||
       JSON.stringify(draft) !== JSON.stringify(initial) ||
       enabled !== !!profile.comercial ||
       JSON.stringify(commercial) !== JSON.stringify(profile.comercial ?? blankCommercial()) ||
@@ -159,6 +163,10 @@ export function ProfileForm({
             setValidation('Define pelo menos um período para cada modalidade ativa.');
             return;
           }
+          if (location.enabled && !location.valid) {
+            setValidation('Confirma o ponto público e a autorização para o publicar.');
+            return;
+          }
           setValidation('');
           void mutation.run(
             '/me/producer',
@@ -168,6 +176,7 @@ export function ProfileForm({
               ifMatch: profile.etag,
               body: {
                 ...draft,
+                localizacaoPublica: location.value,
                 comercial: enabled ? { ...commercial, taxaEntregaCent: value } : null,
               },
             },
@@ -381,6 +390,7 @@ export function ProfileForm({
               </p>
             </fieldset>
           )}
+          <LocationFields location={location} />
           <Button type="submit" disabled={mutation.busy || mutation.blocked}>
             {mutation.busy ? 'A guardar…' : 'Guardar perfil e condições'}
           </Button>

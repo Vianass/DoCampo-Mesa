@@ -37,6 +37,19 @@ export function projectProducerPublic(value: unknown): Record<string, unknown> {
     'updatedAt',
   ]);
   if (value._id instanceof Types.ObjectId) result.id = value._id.toHexString();
+  if (object(value.localizacaoPublica) && value.localizacaoPublica.autorizada === true) {
+    const location = value.localizacaoPublica;
+    if (
+      typeof location.latitude === 'number' &&
+      Number.isFinite(location.latitude) &&
+      Math.abs(location.latitude) <= 90 &&
+      typeof location.longitude === 'number' &&
+      Number.isFinite(location.longitude) &&
+      Math.abs(location.longitude) <= 180 &&
+      typeof location.descricao === 'string'
+    )
+      result.localizacaoPublica = pick(location, ['latitude', 'longitude', 'descricao']);
+  }
   if (object(value.imagem)) result.imagem = pick(value.imagem, ['url', 'alt']);
   if (object(value.aprovacao)) result.aprovacao = pick(value.aprovacao, ['estado']);
   if (object(value.comercial)) {

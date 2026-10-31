@@ -1,3 +1,4 @@
+import { publicLocationInput } from './producer-location.validation.js';
 import { z } from 'zod';
 import { applicationInput } from '../producer-applications/producer-application.validation.js';
 import { validateProducerCommercial } from './producer-commercial.validation.js';
@@ -68,5 +69,6 @@ export const profileInput = applicationInput.extend({
     })
     .optional(),
   comercial: commercialInput.nullable(),
+  localizacaoPublica: publicLocationInput.nullable().optional(),
 });
 export type ProfileInput = z.infer<typeof profileInput>;

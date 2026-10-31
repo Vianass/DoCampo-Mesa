@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 11B — pesquisa, localização e descoberta, implementação local para revisão.** Pesquisa MongoDB por ingredientes com os filtros existentes, ponto público opcional autorizado pelo produtor e mapa interativo mediante escolha do visitante. A homepage destaca leilões reais, com relógio sincronizado e reconciliação REST. Sem geocodificação automática ou divulgação da morada privada. Ver [arquitetura, privacidade, testes e limitações](docs/api/phase-11b-discovery-and-maps.md).
+
 **Fase 11A — gestão real do produtor, implementação local para revisão.** Produtos, fotografias, perfil e condições da loja persistem na API/MongoDB. Stock livre, reservas e limiares opcionais ficam separados, com concorrência por ETag e integração no catálogo e carrinho. O adaptador de imagens é exclusivo de desenvolvimento; a integração Cloud permanece para a Fase 13. Ver [requisitos, contratos, testes e limitações](docs/api/phase-11a-producer-management.md).
 
 **Fase 10 — confirmação de receção e atualizações privadas em direto, implementação local para revisão.** O comprador confirma explicitamente uma encomenda pronta, com transação, ETag e auditoria, preservando pagamento e stock. Comprador e produtor reconciliam alterações pela API e pelo Socket.IO existente; a compra concluída torna-se elegível para avaliações. Ver [arquitetura, revisão e limitações](docs/api/phase-10-orders-realtime.md). Os registos das fases abaixo descrevem o respetivo estado histórico.

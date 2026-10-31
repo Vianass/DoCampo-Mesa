@@ -23,6 +23,7 @@ export function createProducerManagementService(connection: Connection, key: Uin
     concelho: p.concelho,
     descricao: p.descricao,
     telefone: p.telefone,
+    ...(p.localizacaoPublica?.autorizada ? { localizacaoPublica: p.localizacaoPublica } : {}),
     ...(p.imagem ? { imagem: p.imagem } : {}),
     comercial: p.comercial ?? null,
     estadoAprovacao: p.aprovacao.estado,
@@ -89,6 +90,7 @@ export function createProducerManagementService(connection: Connection, key: Uin
             ] as const)
               p.set(field, parsed[field]);
             p.set('comercial', parsed.comercial ?? undefined);
+            p.set('localizacaoPublica', parsed.localizacaoPublica ?? undefined);
             await p.save({ session });
             return dto(p.toObject({ transform: false }) as ProducerRecord);
           },

@@ -1,3 +1,4 @@
+import { parsePublicLocation, type PublicLocation } from '../discovery/location';
 import { record, text, number, id } from '../auctions/contracts';
 import { InvalidResponse, parsePage } from '../api/catalog-contract';
 import type { SaleUnit } from '../../types/market';
@@ -60,6 +61,7 @@ export interface Profile {
   telefone: string;
   imagem?: Photo;
   comercial: Commercial | null;
+  localizacaoPublica?: PublicLocation & { autorizada: true };
   estadoAprovacao: 'pendente' | 'aprovado' | 'rejeitado';
 }
 function tag(v: unknown) {
@@ -229,6 +231,19 @@ export function parseProfile(v: unknown): Profile {
     descricao: text(r.descricao),
     telefone: text(r.telefone),
     comercial,
+    ...(r.localizacaoPublica === undefined
+      ? {}
+      : {
+          localizacaoPublica: {
+            ...parsePublicLocation(r.localizacaoPublica),
+            autorizada:
+              record(r.localizacaoPublica).autorizada === true
+                ? (true as const)
+                : (() => {
+                    throw new InvalidResponse();
+                  })(),
+          },
+        }),
     ...(r.imagem === undefined ? {} : { imagem: photo(r.imagem) }),
   };
 }

@@ -304,6 +304,7 @@ export function ProductForm({
             <label className="form-field">
               Ingredientes (um por linha)
               <textarea
+                aria-label="Ingredientes (um por linha)"
                 className="form-control"
                 rows={3}
                 value={draft.ingredientes.join('\n')}

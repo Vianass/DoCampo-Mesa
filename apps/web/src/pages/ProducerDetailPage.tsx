@@ -1,3 +1,4 @@
+import { PublicProducerMap } from '../features/discovery/PublicProducerMap';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { Container } from '../components/Container';
@@ -162,13 +163,15 @@ export default function ProducerDetailPage() {
               <em>A origem aproxima.</em>
             </h2>
             <p>
-              {producer.concelho}. Não existem coordenadas ou contactos públicos disponibilizados
-              pela API. Não é apresentada a localização de uma exploração.
+              {producer.localizacaoPublica
+                ? 'Ponto público escolhido e autorizado pelo produtor. Não representa uma localização verificada pela plataforma.'
+                : `${producer.concelho}. Não existem coordenadas ou contactos públicos disponibilizados pela API. Não é apresentada a localização de uma exploração.`}
             </p>
           </div>
-          <EmptyState
-            title="Conhecer sem inventar."
-            description="Mapa e certificações serão apresentados quando existirem dados públicos verificados e contratos próprios."
+          <PublicProducerMap
+            key={JSON.stringify(producer.localizacaoPublica)}
+            locality={producer.localidade}
+            location={producer.localizacaoPublica}
           />
         </section>
         <section

@@ -16,6 +16,7 @@ const producerProjection = {
   concelho: 1,
   descricao: 1,
   imagem: 1,
+  localizacaoPublica: 1,
   createdAt: 1,
   updatedAt: 1,
   'comercial.modalidades': 1,
@@ -184,6 +185,7 @@ export function createCatalogRepository(connection: Connection) {
       ...termMatch(query.pesquisa, [
         'nome',
         'descricao',
+        'ingredientes',
         'perfil.nomePublico',
         'perfil.localidade',
       ]),

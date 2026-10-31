@@ -56,7 +56,8 @@ export default function ProductsPage() {
               label="Pesquisar produtos ou produtores"
               labelHidden
               type="search"
-              placeholder="Um produto, um produtor, uma história…"
+              placeholder="Produto, ingrediente ou produtor…"
+              aria-describedby="catalog-search-hint"
               value={state.filters.search}
               maxLength={100}
               onChange={(event) => catalog.setFilter('search', event.target.value, true)}
@@ -83,9 +84,11 @@ export default function ProductsPage() {
             Filtrar{activeFilters.length > 0 && <span>{activeFilters.length}</span>}
           </button>
         </div>
+        <p id="catalog-search-hint" className="form-field__hint">
+          Pesquisa também ingredientes; combina palavras, sem distinguir acentos ou maiúsculas.
+        </p>
         <p className="catalog-demo-label">
-          Produtos e origens do catálogo público. A cesta guarda escolhas locais; ainda não há
-          compras online.
+          Produtos e origens do catálogo público. A cesta guarda escolhas locais.
         </p>
         <div className="catalog-layout">
           <aside className="catalog-sidebar" aria-label="Filtros do catálogo">

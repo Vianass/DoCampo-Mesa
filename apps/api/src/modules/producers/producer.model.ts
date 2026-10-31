@@ -1,3 +1,4 @@
+import type { ProducerPublicLocation } from './producer-location.validation.js';
 import { Error as MongooseError, Schema } from 'mongoose';
 import type { Connection, Model, Types } from 'mongoose';
 import { dateField, requireDocumentValidation, textField } from '../shared/model-validation.js';
@@ -41,6 +42,7 @@ export interface ProducerRecord {
   descricao: string;
   telefone: string;
   imagem?: ProducerImage;
+  localizacaoPublica?: ProducerPublicLocation;
   aprovacao: ProducerApplication;
   historicoCandidaturas?: ProducerApplicationHistory[];
   comercial?: ProducerCommercialSettings;
@@ -111,6 +113,23 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
     },
     { _id: false, strict: 'throw' },
   );
+  const locationSchema = new Schema<ProducerPublicLocation>(
+    {
+      latitude: { type: Number, cast: false, required: true, min: -90, max: 90 },
+      longitude: { type: Number, cast: false, required: true, min: -180, max: 180 },
+      descricao: textField('localizacaoPublica.descricao', 200),
+      autorizada: {
+        type: Boolean,
+        cast: false,
+        required: true,
+        validate: {
+          validator: (value: boolean) => value === true,
+          message: 'Publicação exige autorização explícita.',
+        },
+      },
+    },
+    { _id: false, strict: 'throw' },
+  );
   const schema = new Schema<ProducerRecord>(
     {
       userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, immutable: true },
@@ -120,6 +139,7 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
       descricao: textField('descricao', 5000),
       telefone: { ...textField('telefone'), select: false },
       imagem: { type: imageSchema, default: undefined },
+      localizacaoPublica: { type: locationSchema, default: undefined },
       aprovacao: { type: applicationSchema, required: true, default: () => ({}) },
       historicoCandidaturas: {
         type: [createApplicationHistorySchema()],

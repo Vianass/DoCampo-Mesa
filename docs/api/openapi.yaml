@@ -2,7 +2,7 @@
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.11.0-local-producer
+  version: 0.11.1-local-discovery
   description:
     'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração React local; A Fase 5F acrescenta consulta e avanço operacional de encomendas pelo produtor autenticado, com ETag, auditoria e indicadores; A Fase 6A implementa leilões e licitações REST transacionais, sem encomenda automática, pagamentos ou Socket.IO; não existe publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
@@ -37,6 +37,7 @@ x-admin-auction-realtime:
   payload: apenas-consultar-true-sem-dados-comerciais
   authority: REST-MongoDB
   recovery: consulta-periodica-15-segundos-e-reconexao
+x-local-discovery-and-maps: phase-11b-discovery-and-maps.md
 x-local-producer-management: phase-11a-producer-management.md
 x-stock-alert-decision: Limiar opcional por produto, sem valor por defeito; stock zero indisponível.
 x-local-order-realtime: phase-10-orders-realtime.md
@@ -591,9 +592,11 @@ paths:
         - Produtos
       summary: Consultar catálogo público
       description:
-        Apenas publicados de perfis aprovados e contas ativas com capacidade produtor. Stock zero permanece
-        público. Pesquisa literal por termos, insensível a acentos portugueses; todas as condições combinam por AND.
-        Sem dados privados, revisões ou certificações inferidas.
+        Apenas publicados de perfis aprovados e contas ativas com capacidade produtor. Stock
+        zero permanece público. Pesquisa literal por termos, insensível a acentos portugueses; todas as
+        condições combinam por AND. Sem dados privados, revisões ou certificações inferidas. A Fase 11B
+        inclui o array ingredientes na pesquisa por termos; produtos antigos sem esse array são lidos com
+        lista vazia, sem migração nem dados fictícios.
       security: []
       x-authorized-roles:
         - visitante
@@ -673,8 +676,8 @@ paths:
         - Produtos
       summary: Criar rascunho próprio
       description:
-        Cria sempre rascunho, com owner e EUR atribuídos pelo servidor. Perfil pendente ou aprovado; conta
-        produtora ativa. Não aceita estado, ID, owner ou revisão. Publicação só por PUT explícito.
+        Cria sempre rascunho, com owner e EUR atribuídos pelo servidor. Perfil pendente ou aprovado;
+        conta produtora ativa. Não aceita estado, ID, owner ou revisão. Publicação só por PUT explícito.
       security:
         - bearerAuth: []
       x-authorized-roles:
@@ -702,7 +705,9 @@ paths:
               schema:
                 type: string
             Location:
-              description: URI do produto criado; rascunho não é público. Consultar /api/me/products/{id} para gestão.
+              description:
+                URI do produto criado; rascunho não é público. Consultar /api/me/products/{id}
+                para gestão.
               required: true
               schema:
                 type: string
@@ -4898,8 +4903,9 @@ components:
         minLength: 1
         maxLength: 100
       description:
-        Texto literal, máximo 10 termos. Em products procura nome, descrição, produtor e localidade; em producers
-        nome, descrição, localidade e concelho; em produtos próprios procura nome. Omitir valores vazios.
+        Texto literal, máximo 10 termos. Em products procura nome, descrição, ingredientes, produtor
+        e localidade; em producers nome, descrição, localidade e concelho; em produtos próprios procura nome.
+        Omitir valores vazios.
     CatalogPage:
       name: pagina
       in: query
@@ -6797,6 +6803,8 @@ components:
           $ref: '#/components/schemas/Timestamp'
         comercial:
           $ref: '#/components/schemas/CatalogCommercialPublic'
+        localizacaoPublica:
+          $ref: '#/components/schemas/ProducerLocationPublic11B'
       required:
         - id
         - nomePublico
@@ -7011,6 +7019,8 @@ components:
           $ref: '#/components/schemas/CatalogCommercialPublic'
         produtos:
           $ref: '#/components/schemas/CatalogProductPage'
+        localizacaoPublica:
+          $ref: '#/components/schemas/ProducerLocationPublic11B'
       required:
         - id
         - nomePublico
@@ -12023,11 +12033,12 @@ components:
             - url
         comercial:
           $ref: '#/components/schemas/ProducerCommercial11A'
+        localizacaoPublica:
+          $ref: '#/components/schemas/ProducerLocationWrite11B'
       description:
         Substituição completa dos campos editáveis; comercial é obrigatório e pode ser null. Sem
         aprovação, histórico, papéis ou proprietário. Textos NFC aparados. URLs apenas HTTP(S) sem credenciais;
         o frontend utiliza envio binário.
-
     ProducerProfileOwn11A:
       type: object
       additionalProperties: false
@@ -12088,10 +12099,11 @@ components:
           enum:
             - pendente
             - aprovado
+        localizacaoPublica:
+          $ref: '#/components/schemas/ProducerLocationOwn11B'
       description:
         DTO privado do próprio produtor. Inclui telefone e condições privadas; exclui autor administrativo,
         histórico e identificadores de contas.
-
     ProducerInventoryIndicators11A:
       type: object
       additionalProperties: false
@@ -12271,3 +12283,84 @@ components:
         - updatedAt
         - etag
         - reservasLeilao
+
+    ProducerLocationPublic11B:
+      type: object
+      additionalProperties: false
+      required:
+        - latitude
+        - longitude
+        - descricao
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        descricao:
+          type: string
+          minLength: 1
+          maxLength: 200
+      description:
+        Ponto escolhido e autorizado pelo produtor; não geocodificado nem verificado como morada
+        pela plataforma. Ausente quando não publicado.
+
+    ProducerLocationWrite11B:
+      type: object
+      additionalProperties: false
+      required:
+        - latitude
+        - longitude
+        - descricao
+        - autorizada
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        descricao:
+          type: string
+          minLength: 1
+          maxLength: 200
+        autorizada:
+          type: boolean
+          enum:
+            - true
+      description:
+        Opcional; null ou omissão em PUT completo remove o ponto. Quando presente exige autorização
+        explícita true. Nunca derivado de moradas de levantamento/entrega.
+      nullable: true
+
+    ProducerLocationOwn11B:
+      type: object
+      additionalProperties: false
+      required:
+        - latitude
+        - longitude
+        - descricao
+        - autorizada
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        descricao:
+          type: string
+          minLength: 1
+          maxLength: 200
+        autorizada:
+          type: boolean
+          enum:
+            - true
+      description: Ponto próprio, com autorização explícita; omitido quando removido.

@@ -1,3 +1,4 @@
+import { parsePublicLocation, type PublicLocation } from '../discovery/location';
 import type { ProductCategory, SaleUnit } from '../../types/market';
 
 // Taxonomia pública estável da Fase 5A; não depende da página de resultados.
@@ -46,6 +47,7 @@ export interface ProducerDto {
   descricao: string;
   imagem?: ImageDto;
   comercial?: CommercialDto;
+  localizacaoPublica?: PublicLocation;
   createdAt: string;
   updatedAt: string;
 }
@@ -217,6 +219,7 @@ export function parseProducer(value: unknown): ProducerDto {
   id(value.id);
   for (const key of ['nomePublico', 'localidade', 'concelho', 'descricao']) text(value[key]);
   if (value.imagem !== undefined) image(value.imagem);
+  if (value.localizacaoPublica !== undefined) parsePublicLocation(value.localizacaoPublica);
   commercial(value.comercial);
   date(value.createdAt);
   date(value.updatedAt);

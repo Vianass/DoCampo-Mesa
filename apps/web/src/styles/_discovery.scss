@@ -1,0 +1,76 @@
+@use 'tokens' as t;
+.featured-auction {
+  > * {
+    min-width: 0;
+  }
+  .auction-card__numbers {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  }
+  .auction-card__numbers > div + div {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .auction-clock strong {
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+  .auction-photo {
+    width: 100%;
+    aspect-ratio: auto;
+    height: 100%;
+    border-radius: 0;
+  }
+  .auction-photo img {
+    min-height: 100%;
+    object-fit: cover;
+  }
+  .auction-card__numbers small {
+    display: block;
+    margin-top: 0.5rem;
+  }
+  .auction-clock {
+    color: inherit;
+    min-width: 0;
+  }
+  .auction-clock strong {
+    color: inherit;
+  }
+  .auction-clock small {
+    color: inherit;
+  }
+}
+.producer-map--live,
+.producer-location-unavailable {
+  min-width: 0;
+  padding: 1rem;
+  background: t.$cream;
+  border: 1px solid t.$line;
+  border-radius: t.$radius-small;
+  overflow-wrap: anywhere;
+}
+.producer-map-canvas {
+  width: 100%;
+  min-width: 0;
+  height: 300px;
+  position: relative;
+  z-index: 0;
+}
+.producer-interactive-map .leaflet-container {
+  font-family: t.$font-body;
+}
+.producer-map-consent p,
+.map-instructions,
+.map-attribution {
+  font-size: 0.85rem;
+}
+.producer-map--live .leaflet-control-attribution {
+  max-width: 100%;
+  background: white;
+  color: #193c34;
+}
+.producer-map--live .leaflet-control-attribution a {
+  color: #193c34;
+}
+.featured-auction .auction-clock span {
+  color: inherit;
+}
