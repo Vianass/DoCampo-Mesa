@@ -1,3 +1,4 @@
+import { receiptMetadata } from './order-receipt.service.js';
 import { Types, type Connection } from 'mongoose';
 import type { AuthPrincipal } from '../auth/auth.service.js';
 import { ApiError } from '../../http/api-error.js';
@@ -139,7 +140,13 @@ export function createOrdersService(
         const record = await collection().findOne(
           { _id: new Types.ObjectId(id), comprador: owner },
           {
-            projection: { ...projection, 'entrega.snapshot': 1, historicoEstado: 1 },
+            projection: {
+              ...projection,
+              versao: 1,
+              rececao: 1,
+              'entrega.snapshot': 1,
+              historicoEstado: 1,
+            },
             maxTimeMS: 5000,
             readConcern: { level: 'majority' },
             readPreference: 'primary',
@@ -150,7 +157,11 @@ export function createOrdersService(
         const produtor = (await producerLabels(connection, [record.produtor])).get(
           record.produtor.toHexString(),
         );
-        return { ...buyerOrderDetailDto(record), ...(produtor ? { produtor } : {}) };
+        return {
+          ...buyerOrderDetailDto(record),
+          ...receiptMetadata(record),
+          ...(produtor ? { produtor } : {}),
+        };
       });
     },
   };

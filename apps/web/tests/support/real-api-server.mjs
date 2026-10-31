@@ -1,3 +1,6 @@
+import { orderReceiptReview } from './order-receipt-review.mjs';
+import { createOrderReceiptService } from '../../../api/src/modules/orders/order-receipt.service.ts';
+import { createOrderNotificationsService } from '../../../api/src/modules/orders/order-notifications.service.ts';
 import { createAdminAuctionsService } from '../../../api/src/modules/admin-auctions/admin-auctions.service.ts';
 import { createReviewsService } from '../../../api/src/modules/reviews/reviews.service.ts';
 import { reviewsReview } from './reviews-review.mjs';
@@ -38,6 +41,7 @@ let producerReviewData;
 let auctionReviewData;
 let adminApplicationReviewData;
 let reviewsReviewData;
+let orderReceiptReviewData;
 let realtime;
 let stopAuctions;
 const reviewAuctions = process.env.DOCAMPO_AUCTION_REVIEW === '1';
@@ -46,6 +50,7 @@ const reviewProducer = process.env.DOCAMPO_PRODUCER_REVIEW === '1';
 const reviewApplication = process.env.DOCAMPO_APPLICATION_REVIEW === '1';
 const reviewAdminApplications = process.env.DOCAMPO_ADMIN_APPLICATION_REVIEW === '1';
 const reviewReviews = process.env.DOCAMPO_REVIEWS_REVIEW === '1';
+const reviewReceipt = process.env.DOCAMPO_RECEIPT_REVIEW === '1';
 function stop() {
   return (stopping ??= (async () => {
     await realtime?.close();
@@ -59,6 +64,7 @@ function stop() {
       await auctionReviewData?.cleanup();
       await adminApplicationReviewData?.cleanup();
       await reviewsReviewData?.cleanup();
+      await orderReceiptReviewData?.cleanup();
       await connection.close();
     }
     console.log('Base efémera desta execução removida.');
@@ -76,7 +82,8 @@ try {
       reviewAuctions ||
       reviewApplication ||
       reviewAdminApplications ||
-      reviewReviews
+      reviewReviews ||
+      reviewReceipt
         ? '900'
         : '60',
     JWT_SECRET: randomBytes(48).toString('base64url'),
@@ -93,6 +100,12 @@ try {
   const producerOrders = createProducerOrdersService(connection, authConfig.secret);
   await orders.prepare();
   await preparation.prepare();
+  if (reviewReceipt) {
+    orderReceiptReviewData = await orderReceiptReview(connection, authConfig.secret);
+    console.log(
+      'Revisão de receção — contas fictícias em ficheiro privado: ' + orderReceiptReviewData.file,
+    );
+  }
   const adminAuctions = createAdminAuctionsService(connection, authConfig.secret);
   const reviews = createReviewsService(connection, authConfig.secret);
   await reviews.prepare();
@@ -146,6 +159,7 @@ try {
       auth,
       catalog,
       orders,
+      receipt: createOrderReceiptService(connection, authConfig.secret),
       preparation,
       producerOrders,
       auctions,
@@ -169,8 +183,9 @@ try {
       syncIntervalMs: 100,
       authIntervalMs: 1000,
     },
-    {},
+    { connectionAttempts: 100000 },
     adminAuctions,
+    createOrderNotificationsService(connection),
   );
   stopAuctions = auctions.startLifecycle();
   server.listen(3011, '127.0.0.1', () =>

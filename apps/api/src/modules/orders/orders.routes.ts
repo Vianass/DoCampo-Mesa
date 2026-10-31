@@ -1,3 +1,5 @@
+import { createAuctionRateLimit } from '../auctions/auction-rate-limit.js';
+import { confirmReceiptInput, type OrderReceiptService } from './order-receipt.service.js';
 import { Router, type RequestHandler } from 'express';
 import type { AuthService } from '../auth/auth.service.js';
 import { unauthorized } from '../auth/auth.service.js';
@@ -17,8 +19,10 @@ export function ordersRoutes(
   service: OrdersService,
   auth?: AuthService,
   preparation?: CheckoutPreparationService,
+  receipt?: OrderReceiptService,
 ) {
-  const router = Router();
+  const router = Router(),
+    receiptRate = createAuctionRateLimit({ ipLimit: 240, accountLimit: 60 });
   router.use((_req, res, next) => {
     res.setHeader('Cache-Control', 'no-store');
     next();
@@ -92,12 +96,43 @@ export function ordersRoutes(
       res.json(await service.list(access!.principal(req), res.locals.validated));
     },
   );
+  if (receipt)
+    router.patch(
+      '/:id/receipt',
+      receiptRate.byIp,
+      (req, res, next) => {
+        receiptRate.account(access!.principal(req).id, res);
+        next();
+      },
+      validate(orderParams, (req) => req.params),
+      validate(emptyOrderQuery, (req) => req.query),
+      (req, _res, next) => {
+        if (!req.is('application/json'))
+          throw new ApiError(415, 'CONTEUDO_NAO_SUPORTADO', 'Utiliza application/json.');
+        next();
+      },
+      validate(confirmReceiptInput, (req) => req.body),
+      async (req, res) => {
+        const values = req.headersDistinct['if-match'];
+        if (values && values.length !== 1)
+          throw new ApiError(400, 'IF_MATCH_INVALIDO', 'Envia um único ETag forte.');
+        const result = await receipt.confirm(
+          access!.principal(req),
+          String(req.params.id).toLowerCase(),
+          values?.[0],
+        );
+        res.setHeader('ETag', result.etag).json(result.body);
+      },
+    );
   router.get(
     '/:id',
     validate(orderParams, (req) => req.params),
     validate(emptyOrderQuery, (req) => req.query),
     async (req, res) => {
-      res.json(await service.detail(access!.principal(req), String(req.params.id).toLowerCase()));
+      const principal = access!.principal(req);
+      const result = await service.detail(principal, String(req.params.id).toLowerCase());
+      if (receipt) res.setHeader('ETag', receipt.etag(principal, result));
+      res.json(result);
     },
   );
   return router;

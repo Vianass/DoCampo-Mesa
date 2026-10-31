@@ -1,3 +1,5 @@
+import { useOrderUpdates } from '../orders/OrderUpdatesContext';
+import { OrderConnectionNote } from '../orders/OrderConnectionNote';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/useAuth';
@@ -68,6 +70,7 @@ export default function ProducerOrdersArea({ overview = false }: { overview?: bo
   const { request, session } = useAuth(),
     location = useLocation(),
     [params, setParams] = useSearchParams();
+  const realtime = useOrderUpdates();
   const id = overview ? undefined : location.pathname.split('/')[4];
   const rawPage = params.get('pagina') ?? '1',
     page = /^[1-9]\d{0,3}$/.test(rawPage) && Number(rawPage) <= 1000 ? Number(rawPage) : 1;
@@ -83,9 +86,17 @@ export default function ProducerOrdersArea({ overview = false }: { overview?: bo
   }>({ key: '' });
   const userId = session.kind === 'authenticated' ? session.user.id : '';
   const key = JSON.stringify([userId, id, page, state, sort, retry, overview]);
-  const pending = useRef<AbortController | undefined>(undefined);
+  const pending = useRef<AbortController | undefined>(undefined),
+    reader = useRef<AbortController | undefined>(undefined),
+    missed = useRef(false);
+  const [settled, setSettled] = useState(0);
   useEffect(() => {
+    if (pending.current) {
+      missed.current = true;
+      return;
+    }
     const controller = new AbortController();
+    reader.current = controller;
     void (async () => {
       try {
         if (id && !objectId(id)) throw new ApiFailure('http', 404);
@@ -111,10 +122,15 @@ export default function ProducerOrdersArea({ overview = false }: { overview?: bo
     })();
     return () => {
       controller.abort();
+    };
+  }, [key, id, page, state, sort, request, realtime.revision, settled]);
+  useEffect(
+    () => () => {
       pending.current?.abort();
       pending.current = undefined;
-    };
-  }, [key, id, page, state, sort, request]);
+    },
+    [userId, id, page, state, sort],
+  );
   const current = resource.key === key ? resource : undefined,
     notice = write.key === key ? write : undefined;
   function filters(nextState = state, nextSort = sort, nextPage = 1) {
@@ -128,6 +144,7 @@ export default function ProducerOrdersArea({ overview = false }: { overview?: bo
     if (pending.current || notice?.error) return;
     const controller = new AbortController();
     pending.current = controller;
+    reader.current?.abort();
     setWrite({ key, busy: true });
     try {
       const data = await request(
@@ -158,7 +175,13 @@ export default function ProducerOrdersArea({ overview = false }: { overview?: bo
         });
       }
     } finally {
-      if (pending.current === controller) pending.current = undefined;
+      if (pending.current === controller) {
+        pending.current = undefined;
+        if (missed.current) {
+          missed.current = false;
+          setSettled((n) => n + 1);
+        }
+      }
     }
   }
   return (
@@ -179,6 +202,7 @@ export default function ProducerOrdersArea({ overview = false }: { overview?: bo
         </p>
       </header>
       {overview && session.kind === 'authenticated' && <AccountIdentity user={session.user} />}
+      <OrderConnectionNote />
       <div className="producer-live-toolbar">
         <Button to="/area/produtor/encomendas" variant="text">
           Todas as encomendas
@@ -313,10 +337,10 @@ export default function ProducerOrdersArea({ overview = false }: { overview?: bo
                 <p>Não há transições de estado disponíveis para o produtor nesta etapa.</p>
               )}
               <p className="producer-help">
-                A conclusão depende da receção pelo comprador ou dos mecanismos previstos. Esta
-                operação não altera pagamentos, produtos, stock ou condições históricas. O comprador
-                consulta o estado ao atualizar ou voltar à sua encomenda; não existem notificações
-                em tempo real nesta fase.
+                A conclusão depende da confirmação explícita de receção pelo comprador. Esta
+                operação não altera pagamentos, produtos, stock ou condições históricas. As
+                atualizações em direto sinalizam alterações confirmadas; a API mantém o estado de
+                referência.
               </p>
             </section>
           </>

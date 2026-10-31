@@ -1,3 +1,4 @@
+import { OrderUpdatesProvider } from './features/orders/OrderUpdatesProvider';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
@@ -22,21 +23,23 @@ createRoot(root).render(
   <StrictMode>
     <BrowserRouter basename={demonstrationSite ? '/demonstracao' : '/'}>
       <AuthProvider>
-        <CartProvider>
-          <BuyerProvider>
-            <ProducerProvider>
-              <AdminProvider>
-                <ApplicationProvider>
-                  <AdminApplicationsProvider>
-                    <AdminUsersProvider>
-                      <App />
-                    </AdminUsersProvider>
-                  </AdminApplicationsProvider>
-                </ApplicationProvider>
-              </AdminProvider>
-            </ProducerProvider>
-          </BuyerProvider>
-        </CartProvider>
+        <OrderUpdatesProvider>
+          <CartProvider>
+            <BuyerProvider>
+              <ProducerProvider>
+                <AdminProvider>
+                  <ApplicationProvider>
+                    <AdminApplicationsProvider>
+                      <AdminUsersProvider>
+                        <App />
+                      </AdminUsersProvider>
+                    </AdminApplicationsProvider>
+                  </ApplicationProvider>
+                </AdminProvider>
+              </ProducerProvider>
+            </BuyerProvider>
+          </CartProvider>
+        </OrderUpdatesProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,

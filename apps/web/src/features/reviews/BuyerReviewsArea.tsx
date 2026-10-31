@@ -1,3 +1,4 @@
+import { useOrderUpdates } from '../orders/OrderUpdatesContext';
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Button } from '../../components/Button';
@@ -174,11 +175,16 @@ function OwnDetail({ id }: { id: string }) {
   );
 }
 function OwnList() {
+  const { revision } = useOrderUpdates();
   const [section, setSection] = useState<'compras' | 'historico'>('compras'),
     [page, setPage] = useState(1),
     [choice, setChoice] = useState<Choice>();
   const path = section === 'compras' ? '/me/review-eligibility' : '/me/reviews',
-    r = useReviewResource(path + `?pagina=${page}&porPagina=12&ordem=recentes`, parseBuyerActivity),
+    r = useReviewResource(
+      path + `?pagina=${page}&porPagina=12&ordem=recentes`,
+      parseBuyerActivity,
+      revision,
+    ),
     { title, requestFocus } = useReviewFocus(r.data);
   const pages = r.data?.totalPaginas ?? 0,
     corrected = r.data && page > Math.max(1, pages) ? Math.max(1, pages) : undefined;
@@ -316,9 +322,9 @@ export default function BuyerReviewsArea() {
         <p>Avaliações de compras concluídas, ligadas à tua conta e verificadas pelo serviço.</p>
       </header>
       <p className="review-dependency">
-        A confirmação de receção ainda não está disponível no fluxo atual de encomendas. As compras
-        pendentes ou prontas continuam sem elegibilidade; não são concluídas automaticamente para
-        permitir avaliar.
+        Apenas compras concluídas podem ser avaliadas. Depois de receberes os produtos, confirma a
+        receção no detalhe da encomenda pronta. A confirmação não altera o pagamento nem cria
+        avaliações automaticamente.
       </p>
       {parts.length > 4 || (id && !/^[a-fA-F0-9]{24}$/.test(id)) ? (
         <EmptyState title="A avaliação não está disponível." description="Revê o endereço." />

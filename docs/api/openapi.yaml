@@ -2,7 +2,7 @@
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.9.0-local-reviews
+  version: 0.10.0-local-orders
   description:
     'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração React local; A Fase 5F acrescenta consulta e avanço operacional de encomendas pelo produtor autenticado, com ETag, auditoria e indicadores; A Fase 6A implementa leilões e licitações REST transacionais, sem encomenda automática, pagamentos ou Socket.IO; não existe publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
@@ -37,6 +37,10 @@ x-admin-auction-realtime:
   payload: apenas-consultar-true-sem-dados-comerciais
   authority: REST-MongoDB
   recovery: consulta-periodica-15-segundos-e-reconexao
+x-local-order-realtime: phase-10-orders-realtime.md
+x-order-realtime-namespace: /orders
+x-order-realtime-event: order:updated
+x-order-realtime-authority: MongoDB-majority-primary
 x-local-reviews: phase-9-reviews-moderation.md
 x-review-eligibility: concluida-com-evidencia-persistida-sem-atalhos-ou-pagamento-integrado
 x-review-limitations:
@@ -1374,6 +1378,83 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /orders/{id}/receipt:
+    patch:
+      operationId: confirmOwnOrderReceipt
+      tags:
+        - Encomendas
+      summary: Confirmar explicitamente a receção de encomenda própria pronta
+      description:
+        Fase 10. Apenas comprador proprietário ativo. Pronta → concluida, sem alterar stock/pagamento/recibo.
+        If-Match obrigatório; a repetição com o ETag da confirmação original recupera a conclusão do próprio
+        comprador sem nova auditoria. Resultado desconhecido exige consultar REST antes de repetir. Sem
+        confirmação por produtor/admin, conclusão automática ou declaração de entrega inferida.
+      security:
+        - bearerAuth: []
+      x-implementation-stage: '10'
+      x-authorized-roles:
+        - comprador
+      x-contract-status: implementado-localmente
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-fA-F0-9]{24}$
+        - in: header
+          name: If-Match
+          required: true
+          schema:
+            type: string
+            pattern: ^"[A-Za-z0-9_-]{43}"$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - confirmarRececao
+              properties:
+                confirmarRececao:
+                  type: boolean
+                  enum:
+                    - true
+      responses:
+        '200':
+          description: 'Confirmação persistida ou recuperada, Cache-Control: no-store.'
+          headers:
+            ETag:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptConfirmation10'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
   /orders/{id}:
     get:
       tags:
@@ -1387,9 +1468,11 @@ paths:
       operationId: getOwnOrder
       summary: Consultar uma encomenda do comprador autenticado
       description:
-        Filtro obrigatório por comprador na própria consulta MongoDB. Terceiros e inexistentes devolvem
-        a mesma resposta 404. Totais, linhas, entrega e pagamento provêm da encomenda persistida; não se recalculam
-        com o catálogo atual. Produtores/admin sem capacidade comprador não têm bypass. Cache-Control no-store.
+        Filtro obrigatório por comprador na própria consulta MongoDB. Terceiros e inexistentes
+        devolvem a mesma resposta 404. Totais, linhas, entrega e pagamento provêm da encomenda persistida;
+        não se recalculam com o catálogo atual. Produtores/admin sem capacidade comprador não têm bypass.
+        Cache-Control no-store. Fase 10 acrescenta versão, metadados de receção e ETag privado para confirmação
+        explícita; não expõe auditoria interna.
       parameters:
         - name: id
           in: path
@@ -1404,6 +1487,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BuyerOrderDetail'
+          headers:
+            ETag:
+              description: ETag forte privado para confirmar receção.
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -9000,6 +9088,28 @@ components:
           required:
             - perfilId
             - nomePublico
+        versao:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        podeConfirmarRececao:
+          type: boolean
+          description: Verdadeiro apenas em pronta; autorização continua no backend.
+        rececao:
+          type: object
+          additionalProperties: false
+          required:
+            - confirmadaEm
+            - concluidaEm
+          properties:
+            confirmadaEm:
+              type: string
+              format: date-time
+              nullable: true
+            concluidaEm:
+              type: string
+              format: date-time
+              nullable: true
       required:
         - id
         - operacaoCompraId
@@ -9016,10 +9126,10 @@ components:
         - entrega
         - historicoEstado
       description:
-        'Detalhe autorizado: inclui snapshot de levantamento ou morada/contacto da própria encomenda, período
-        inicial e histórico minimizado; nunca reconsulta preços atuais ou expõe atores/auditoria privada. A propriedade
-        opcional produtor identifica o perfil público atual; não é um snapshot histórico do seu nome. Valores/linhas/entrega
-        continuam snapshots.'
+        'Detalhe autorizado: inclui snapshot de levantamento ou morada/contacto da própria encomenda,
+        período inicial e histórico minimizado; nunca reconsulta preços atuais ou expõe atores/auditoria privada.
+        A propriedade opcional produtor identifica o perfil público atual; não é um snapshot histórico do
+        seu nome. Valores/linhas/entrega continuam snapshots.'
     BuyerOrderPage:
       type: object
       additionalProperties: false
@@ -11276,3 +11386,189 @@ components:
           type: integer
           minimum: 0
           maximum: 9007199254740991
+    ReceiptConfirmation10:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        operacaoCompraId:
+          type: string
+          format: uuid
+        produtorContaId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        estado:
+          $ref: '#/components/schemas/OrderStatus'
+        linhas:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuyerOrderLine'
+          minItems: 1
+        subtotalProdutosCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        taxaEntregaCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        moeda:
+          type: string
+          enum:
+            - EUR
+        pagamento:
+          type: object
+          additionalProperties: false
+          properties:
+            metodo:
+              type: string
+              enum:
+                - dinheiro
+                - mb_way
+                - transferencia_bancaria
+            estado:
+              type: string
+              enum:
+                - por_pagar
+                - pagamento_comunicado
+                - pago
+          required:
+            - metodo
+            - estado
+        criadaEm:
+          type: string
+          format: date-time
+        atualizadaEm:
+          type: string
+          format: date-time
+        entrega:
+          type: object
+          additionalProperties: false
+          properties:
+            modalidade:
+              type: string
+              enum:
+                - levantamento
+                - entrega
+            periodoInicial:
+              $ref: '#/components/schemas/CheckoutPeriod'
+            taxaEntregaCent:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            localLevantamento:
+              type: string
+            concelhoId:
+              type: string
+            morada:
+              type: string
+            contacto:
+              type: string
+          required:
+            - modalidade
+            - periodoInicial
+            - taxaEntregaCent
+          oneOf:
+            - properties:
+                modalidade:
+                  type: string
+                  enum:
+                    - levantamento
+              required:
+                - localLevantamento
+            - properties:
+                modalidade:
+                  type: string
+                  enum:
+                    - entrega
+              required:
+                - concelhoId
+                - morada
+                - contacto
+        historicoEstado:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              tipo:
+                type: string
+              de:
+                $ref: '#/components/schemas/OrderStatus'
+              para:
+                $ref: '#/components/schemas/OrderStatus'
+              ocorridoEm:
+                type: string
+                format: date-time
+            required:
+              - tipo
+              - ocorridoEm
+        produtor:
+          type: object
+          additionalProperties: false
+          properties:
+            perfilId:
+              type: string
+              pattern: ^[a-fA-F0-9]{24}$
+            nomePublico:
+              type: string
+          required:
+            - perfilId
+            - nomePublico
+        versao:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        podeConfirmarRececao:
+          type: boolean
+          description: Verdadeiro apenas em pronta; autorização continua no backend.
+        rececao:
+          type: object
+          additionalProperties: false
+          required:
+            - confirmadaEm
+            - concluidaEm
+          properties:
+            confirmadaEm:
+              type: string
+              format: date-time
+              nullable: true
+            concluidaEm:
+              type: string
+              format: date-time
+              nullable: true
+        origem:
+          type: string
+          enum:
+            - nova
+            - recuperada
+      required:
+        - id
+        - operacaoCompraId
+        - produtorContaId
+        - estado
+        - linhas
+        - subtotalProdutosCent
+        - taxaEntregaCent
+        - totalCent
+        - moeda
+        - pagamento
+        - criadaEm
+        - atualizadaEm
+        - entrega
+        - historicoEstado
+        - origem
+        - versao
+        - podeConfirmarRececao
+        - rececao
+      description:
+        'Detalhe autorizado: inclui snapshot de levantamento ou morada/contacto da própria encomenda,
+        período inicial e histórico minimizado; nunca reconsulta preços atuais ou expõe atores/auditoria privada.
+        A propriedade opcional produtor identifica o perfil público atual; não é um snapshot histórico do
+        seu nome. Valores/linhas/entrega continuam snapshots.'

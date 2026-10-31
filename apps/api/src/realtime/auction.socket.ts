@@ -1,3 +1,5 @@
+import { attachOrderNamespace } from './order.socket.js';
+import type { OrderNotificationsService } from '../modules/orders/order-notifications.service.js';
 import type { AdminAuctionsService } from '../modules/admin-auctions/admin-auctions.service.js';
 import { createAdminAuctionPublication } from './admin-auction.publication.js';
 import type { Server as HttpServer } from 'node:http';
@@ -35,6 +37,7 @@ export function attachAuctionSockets(
   config: RealtimeConfiguration,
   options: SocketLimits = {},
   oversight?: Pick<AdminAuctionsService, 'versions'>,
+  orders?: OrderNotificationsService,
 ) {
   const limits = createSocketLimits(options),
     sessions = new WeakMap<AuctionSocket, Session>();
@@ -60,6 +63,9 @@ export function attachAuctionSockets(
       }
     },
   });
+  const orderNamespace = orders
+    ? attachOrderNamespace(io, orders, auth, security, config, options)
+    : undefined;
   // O namespace público não concede uma ligação alternativa sem autenticação.
   io.use((_socket, next) => next(new Error('Namespace indisponível.')));
   const namespace = io.of('/auctions');
@@ -389,6 +395,7 @@ export function attachAuctionSockets(
         stopped = true;
         clearInterval(authTimer);
         namespace.disconnectSockets(true);
+        await orderNamespace?.close();
         await Promise.allSettled([...jobs]);
         await authCheck;
         await adminPublication?.close();

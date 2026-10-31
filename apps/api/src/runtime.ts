@@ -1,3 +1,5 @@
+import { createOrderReceiptService } from './modules/orders/order-receipt.service.js';
+import { createOrderNotificationsService } from './modules/orders/order-notifications.service.js';
 import { createAdminAuctionsService } from './modules/admin-auctions/admin-auctions.service.js';
 import { createReviewsService } from './modules/reviews/reviews.service.js';
 import { createAdminOrdersService } from './modules/admin-orders/admin-orders.service.js';
@@ -91,6 +93,7 @@ export async function startApi(
             auth,
             catalog,
             orders,
+            receipt: createOrderReceiptService(database.connection!, authentication.secret),
             preparation,
             producerOrders,
             auctions,
@@ -106,7 +109,16 @@ export async function startApi(
   );
   const sockets =
     auctions && auth && authentication && realtime.enabled
-      ? attachAuctionSockets(server, auctions, auth, authentication, realtime, {}, adminAuctions)
+      ? attachAuctionSockets(
+          server,
+          auctions,
+          auth,
+          authentication,
+          realtime,
+          {},
+          adminAuctions,
+          createOrderNotificationsService(database.connection!),
+        )
       : undefined;
   try {
     await new Promise<void>((resolve, reject) => {

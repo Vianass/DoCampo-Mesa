@@ -1,3 +1,4 @@
+import type { OrderReceiptService } from './modules/orders/order-receipt.service.js';
 import type { AdminAuctionsService } from './modules/admin-auctions/admin-auctions.service.js';
 import type { ReviewsService } from './modules/reviews/reviews.service.js';
 import { reviewsRoutes } from './modules/reviews/reviews.routes.js';
@@ -32,6 +33,7 @@ export function createApp(
     auth?: AuthService;
     catalog?: CatalogService;
     orders?: OrdersService;
+    receipt?: OrderReceiptService;
     preparation?: CheckoutPreparationService;
     producerOrders?: ProducerOrdersService;
     auctions?: AuctionService;
@@ -61,7 +63,10 @@ export function createApp(
   if (options.reviews) app.use('/api', reviewsRoutes(options.reviews, options.auth));
   if (options.catalog) app.use('/api', catalogRoutes(options.catalog, options.auth));
   if (options.orders)
-    app.use('/api/orders', ordersRoutes(options.orders, options.auth, options.preparation));
+    app.use(
+      '/api/orders',
+      ordersRoutes(options.orders, options.auth, options.preparation, options.receipt),
+    );
   if (options.producerOrders)
     app.use('/api/me/producer/orders', producerOrdersRoutes(options.producerOrders, options.auth));
   if (options.auctions)

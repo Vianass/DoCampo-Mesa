@@ -261,7 +261,8 @@ test('suspensão real bloqueia JWT antigo e o React retira as avaliações priva
       })
     ).status(),
   ).toBe(401);
-  await page.getByRole('button', { name: 'Atualizar avaliações', exact: true }).click();
+  // Fase 10: a subscrição privada revalida a conta e retira o acesso sem refresh manual.
+  await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Avaliar produto', exact: true })).toHaveCount(0);
 });
 for (const width of [320, 430, 768, 1024, 1280, 1440])

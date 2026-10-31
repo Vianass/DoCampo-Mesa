@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 10 — confirmação de receção e atualizações privadas em direto, implementação local para revisão.** O comprador confirma explicitamente uma encomenda pronta, com transação, ETag e auditoria, preservando pagamento e stock. Comprador e produtor reconciliam alterações pela API e pelo Socket.IO existente; a compra concluída torna-se elegível para avaliações. Ver [arquitetura, revisão e limitações](docs/api/phase-10-orders-realtime.md). Os registos das fases abaixo descrevem o respetivo estado histórico.
+
 **Fase 9 — avaliações verificadas e moderação, implementação local para revisão.** Produtos e produtores avaliados separadamente a partir de compras históricas concluídas, comentários imutáveis, médias públicas reais, ocultação/restauro com ETag e auditoria. O fluxo normal ainda depende da futura confirmação de receção para ganhar elegibilidade. Ver [contratos, decisões e limitações](docs/api/phase-9-reviews-moderation.md).
 
 **Fase 8C — supervisão administrativa de leilões reais, implementação local para revisão.** Pesquisa/filtros e paginação global, detalhe/histórico, indicadores e acompanhamento Socket.IO de leitura, com REST/MongoDB como fonte de verdade. Ver [arquitetura, contratos e limites](docs/api/phase-8c-admin-auction-supervision.md).
