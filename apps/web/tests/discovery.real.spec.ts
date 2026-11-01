@@ -396,14 +396,15 @@ for (const width of [320, 430, 768, 1024, 1280, 1440])
       await navigate(page, '/');
       await expect(page.locator('.featured-auction')).toBeVisible();
       const image = page.locator('.featured-auction img');
-      await image.scrollIntoViewIfNeeded();
-      await expect
-        .poll(() =>
-          image.evaluate(
+      // O destaque pode ser substituído pela reconciliação real enquanto se desloca a página.
+      await expect(async () => {
+        await image.scrollIntoViewIfNeeded({ timeout: 1000 });
+        expect(
+          await image.evaluate(
             (el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0,
           ),
-        )
-        .toBe(true);
+        ).toBe(true);
+      }).toPass({ timeout: 5000 });
       const clock = page.locator('.featured-auction .auction-clock strong');
       await expect(clock).toBeVisible();
       expect(

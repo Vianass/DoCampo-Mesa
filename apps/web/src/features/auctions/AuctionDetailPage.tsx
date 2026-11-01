@@ -21,28 +21,38 @@ import {
 } from './contracts';
 import { AuctionImage, AuctionBadge, AuctionClock, AuctionPagination } from './components';
 import { useAuctionRoom } from './useAuctionRoom';
-import { cents, euros, nextMinimum, auctionDate, serverTime, sampleClock, lotLabel } from './model';
+import { QuickBidForm } from './QuickBidForm';
+import { auctionDate, serverTime, sampleClock, lotLabel } from './model';
 
 export function AuctionRoom({
   detail,
   onRefresh,
   ownerControls,
+  interactionEnabled = true,
 }: {
+  interactionEnabled?: boolean;
   detail: AuctionDetail;
   onRefresh: () => void;
   ownerControls?: (state: AuctionSnapshot) => React.ReactNode;
 }) {
   const auth = useAuth(),
     live = useAuctionRoom(detail),
-    [amount, setAmount] = useState(''),
-    [validation, setValidation] = useState(''),
     [historyPage, setHistoryPage] = useState(1);
   const state = live.state,
     snapshotClock = live.clock,
     sequence = state?.sequencia ?? detail.sequencia;
+  const metadataRequested = useRef(-1);
   useEffect(() => {
     // O evento não transporta título/descrição nem o ETag. Reler alterações anteriores à primeira oferta.
-    if (state && state.sequencia === 0 && state.versao > detail.versao) onRefresh();
+    if (
+      state &&
+      state.sequencia === 0 &&
+      state.versao > detail.versao &&
+      metadataRequested.current !== state.versao
+    ) {
+      metadataRequested.current = state.versao;
+      onRefresh();
+    }
   }, [state, detail.versao, onRefresh]);
   const [historyVersion, setHistoryVersion] = useState(sequence);
   useEffect(() => {
@@ -58,10 +68,6 @@ export function AuctionRoom({
         {},
         signal,
       ),
-  );
-  const min = nextMinimum(
-    state?.valorAtualCent ?? detail.licitacaoAtual.valorCent,
-    state?.incrementoCent ?? detail.incrementoCent,
   );
   const owner = !!detail.reserva,
     canBid =
@@ -80,7 +86,12 @@ export function AuctionRoom({
     (state?.estado ?? detail.estado) === 'ativo' &&
     now < Date.parse(state?.terminaEm ?? detail.terminaEm) &&
     now >= Date.parse(state?.iniciaEm ?? detail.iniciaEm);
-  const synced = live.status === 'connected' && !!state;
+  const synced =
+    live.status === 'connected' &&
+    !!state &&
+    interactionEnabled &&
+    auth.session.kind === 'authenticated' &&
+    auth.session.status === 'ready';
   const leaderOwn =
     state?.lider?.referencia &&
     (state.lider.referencia === live.receipt?.licitacao.participante.referencia ||
@@ -204,63 +215,17 @@ export function AuctionRoom({
                   : 'Há uma oferta na liderança.'}
           </p>
           {canBid && (
-            <form
-              className="auction-bid-form"
-              aria-label="Apresentar oferta"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const value = cents(amount || (min !== undefined ? euros(min) : ''));
-                if (value === undefined || min === undefined || value < min) {
-                  setValidation('Indica um valor igual ou superior à próxima oferta mínima.');
-                  return;
-                }
-                setValidation('');
-                void live.submit(value);
-              }}
-            >
-              <label htmlFor="auction-bid-amount">A tua oferta pelo lote (€)</label>
-              <input
-                id="auction-bid-amount"
-                className="form-control"
-                inputMode="decimal"
-                autoComplete="off"
-                value={amount}
-                placeholder={min !== undefined ? euros(min) : '—'}
-                disabled={!active || !synced || live.busy || !!live.attempt}
-                onChange={(e) => {
-                  setAmount(e.target.value);
-                  setValidation('');
-                }}
-                aria-invalid={validation ? true : undefined}
-                aria-describedby="auction-minimum auction-bid-error"
-              />
-              <p id="auction-minimum">
-                Próxima oferta mínima:{' '}
-                {min !== undefined ? (
-                  <PriceDisplay amountCents={min} />
-                ) : (
-                  'Limite de valor atingido'
-                )}
-              </p>
-              <p id="auction-bid-error" role={validation ? 'alert' : undefined}>
-                {validation}
-              </p>
-              <Button
-                type="submit"
-                disabled={!active || !synced || !!live.busy || !!live.attempt || min === undefined}
-              >
-                {live.busy ? 'A confirmar oferta…' : 'Confirmar oferta'}
-              </Button>
-              {live.attempt && (
-                <Button
-                  variant="secondary"
-                  disabled={!synced || live.busy}
-                  onClick={() => void live.submit()}
-                >
-                  Recuperar resultado da oferta
-                </Button>
-              )}
-            </form>
+            <QuickBidForm
+              current={state?.valorAtualCent ?? detail.licitacaoAtual.valorCent}
+              increment={state?.incrementoCent ?? detail.incrementoCent}
+              active={active}
+              synced={synced}
+              busy={live.busy}
+              pending={!!live.attempt}
+              receiptId={live.receipt?.requestId}
+              submit={live.submit}
+              recover={() => void live.submit()}
+            />
           )}
           {!canBid && (
             <p className="auction-help">
@@ -398,28 +363,53 @@ export function AuthorizedAuctionDetail({ id, owner = false }: { id: string; own
   const resource = useRemote(userId + ':auction:' + id, (signal) =>
     auth.request('/auctions/' + id, parseAuctionDetail, {}, signal),
   );
-  if (resource.loading) return <LoadingSkeleton label="A carregar o leilão" count={2} />;
-  if (resource.error)
-    return (
-      <div className="auction-notice" role="alert">
-        <h1>
-          {resource.error.status === 404
-            ? 'Este leilão não está disponível.'
-            : 'Não foi possível abrir o leilão.'}
-        </h1>
-        <p>Confirma o teu acesso ou tenta novamente.</p>
-        <Button onClick={resource.retry}>Tentar novamente</Button>
-      </div>
-    );
-  if (!resource.data) return null;
-  if (owner && !resource.data.reserva)
+  const key = userId + ':auction:' + id;
+  const [confirmed, setConfirmed] = useState<{ key: string; data?: AuctionDetail }>({ key });
+  if (confirmed.key !== key) setConfirmed({ key });
+  else if (resource.data && resource.data !== confirmed.data)
+    setConfirmed({ key, data: resource.data });
+  const denied = !!resource.error && [401, 403, 404].includes(resource.error.status ?? 0);
+  if (denied && confirmed.data) setConfirmed({ key });
+  const data = denied
+    ? undefined
+    : (resource.data ?? (confirmed.key === key ? confirmed.data : undefined));
+  const ErrorTitle = data ? 'h2' : 'h1';
+  const error = resource.error && (
+    <div className="auction-notice" role="alert">
+      <ErrorTitle>
+        {resource.error.status === 404
+          ? 'Este leilão não está disponível.'
+          : 'Não foi possível abrir o leilão.'}
+      </ErrorTitle>
+      <p>
+        {data
+          ? 'Mostramos a última confirmação disponível. As ofertas estão bloqueadas até conseguirmos atualizar.'
+          : 'Confirma o teu acesso ou tenta novamente.'}
+      </p>
+      <Button onClick={resource.retry}>Tentar novamente</Button>
+    </div>
+  );
+  if (!data) return error || <LoadingSkeleton label="A carregar o leilão" count={2} />;
+  if (owner && !data.reserva)
     return (
       <div className="auction-notice">
         <h1>Este lote não pertence à tua produção.</h1>
         <Button to="/area/produtor/leiloes">Voltar aos teus leilões</Button>
       </div>
     );
-  return <AuctionRoom detail={resource.data} onRefresh={resource.retry} />;
+  return (
+    <>
+      {error}
+      {resource.loading && (
+        <p role="status">A atualizar o leilão. As ofertas estão temporariamente bloqueadas.</p>
+      )}
+      <AuctionRoom
+        detail={data}
+        onRefresh={resource.retry}
+        interactionEnabled={!resource.loading && !resource.error}
+      />
+    </>
+  );
 }
 function VisitorPreview({ id }: { id: string }) {
   const location = useLocation();
@@ -476,7 +466,7 @@ function VisitorPreview({ id }: { id: string }) {
 }
 export default function AuctionDetailPage() {
   const { id = '' } = useParams(),
-    { session } = useAuth();
+    { session, revalidate } = useAuth();
   if (id === legacy.id) return <LegacyDetail />;
   if (!objectId(id)) return <NotFoundPage />;
   return (
@@ -484,14 +474,22 @@ export default function AuctionDetailPage() {
       <div className="auction-market">
         <Breadcrumbs items={[{ label: 'Leilões', to: '/leiloes' }, { label: 'O lote' }]} />
         {session.kind === 'authenticated' ? (
-          session.status === 'ready' ? (
-            <AuthorizedAuctionDetail id={id} />
-          ) : (
-            <div className="auction-notice">
-              <h1>A confirmar o teu acesso.</h1>
-              <LoadingSkeleton count={1} label="A confirmar a sessão" />
-            </div>
-          )
+          <>
+            {session.status !== 'ready' && (
+              <div className="auction-notice">
+                <h1>A confirmar o teu acesso.</h1>
+                <LoadingSkeleton count={1} label="A confirmar a sessão" />
+                {session.status !== 'checking' && (
+                  <Button onClick={() => void revalidate()}>Voltar a confirmar acesso</Button>
+                )}
+              </div>
+            )}
+            {session.status !== 'forbidden' && (
+              <div hidden={session.status !== 'ready'} inert={session.status !== 'ready'}>
+                <AuthorizedAuctionDetail id={id} />
+              </div>
+            )}
+          </>
         ) : (
           <VisitorPreview id={id} />
         )}

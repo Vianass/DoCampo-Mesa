@@ -6,6 +6,7 @@ export async function mockProducerOrders(page: Page) {
     order: orderFixture(),
     version: 0,
     status: 200,
+    writeStatus: 200,
     total: 1,
     gate: undefined as Promise<void> | undefined,
     calls: [] as { method: string; query: string; match?: string; body?: unknown }[],
@@ -28,11 +29,13 @@ export async function mockProducerOrders(page: Page) {
         ...(method === 'PATCH' ? { body: req.postDataJSON() } : {}),
       });
       await state.gate;
-      if (state.status !== 200)
+      const status =
+        method === 'PATCH' && state.writeStatus !== 200 ? state.writeStatus : state.status;
+      if (status !== 200)
         return route.fulfill({
-          status: state.status,
+          status,
           json: {
-            codigo: state.status === 412 ? 'PRECONDICAO_FALHOU' : 'SERVICO_INDISPONIVEL',
+            codigo: status === 412 ? 'PRECONDICAO_FALHOU' : 'SERVICO_INDISPONIVEL',
             mensagem: 'detalhe interno fictício',
           },
         });

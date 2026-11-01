@@ -626,7 +626,18 @@ export const featuredCategories: Category[] = [
 ];
 
 export function formatPrice(amountCents: number): string {
-  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(
-    amountCents / 100,
+  const value = BigInt(amountCents),
+    absolute = value < 0n ? -value : value;
+  const parts = new Intl.NumberFormat('pt-PT', {
+    style: 'currency',
+    currency: 'EUR',
+  }).formatToParts(absolute / 100n);
+  return (
+    (value < 0n ? '-' : '') +
+    parts
+      .map((part) =>
+        part.type === 'fraction' ? String(absolute % 100n).padStart(2, '0') : part.value,
+      )
+      .join('')
   );
 }

@@ -1,0 +1,66 @@
+@use 'tokens' as t;
+.auction-quick-bids {
+  min-width: 0;
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+  legend {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  > p {
+    font-size: 0.78rem;
+    line-height: 1.6;
+  }
+}
+.auction-quick-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.auction-quick-button {
+  transition: border-color t.$transition-fast;
+  min-width: 0;
+  min-height: 68px;
+  padding: 10px 6px;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  strong {
+    font-weight: 600;
+  }
+  > span {
+    font-size: 0.7rem;
+    line-height: 1.4;
+  }
+  .price-display {
+    color: inherit;
+    font: inherit;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  &[aria-pressed='true'] {
+    color: t.$cream;
+    background: t.$forest;
+    border-color: t.$forest;
+  }
+}
+.auction-prepared-value {
+  padding: 12px;
+  border: 1px solid t.$line;
+  border-radius: t.$radius-small;
+  background: t.$cream;
+  overflow-wrap: anywhere;
+  .price-display {
+    font: inherit;
+    white-space: normal;
+  }
+  > span {
+    display: block;
+    margin-top: 8px;
+  }
+}
+
+.auction-bid-form .auction-quick-options .auction-quick-button {
+  margin-top: 0;
+}

@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 11C — licitações rápidas, implementação local para revisão.** Atalhos +5/+10/+25 € preparam uma oferta sobre o último valor confirmado, com confirmação explícita, revisão de valores desatualizados e recuperação pelos mecanismos reais existentes. Regras transacionais e permissões permanecem no backend. Ver [semântica aprovada, interface, testes e limitações](docs/api/phase-11c-quick-bidding.md).
+
 **Fase 11B — pesquisa, localização e descoberta, implementação local para revisão.** Pesquisa MongoDB por ingredientes com os filtros existentes, ponto público opcional autorizado pelo produtor e mapa interativo mediante escolha do visitante. A homepage destaca leilões reais, com relógio sincronizado e reconciliação REST. Sem geocodificação automática ou divulgação da morada privada. Ver [arquitetura, privacidade, testes e limitações](docs/api/phase-11b-discovery-and-maps.md).
 
 **Fase 11A — gestão real do produtor, implementação local para revisão.** Produtos, fotografias, perfil e condições da loja persistem na API/MongoDB. Stock livre, reservas e limiares opcionais ficam separados, com concorrência por ETag e integração no catálogo e carrinho. O adaptador de imagens é exclusivo de desenvolvimento; a integração Cloud permanece para a Fase 13. Ver [requisitos, contratos, testes e limitações](docs/api/phase-11a-producer-management.md).

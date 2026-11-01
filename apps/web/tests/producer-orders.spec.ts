@@ -80,7 +80,7 @@ for (const status of [409, 412, 503])
   test(`erro ${status} impede repetição cega e pede consulta atualizada`, async ({ page }) => {
     const { api } = await setup(page);
     await detail(page);
-    api.status = status;
+    api.writeStatus = status;
     await page.getByRole('button', { name: 'Confirmar encomenda', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText(
       status === 503 ? 'Não foi possível confirmar' : 'A encomenda mudou',
@@ -89,7 +89,7 @@ for (const status of [409, 412, 503])
       page.getByRole('button', { name: 'Confirmar encomenda', exact: true }),
     ).toBeDisabled();
     expect(api.calls.filter((c) => c.method === 'PATCH')).toHaveLength(1);
-    api.status = 200;
+    api.writeStatus = 200;
     await page.getByRole('button', { name: 'Atualizar consulta', exact: true }).click();
     await expect(
       page.getByRole('button', { name: 'Confirmar encomenda', exact: true }),

@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/useAuth';
 import { createAuctionLiveClient, type LiveStatus } from './live-client';
-import { fromDetail, type AuctionDetail, type AuctionSnapshot, type BidReceipt } from './contracts';
+import {
+  fromDetail,
+  parseAuctionDetail,
+  type AuctionDetail,
+  type AuctionSnapshot,
+  type BidReceipt,
+} from './contracts';
 import { sampleClock, type ClockSample } from './model';
 import { accountFingerprint, attemptStore, type BidAttempt } from './attempts';
 export function useAuctionRoom(detail: AuctionDetail | undefined) {
   const auth = useAuth(),
     userId = auth.session.kind === 'authenticated' ? auth.session.user.id : '';
   const id = detail?.id;
-  const { socketAuth, trackConnection, revalidate } = auth;
+  const { socketAuth, trackConnection, revalidate, request } = auth;
   const seed = useRef(detail);
   useEffect(() => {
     seed.current = detail;
@@ -56,6 +62,7 @@ export function useAuctionRoom(detail: AuctionDetail | undefined) {
       initial,
       socketAuth,
       trackConnection,
+      reconcile: async () => fromDetail(await request('/auctions/' + id, parseAuctionDetail)),
       state: (state, received, sent) =>
         update((r) => ({ ...r, state, clock: sampleClock(state.serverNow, received, sent) })),
       status: (status) => update((r) => ({ ...r, status })),
@@ -118,7 +125,7 @@ export function useAuctionRoom(detail: AuctionDetail | undefined) {
       document.removeEventListener('visibilitychange', focus);
     };
     // O detalhe é a semente REST; as versões seguintes pertencem à mesma sala, sem recriar sockets por render.
-  }, [key, id, userId, socketAuth, trackConnection, revalidate]);
+  }, [key, id, userId, socketAuth, trackConnection, revalidate, request]);
   const current = resource?.key === key ? resource : undefined;
   async function submit(value?: number) {
     if (

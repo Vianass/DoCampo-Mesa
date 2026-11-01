@@ -56,6 +56,7 @@ export function createAuctionLiveClient(options: {
   presence: (count: number) => void;
   error: (error: LiveFault) => void;
   socketFactory?: typeof io;
+  reconcile?: () => Promise<AuctionSnapshot>;
 }) {
   let current = options.initial,
     closed = false,
@@ -103,6 +104,13 @@ export function createAuctionLiveClient(options: {
     const r = record(raw);
     if (!r.ok) throw fault(r.erro);
     apply(r.data, sent);
+    if (closed) return;
+    if (options.reconcile) {
+      const restSent = performance.now();
+      const snapshot = await options.reconcile();
+      if (closed) return;
+      apply(snapshot, restSent);
+    }
     if (closed) return;
     joined = true;
     options.status(offline ? 'reconnecting' : 'connected');
