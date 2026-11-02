@@ -39,6 +39,7 @@ export function apiBase(value: string = import.meta.env?.VITE_API_URL || '/api')
     const url = new URL(base);
     if (
       !['http:', 'https:'].includes(url.protocol) ||
+      (import.meta.env?.PROD && url.protocol !== 'https:') ||
       url.username ||
       url.password ||
       url.search ||

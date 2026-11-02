@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 12 — Swagger UI, conformidade REST e preparação de produção, implementação local.** Documentação interativa real, compatibilidade segura de estados e configuração independente de localhost. Ver [entrega, segurança e limitações](docs/api/phase-12-production-readiness.md). Sem staging, commit, push ou deployment nesta fase. Os registos seguintes descrevem o estado histórico de cada entrega.
+
 **Fase 11D — denúncias e moderação de conteúdos, implementação local para revisão.** Contas ativas sinalizam produtos, perfis e avaliações; a administração analisa evidências e decide com motivo, ETag e auditoria persistida. A ocultação respeita o catálogo e novas compras, preservando gestão privada, encomendas e regras de leilões existentes. Ver [âmbito aprovado, contratos e limitações](docs/api/phase-11d-content-moderation.md). Sem commit ou push nesta fase.
 
 **Fase 11C — licitações rápidas, implementação local para revisão.** Atalhos +5/+10/+25 € preparam uma oferta sobre o último valor confirmado, com confirmação explícita, revisão de valores desatualizados e recuperação pelos mecanismos reais existentes. Regras transacionais e permissões permanecem no backend. Ver [semântica aprovada, interface, testes e limitações](docs/api/phase-11c-quick-bidding.md).
@@ -193,7 +195,7 @@ Estes objetivos descrevem o âmbito completo a desenvolver. Nesta fase existem a
 | Backend                   | Node.js, Express, TypeScript e Mongoose                                   | Workspace vazio; bibliotecas de backend não instaladas |
 | Base de dados             | MongoDB Atlas                                                             | Planeada; sem ligação                                  |
 | Autenticação e tempo real | JWT, bcrypt e Socket.IO                                                   | Planeados; não implementados                           |
-| Documentação da API       | OpenAPI 3 e Swagger UI                                                    | Planeados                                              |
+| Documentação da API       | OpenAPI 3 e Swagger UI                                                    | Implementados localmente                               |
 | Cloud                     | App Service, Static Web Apps e Blob Storage                               | Planeados; não configurados                            |
 | Testes futuros            | Vitest e Supertest                                                        | Planeados; não instalados nesta fase                   |
 
@@ -499,3 +501,11 @@ A declaração de uso de IA e bibliotecas deverá também constar do relatório 
 ## Repositório
 
 [Vianass/DoCampo-Mesa](https://github.com/Vianass/DoCampo-Mesa)
+
+## Fase 12 — documentação interativa e preparação de produção
+
+A API disponibiliza Swagger UI real em `/api-docs`, com Authorize e pedidos HTTP para as operações efetivamente implementadas. O build inclui o contrato e os recursos locais. GET `/api/ready` consulta a ligação MongoDB; GET `/api/health` conserva o diagnóstico do processo. O PATCH académico `/api/orders/:id/estado` reutiliza os serviços atuais e traduz `entregue` para a conclusão já existente, sem migrar estados persistidos.
+
+A configuração admite `PORT` do PaaS, origem HTTPS independente para React e uma porta de armazenamento Cloud injetável. Não há deployment ou adaptador Cloud concreto nesta fase. As fotografias locais continuam proibidas em produção. Argon2id e bcrypt legado mantêm-se por decisão explícita do utilizador; a divergência face ao requisito académico bcrypt está documentada para aceitação formal.
+
+Consultar [a entrega da Fase 12](docs/api/phase-12-production-readiness.md), incluindo testes, configurações de exemplo, compatibilidades e limitações para a Fase 13. A grid, os cards e a navegação Bootstrap preservam a identidade visual existente.

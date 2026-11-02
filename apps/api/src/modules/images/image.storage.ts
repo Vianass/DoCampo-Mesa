@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, isAbsolute, relative } from 'node:path';
 export interface ImageStorage {
+  readonly kind?: 'development' | 'cloud';
   readonly publicBase: string;
   put: (id: string, bytes: Buffer) => Promise<void>;
   read: (id: string) => Promise<Buffer>;
@@ -31,6 +32,7 @@ export function developmentImageStorage(
     return resolve(root, id);
   }
   return {
+    kind: 'development',
     publicBase: publicBase.replace(/\/+$/, ''),
     async put(id, bytes) {
       await mkdir(root, { recursive: true, mode: 0o700 });

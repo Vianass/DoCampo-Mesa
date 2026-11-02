@@ -1,3 +1,6 @@
+import { apiRouteInventory, mountRoutes } from './documentation/route-inventory.js';
+import { documentationRoutes } from './documentation/docs.routes.js';
+import { academicOrdersRoutes } from './modules/orders/academic-orders.routes.js';
 import { contentReportRoutes } from './modules/moderation/moderation.routes.js';
 import type { ModerationService } from './modules/moderation/moderation.service.js';
 import type { OrderReceiptService } from './modules/orders/order-receipt.service.js';
@@ -53,6 +56,7 @@ export function createApp(
     reviews?: ReviewsService;
     moderation?: ModerationService;
     adminLimits?: AuctionRateOptions;
+    readiness?: () => Promise<boolean>;
     security?: HttpSecurityConfiguration;
     rateLimit?: AuthRateLimitOptions;
   } = {},
@@ -68,26 +72,43 @@ export function createApp(
   app.set('trust proxy', security.trustedProxies.length ? [...security.trustedProxies] : false);
   app.use(httpSecurity(security));
   app.use(express.json({ limit: '100kb', inflate: false }));
-  if (options.auth) app.use('/api/auth', authRoutes(options.auth, options.rateLimit));
-  if (options.reviews) app.use('/api', reviewsRoutes(options.reviews, options.auth));
-  if (options.moderation) app.use('/api', contentReportRoutes(options.moderation, options.auth));
-  if (options.catalog) app.use('/api', catalogRoutes(options.catalog, options.auth));
+  if (options.auth) mountRoutes(app, '/api/auth', authRoutes(options.auth, options.rateLimit));
+  if (options.reviews) mountRoutes(app, '/api', reviewsRoutes(options.reviews, options.auth));
+  if (options.moderation)
+    mountRoutes(app, '/api', contentReportRoutes(options.moderation, options.auth));
+  if (options.catalog) mountRoutes(app, '/api', catalogRoutes(options.catalog, options.auth));
   if (options.producerManagement)
-    app.use('/api/me/producer', producerManagementRoutes(options.producerManagement, options.auth));
-  if (options.images) app.use('/api', imageRoutes(options.images, options.auth));
+    mountRoutes(
+      app,
+      '/api/me/producer',
+      producerManagementRoutes(options.producerManagement, options.auth),
+    );
+  if (options.images) mountRoutes(app, '/api', imageRoutes(options.images, options.auth));
+  if (options.producerOrders && options.receipt)
+    mountRoutes(
+      app,
+      '/api/orders',
+      academicOrdersRoutes(options.producerOrders, options.receipt, options.auth),
+    );
   if (options.orders)
-    app.use(
+    mountRoutes(
+      app,
       '/api/orders',
       ordersRoutes(options.orders, options.auth, options.preparation, options.receipt),
     );
   if (options.producerOrders)
-    app.use('/api/me/producer/orders', producerOrdersRoutes(options.producerOrders, options.auth));
+    mountRoutes(
+      app,
+      '/api/me/producer/orders',
+      producerOrdersRoutes(options.producerOrders, options.auth),
+    );
   if (options.auctions)
-    app.use('/api', auctionRoutes(options.auctions, options.auth, options.auctionLimits));
+    mountRoutes(app, '/api', auctionRoutes(options.auctions, options.auth, options.auctionLimits));
   if (options.producerApplications)
-    app.use('/api', producerApplicationRoutes(options.producerApplications, options.auth));
+    mountRoutes(app, '/api', producerApplicationRoutes(options.producerApplications, options.auth));
   if (options.admin)
-    app.use(
+    mountRoutes(
+      app,
       '/api/admin',
       adminRoutes(
         options.admin,
@@ -99,7 +120,10 @@ export function createApp(
         options.moderation,
       ),
     );
-  app.use('/api', technicalRoutes());
+  mountRoutes(app, '/api', technicalRoutes(options.readiness));
+  const inventory = apiRouteInventory(app);
+  app.locals.apiRoutes = inventory;
+  mountRoutes(app, '/api-docs', documentationRoutes(inventory));
   app.use((_request, _response, next) => {
     next(new ApiError(404, 'ROTA_NAO_ENCONTRADA', 'O recurso pedido não está disponível.'));
   });

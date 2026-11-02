@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { createProducerManagementService } from './modules/producers/producer-management.service.js';
 import { createImageService } from './modules/images/image.service.js';
 import { developmentImageStorage } from './modules/images/image.storage.js';
+import type { ImageStorage } from './modules/images/image.storage.js';
 import { createOrderNotificationsService } from './modules/orders/order-notifications.service.js';
 import { createAdminAuctionsService } from './modules/admin-auctions/admin-auctions.service.js';
 import { createReviewsService } from './modules/reviews/reviews.service.js';
@@ -36,6 +37,7 @@ interface DatabaseHandle {
 
 interface RuntimeDependencies {
   connect: (configuration: ApiConfiguration) => Promise<DatabaseHandle>;
+  imageStorage?: ImageStorage;
 }
 
 export async function startApi(
@@ -68,18 +70,41 @@ export async function startApi(
     await database.close();
     throw new Error('Armazenamento local de imagens proibido em produção.');
   }
+  if (configuration.environment === 'production' && dependencies.imageStorage) {
+    try {
+      const url = new URL(dependencies.imageStorage.publicBase);
+      if (
+        dependencies.imageStorage.kind !== 'cloud' ||
+        url.protocol !== 'https:' ||
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash
+      )
+        throw Error();
+    } catch {
+      await database.close();
+      throw new Error(
+        'Adaptador de imagens Cloud e URL HTTPS sem credenciais obrigatórios em produção.',
+      );
+    }
+  }
   let images: ReturnType<typeof createImageService> | undefined;
   try {
     images =
-      authentication && catalog && producerManagement && configuration.environment !== 'production'
+      authentication &&
+      catalog &&
+      producerManagement &&
+      (configuration.environment !== 'production' || dependencies.imageStorage)
         ? createImageService(
             database.connection!,
             catalog,
             producerManagement,
-            developmentImageStorage(
-              process.env.MEDIA_DIRECTORY ?? join(tmpdir(), 'docampo-media-development'),
-              process.env.MEDIA_PUBLIC_BASE ?? `http://127.0.0.1:${configuration.port}/api/media`,
-            ),
+            dependencies.imageStorage ??
+              developmentImageStorage(
+                process.env.MEDIA_DIRECTORY ?? join(tmpdir(), 'docampo-media-development'),
+                process.env.MEDIA_PUBLIC_BASE ?? `http://127.0.0.1:${configuration.port}/api/media`,
+              ),
           )
         : undefined;
   } catch {
@@ -121,8 +146,9 @@ export async function startApi(
   const adminAuctions = authentication
     ? createAdminAuctionsService(database.connection!, authentication.secret)
     : undefined;
-  const server = createServer(
-    createApp(
+  let app: ReturnType<typeof createApp>;
+  try {
+    app = createApp(
       authentication
         ? {
             auth,
@@ -141,10 +167,21 @@ export async function startApi(
             moderation,
             adminOrders: auth ? createAdminOrdersService(database.connection!) : undefined,
             security: authentication,
+            readiness: async () => {
+              if (!database.connection?.db) return false;
+              const r = await database.connection.db
+                .admin()
+                .command({ ping: 1, maxTimeMS: 1000 }, { timeoutMS: 1250 });
+              return r.ok === 1;
+            },
           }
         : undefined,
-    ),
-  );
+    );
+  } catch {
+    await database.close();
+    throw new Error('Não foi possível preparar os contratos HTTP.');
+  }
+  const server = createServer(app);
   const sockets =
     auctions && auth && authentication && realtime.enabled
       ? attachAuctionSockets(

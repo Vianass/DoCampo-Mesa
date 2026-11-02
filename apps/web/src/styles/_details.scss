@@ -712,3 +712,15 @@
     margin-block: 24px;
   }
 }
+
+// Grelha Bootstrap real no diretório, com a mesma composição e espaçamento editorial.
+.producer-directory .producer-grid--bootstrap {
+  display: flex;
+  gap: 0;
+  --bs-gutter-x: 28px;
+  --bs-gutter-y: 28px;
+  @media (min-width: 768px) {
+    --bs-gutter-x: 24px;
+    --bs-gutter-y: 24px;
+  }
+}

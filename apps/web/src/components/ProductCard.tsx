@@ -9,7 +9,7 @@ import { AddToCart } from '../features/cart/AddToCart';
 
 export function ProductCard({ product }: { product: Product }) {
   return (
-    <article className="product-card">
+    <article className="product-card card">
       <Link
         to={`/produtos/${product.id}`}
         className="product-card__link"
@@ -42,7 +42,7 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
       </Link>
-      <div className="product-card__body">
+      <div className="product-card__body card-body">
         <p className="product-card__origin">
           <Link to={`/produtores/${product.producerId}`}>{product.producerName}</Link>
           <span className="product-card__locality">

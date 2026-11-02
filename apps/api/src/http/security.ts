@@ -21,7 +21,8 @@ export function httpSecurity(settings: HttpSecurityConfiguration): RequestHandle
     const origin = request.headers.origin;
     if (origin !== undefined) {
       response.vary('Origin');
-      if (!settings.allowedOrigins.includes(origin))
+      const ownOrigin = `${request.protocol}://${request.get('host')}`;
+      if (!settings.allowedOrigins.includes(origin) && origin !== ownOrigin)
         throw new ApiError(403, 'ORIGEM_NAO_PERMITIDA', 'Origem não permitida.');
       response.setHeader('Access-Control-Allow-Origin', origin);
       response.setHeader('Access-Control-Expose-Headers', 'ETag, Location');

@@ -31,7 +31,12 @@ export class ConfigurationError extends Error {
 }
 
 export function parseEnvironment(environment: NodeJS.ProcessEnv = process.env) {
-  const result = environmentSchema.safeParse(environment);
+  const result = environmentSchema.safeParse({
+    ...environment,
+    API_PORT: environment.API_PORT ?? environment.PORT,
+    API_HOST:
+      environment.API_HOST ?? (environment.NODE_ENV === 'production' ? '0.0.0.0' : undefined),
+  });
   if (!result.success) {
     throw new ConfigurationError(result.error.issues.map((issue) => issue.path.join('.')));
   }

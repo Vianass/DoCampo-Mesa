@@ -2,12 +2,20 @@
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.11.4-local-moderation
+  version: 0.12.0-local-readiness
   description:
-    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração React local; A Fase 5F acrescenta consulta e avanço operacional de encomendas pelo produtor autenticado, com ETag, auditoria e indicadores; A Fase 6A implementa leilões e licitações REST transacionais, sem encomenda automática, pagamentos ou Socket.IO; não existe publicação de produção. Métodos/códigos
-    académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
-    essas operações não podem ser disponibilizadas antes de aprovação e segurança real. Papéis nas extensões
-    são propostas da matriz, não permissões concedidas. Ver README.md, decisions.md e security.md.'
+    'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente
+    em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos
+    assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados
+    localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração
+    React local; A Fase 5F acrescenta consulta e avanço operacional de encomendas pelo produtor autenticado, com
+    ETag, auditoria e indicadores; A Fase 6A implementa leilões e licitações REST transacionais, sem encomenda automática,
+    pagamentos ou Socket.IO; não existe publicação de produção. Métodos/códigos académicos são preservados; C01/C02/C04/C06
+    aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo
+    aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06
+    aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q: essas
+    operações não podem ser disponibilizadas antes de aprovação e segurança real. Papéis nas extensões são propostas
+    da matriz, não permissões concedidas. Ver README.md, decisions.md e security.md.'
 servers:
   - url: /api
     description: Base relativa proposta; não anuncia um servidor ativo.
@@ -168,14 +176,19 @@ paths:
   /auth/register:
     post:
       operationId: register
-      tags: [Autenticação]
+      tags:
+        - Autenticação
       summary: Registar exclusivamente uma conta compradora
-      description: >-
-        Normaliza email, protege password com Argon2id e força capacidade comprador.
-        Email duplicado recebe a mesma resposta 202, sem substituir a conta existente.
-        Não emite token no registo nem atribui produtor ou administrador. Sem confirmação de password neste contrato.
+      description:
+        Normaliza email, protege password com Argon2id e força capacidade comprador. Email duplicado
+        recebe a mesma resposta 202, sem substituir a conta existente. Não emite token no registo nem atribui produtor
+        ou administrador. Sem confirmação de password neste contrato.
       security: []
-      x-authorized-roles: [visitante, comprador, produtor, administrador]
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
       x-contract-status: implementado-localmente
       x-implementation-stage: '4'
       requestBody:
@@ -185,9 +198,9 @@ paths:
             schema:
               $ref: '#/components/schemas/Registration'
             example:
-              nome: Pessoa fictícia
-              email: pessoa@example.invalid
-              password: Frase fictícia apenas para exemplo!
+              nome: Comprador fictício
+              email: comprador@example.invalid
+              password: Frase fictícia apenas para testes 12!
       responses:
         '202':
           description: Resposta genérica, igual para email novo e duplicado; sem revelar a existência da conta.
@@ -212,14 +225,19 @@ paths:
   /auth/login:
     post:
       operationId: login
-      tags: [Autenticação]
+      tags:
+        - Autenticação
       summary: Autenticar e emitir JWT HS256 com expiração
-      description: >-
-        Verifica Argon2id ou bcrypt legado; conta inexistente, desativada e password
-        incorreta devolvem o mesmo erro 401. JWT contém apenas sub/iss/aud/iat/exp/jti,
-        nunca papéis ou dados pessoais. Duração por omissão 900 segundos, configurável entre 60 e 3600.
+      description:
+        Verifica Argon2id ou bcrypt legado; conta inexistente, desativada e password incorreta devolvem
+        o mesmo erro 401. JWT contém apenas sub/iss/aud/iat/exp/jti, nunca papéis ou dados pessoais. Duração por
+        omissão 900 segundos, configurável entre 60 e 3600.
       security: []
-      x-authorized-roles: [visitante, comprador, produtor, administrador]
+      x-authorized-roles:
+        - visitante
+        - comprador
+        - produtor
+        - administrador
       x-contract-status: implementado-localmente
       x-implementation-stage: '4'
       requestBody:
@@ -229,8 +247,8 @@ paths:
             schema:
               $ref: '#/components/schemas/Credentials'
             example:
-              email: pessoa@example.invalid
-              password: Frase fictícia apenas para exemplo!
+              email: comprador@example.invalid
+              password: Frase fictícia apenas para testes 12!
       responses:
         '200':
           description: Token e projeção própria mínima; Cache-Control no-store. Sem token real nos exemplos.
@@ -246,7 +264,8 @@ paths:
                   id: '000000000000000000000011'
                   nome: Pessoa fictícia
                   email: pessoa@example.invalid
-                  papeis: [comprador]
+                  papeis:
+                    - comprador
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -594,11 +613,10 @@ paths:
         - Produtos
       summary: Consultar catálogo público
       description:
-        Apenas publicados de perfis aprovados e contas ativas com capacidade produtor. Stock
-        zero permanece público. Pesquisa literal por termos, insensível a acentos portugueses; todas as
-        condições combinam por AND. Sem dados privados, revisões ou certificações inferidas. A Fase 11B
-        inclui o array ingredientes na pesquisa por termos; produtos antigos sem esse array são lidos com
-        lista vazia, sem migração nem dados fictícios.
+        Apenas publicados de perfis aprovados e contas ativas com capacidade produtor. Stock zero permanece
+        público. Pesquisa literal por termos, insensível a acentos portugueses; todas as condições combinam por
+        AND. Sem dados privados, revisões ou certificações inferidas. A Fase 11B inclui o array ingredientes na
+        pesquisa por termos; produtos antigos sem esse array são lidos com lista vazia, sem migração nem dados fictícios.
       security: []
       x-authorized-roles:
         - visitante
@@ -693,7 +711,10 @@ paths:
             schema:
               $ref: '#/components/schemas/CatalogProductCreate'
             example:
-              nome: Rascunho fictício
+              nome: Produto fictício em rascunho
+              ingredientes: []
+              etiquetas: []
+              imagens: []
       responses:
         '201':
           description: Resultado da operação.
@@ -707,9 +728,7 @@ paths:
               schema:
                 type: string
             Location:
-              description:
-                URI do produto criado; rascunho não é público. Consultar /api/me/products/{id}
-                para gestão.
+              description: URI do produto criado; rascunho não é público. Consultar /api/me/products/{id} para gestão.
               required: true
               schema:
                 type: string
@@ -1569,37 +1588,56 @@ paths:
           $ref: '#/components/responses/Error503'
   /orders/{id}/estado:
     patch:
-      operationId: changeOrderState
+      operationId: changeOrderAcademicState12
       tags:
         - Encomendas
-      summary: Atualizar estado de encomenda própria
+      summary: Atualizar estado pela rota académica compatível
       description:
-        Caminho académico preservado para cadeia operacional do produtor proprietário, com estado/versão atuais.
-        Outros comandos aprovados têm DTOs/rotas próprios em etapa futura; este PATCH não conclui, cancela ou confirma
-        pagamento genericamente. C04 mantém operação ausente.
+        'Contrato literal das páginas 17/22. Usa exclusivamente os serviços existentes: produtor proprietário
+        avança preparação; só comprador proprietário confirma entregue, com confirmarRececao=true. MongoDB mantém
+        concluida; esta resposta traduz o estado de topo e inclui estadoPersistido. Preserva históricos, pagamento,
+        auditoria, stock e Socket.IO. ETag obtido no GET próprio existente. Repetição de receção recupera pelo mecanismo
+        existente.'
       security:
         - bearerAuth: []
-      x-authorized-roles: [produtor]
-      x-decision-dependencies:
-        - Q04
-        - Q05
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.4'
+      x-contract-status: implementado-localmente
+      x-implementation-stage: '12'
+      x-authorized-roles:
+        - comprador
+        - produtor
       parameters:
-        - { $ref: '#/components/parameters/Id' }
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CatalogIfMatch'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderStateWrite'
+              $ref: '#/components/schemas/AcademicStatusWrite12'
+            examples:
+              preparacao:
+                summary: Produtor proprietário
+                value:
+                  estado: confirmada
+              rececao:
+                summary: Comprador confirma explicitamente a entrega
+                value:
+                  estado: entregue
+                  confirmarRececao: true
       responses:
         '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
+          description: Atualização ou recuperação confirmada. Mesmo ETag do comando existente.
+          headers:
+            ETag:
+              schema:
+                type: string
+              description: ETag forte atual.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'
+                oneOf:
+                  - $ref: '#/components/schemas/AcademicProducerOrder12'
+                  - $ref: '#/components/schemas/AcademicReceipt12'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -1610,6 +1648,14 @@ paths:
           $ref: '#/components/responses/Error404'
         '409':
           $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
         '500':
           $ref: '#/components/responses/Error500'
         '503':
@@ -5401,6 +5447,39 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ContentVisibilityDecision11D'
+  /ready:
+    get:
+      operationId: getApiReadiness12
+      tags:
+        - Diagnóstico técnico
+      summary: Consultar prontidão real da API e ligação MongoDB
+      description:
+        Ping limitado à base configurada. 503 se não configurada, indisponível ou exceder o prazo. Sem
+        URI, credenciais ou topologia. Não comprova disponibilidade de Atlas/Cloud.
+      security: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: '12'
+      responses:
+        '400':
+          $ref: '#/components/responses/Error400'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '200':
+          description: Processo e MongoDB disponíveis.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiReadiness12'
+        '503':
+          description: Não pronto ou não configurado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiReadiness12'
+        '429':
+          $ref: '#/components/responses/Error429'
 components:
   securitySchemes:
     bearerAuth:
@@ -8180,8 +8259,8 @@ components:
         - concluida
         - cancelada
       description:
-        'O02/OR01 aprovadas: concluida é final; entregue académico é acontecimento físico, não sétimo estado.
-        Entrega declarada e receção confirmada têm campos/histórico próprios; diferença literal com PDF permanece registada.'
+        Estado operacional persistido. concluida corresponde a entrega/receção confirmada (entregue na
+        rota académica), sem migração de históricos. em_preparacao é um estado intermédio adicional.
     AuctionStatus:
       type: string
       enum:
@@ -13479,3 +13558,386 @@ components:
         - total
         - totalPaginas
         - versao
+    AcademicProducerOrder12:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        operacaoCompraId:
+          type: string
+          format: uuid
+        produtorContaId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        estado:
+          $ref: '#/components/schemas/OrderStatus'
+        linhas:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuyerOrderLine'
+          minItems: 1
+        subtotalProdutosCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        taxaEntregaCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        moeda:
+          type: string
+          enum:
+            - EUR
+        pagamento:
+          type: object
+          additionalProperties: false
+          properties:
+            metodo:
+              type: string
+              enum:
+                - dinheiro
+                - mb_way
+                - transferencia_bancaria
+            estado:
+              type: string
+              enum:
+                - por_pagar
+                - pagamento_comunicado
+                - pago
+          required:
+            - metodo
+            - estado
+        criadaEm:
+          type: string
+          format: date-time
+        atualizadaEm:
+          type: string
+          format: date-time
+        entrega:
+          type: object
+          additionalProperties: false
+          properties:
+            modalidade:
+              type: string
+              enum:
+                - levantamento
+                - entrega
+            periodoInicial:
+              $ref: '#/components/schemas/CheckoutPeriod'
+            taxaEntregaCent:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            localLevantamento:
+              type: string
+            concelhoId:
+              type: string
+            morada:
+              type: string
+            contacto:
+              type: string
+          required:
+            - modalidade
+            - periodoInicial
+            - taxaEntregaCent
+          oneOf:
+            - properties:
+                modalidade:
+                  type: string
+                  enum:
+                    - levantamento
+              required:
+                - localLevantamento
+            - properties:
+                modalidade:
+                  type: string
+                  enum:
+                    - entrega
+              required:
+                - concelhoId
+                - morada
+                - contacto
+        historicoEstado:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              tipo:
+                type: string
+              de:
+                $ref: '#/components/schemas/OrderStatus'
+              para:
+                $ref: '#/components/schemas/OrderStatus'
+              ocorridoEm:
+                type: string
+                format: date-time
+            required:
+              - tipo
+              - ocorridoEm
+        acoesPermitidas:
+          type: array
+          maxItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - confirmada
+              - em_preparacao
+              - pronta
+        estadoPersistido:
+          $ref: '#/components/schemas/OrderStatus'
+      required:
+        - id
+        - operacaoCompraId
+        - produtorContaId
+        - estado
+        - linhas
+        - subtotalProdutosCent
+        - taxaEntregaCent
+        - totalCent
+        - moeda
+        - pagamento
+        - criadaEm
+        - atualizadaEm
+        - entrega
+        - historicoEstado
+        - acoesPermitidas
+        - estadoPersistido
+      description:
+        Detalhe autorizado do produtor da encomenda, incluindo apenas informação operacional de entrega
+        e histórico minimizado. Sem email, conta compradora, comandos, atores, chave, hash ou manifesto. ETag forte
+        no header; ações calculadas pelo servidor.
+    AcademicReceipt12:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        operacaoCompraId:
+          type: string
+          format: uuid
+        produtorContaId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        estado:
+          type: string
+          enum:
+            - entregue
+        linhas:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuyerOrderLine'
+          minItems: 1
+        subtotalProdutosCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        taxaEntregaCent:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        totalCent:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        moeda:
+          type: string
+          enum:
+            - EUR
+        pagamento:
+          type: object
+          additionalProperties: false
+          properties:
+            metodo:
+              type: string
+              enum:
+                - dinheiro
+                - mb_way
+                - transferencia_bancaria
+            estado:
+              type: string
+              enum:
+                - por_pagar
+                - pagamento_comunicado
+                - pago
+          required:
+            - metodo
+            - estado
+        criadaEm:
+          type: string
+          format: date-time
+        atualizadaEm:
+          type: string
+          format: date-time
+        entrega:
+          type: object
+          additionalProperties: false
+          properties:
+            modalidade:
+              type: string
+              enum:
+                - levantamento
+                - entrega
+            periodoInicial:
+              $ref: '#/components/schemas/CheckoutPeriod'
+            taxaEntregaCent:
+              type: integer
+              minimum: 0
+              maximum: 9007199254740991
+            localLevantamento:
+              type: string
+            concelhoId:
+              type: string
+            morada:
+              type: string
+            contacto:
+              type: string
+          required:
+            - modalidade
+            - periodoInicial
+            - taxaEntregaCent
+          oneOf:
+            - properties:
+                modalidade:
+                  type: string
+                  enum:
+                    - levantamento
+              required:
+                - localLevantamento
+            - properties:
+                modalidade:
+                  type: string
+                  enum:
+                    - entrega
+              required:
+                - concelhoId
+                - morada
+                - contacto
+        historicoEstado:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              tipo:
+                type: string
+              de:
+                $ref: '#/components/schemas/OrderStatus'
+              para:
+                $ref: '#/components/schemas/OrderStatus'
+              ocorridoEm:
+                type: string
+                format: date-time
+            required:
+              - tipo
+              - ocorridoEm
+        produtor:
+          type: object
+          additionalProperties: false
+          properties:
+            perfilId:
+              type: string
+              pattern: ^[a-fA-F0-9]{24}$
+            nomePublico:
+              type: string
+          required:
+            - perfilId
+            - nomePublico
+        versao:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        podeConfirmarRececao:
+          type: boolean
+          description: Verdadeiro apenas em pronta; autorização continua no backend.
+        rececao:
+          type: object
+          additionalProperties: false
+          required:
+            - confirmadaEm
+            - concluidaEm
+          properties:
+            confirmadaEm:
+              type: string
+              format: date-time
+              nullable: true
+            concluidaEm:
+              type: string
+              format: date-time
+              nullable: true
+        origem:
+          type: string
+          enum:
+            - nova
+            - recuperada
+        estadoPersistido:
+          type: string
+          enum:
+            - concluida
+      required:
+        - id
+        - operacaoCompraId
+        - produtorContaId
+        - estado
+        - linhas
+        - subtotalProdutosCent
+        - taxaEntregaCent
+        - totalCent
+        - moeda
+        - pagamento
+        - criadaEm
+        - atualizadaEm
+        - entrega
+        - historicoEstado
+        - origem
+        - versao
+        - podeConfirmarRececao
+        - rececao
+        - estadoPersistido
+      description:
+        'Detalhe autorizado: inclui snapshot de levantamento ou morada/contacto da própria encomenda,
+        período inicial e histórico minimizado; nunca reconsulta preços atuais ou expõe atores/auditoria privada.
+        A propriedade opcional produtor identifica o perfil público atual; não é um snapshot histórico do seu nome.
+        Valores/linhas/entrega continuam snapshots.'
+    AcademicStatusWrite12:
+      oneOf:
+        - $ref: '#/components/schemas/ProducerOrderStatusChange'
+        - type: object
+          additionalProperties: false
+          required:
+            - estado
+            - confirmarRececao
+          properties:
+            estado:
+              type: string
+              enum:
+                - entregue
+            confirmarRececao:
+              type: boolean
+              enum:
+                - true
+    ApiReadiness12:
+      type: object
+      additionalProperties: false
+      required:
+        - estado
+        - ambito
+      properties:
+        estado:
+          type: string
+          enum:
+            - operacional
+            - indisponivel
+        ambito:
+          type: string
+          enum:
+            - api-mongodb
+x-local-production-readiness: phase-12-production-readiness.md

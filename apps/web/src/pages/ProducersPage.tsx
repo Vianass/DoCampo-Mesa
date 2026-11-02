@@ -74,9 +74,11 @@ export function ProducersPage() {
             <p role="status" aria-label="Resultados de produtores">
               {remote.data!.total} produtores encontrados
             </p>
-            <div className="producer-grid">
+            <div className="producer-grid producer-grid--bootstrap row">
               {remote.data!.itens.map((p) => (
-                <ProducerCard key={p.id} producer={adaptProducer(p)} />
+                <div key={p.id} className="col-12 col-md-6 col-lg-4">
+                  <ProducerCard producer={adaptProducer(p)} />
+                </div>
               ))}
             </div>
             {!remote.data!.itens.length && (

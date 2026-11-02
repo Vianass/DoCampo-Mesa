@@ -606,3 +606,9 @@ O formulário usa rádios nativos de 1–5 estrelas, acessíveis por teclado/set
 O [percurso integrado](../api/phase-10-orders-realtime.md) mantém os layouts comprador/produtor/administração. A ação de receção aparece apenas no detalhe próprio pronto e explica que receber não significa pagar. Reutiliza o diálogo nativo, foco inicial no cancelamento, envio único e recuperação de conflitos por consulta. Ao concluir, o título recebe foco e surge a ligação às avaliações.
 
 O estado de ligação é uma nota discreta, sem ticks ou anúncios repetidos por evento. As alterações invalidam leituras e mantêm REST como referência; a atualização de fundo não desloca o foco. Histórico e indicadores existentes são reutilizados, sem novos poderes administrativos. Teclado, contraste, AX e seis larguras acompanham a revisão; VoiceOver audível permanece por testar.
+
+## Fase 12 — Bootstrap e documentação interativa
+
+A integração literal de Bootstrap inclui agora os partials card e navbar. ProductCard reutiliza card/card-body e a navegação desktop mantém o componente React com navbar; os tokens locais anulam bordas, fundo e espaçamentos predefinidos que alterariam o desenho aprovado. O diretório de produtores usa row e col-12/col-md-6/col-lg-4, preservando uma, duas e três colunas. Não se acrescentou JavaScript Bootstrap ou outra biblioteca visual.
+
+Swagger UI é uma interface técnica separada em `/api-docs`, com cabeçalho editorial, recursos locais, salto por teclado e ajustes responsivos das tabelas/formulários. A CSP desta página não altera a política restritiva dos endpoints da API. Revisão nas larguras 320, 430, 768, 1024, 1280 e 1440 px; capturas fora do repositório. Ver [Fase 12](../api/phase-12-production-readiness.md).

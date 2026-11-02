@@ -610,3 +610,16 @@
     opacity: 0.55;
   }
 }
+
+// Bootstrap fornece a estrutura; os tokens e o desenho editorial continuam vigentes.
+.product-card.card {
+  --bs-card-border-width: 0;
+  --bs-card-border-radius: 0;
+  --bs-card-bg: transparent;
+  --bs-card-spacer-y: 0;
+  --bs-card-spacer-x: 0;
+}
+.desktop-navigation.navbar {
+  --bs-navbar-padding-y: 0;
+  --bs-navbar-padding-x: 0;
+}

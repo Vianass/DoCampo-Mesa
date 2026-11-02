@@ -1,4 +1,5 @@
 import { adminContentRoutes } from '../moderation/moderation.routes.js';
+import { mountRoutes } from '../../documentation/route-inventory.js';
 import type { ModerationService } from '../moderation/moderation.service.js';
 import type { AdminAuctionsService } from '../admin-auctions/admin-auctions.service.js';
 import type { ReviewsService } from '../reviews/reviews.service.js';
@@ -48,9 +49,15 @@ export function adminRoutes(
     rate.account(access!.principal(req).id, res);
     next();
   });
-  if (moderation) router.use(adminContentRoutes(moderation, (req) => access!.principal(req)));
+  if (moderation)
+    mountRoutes(
+      router,
+      '',
+      adminContentRoutes(moderation, (req) => access!.principal(req)),
+    );
   if (reviews)
-    router.use(
+    mountRoutes(
+      router,
       '/reviews',
       adminReviewRoutes(reviews, (req) => {
         if (!access) throw unauthorized();

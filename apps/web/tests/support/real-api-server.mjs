@@ -189,6 +189,8 @@ try {
       adminAuctions,
       reviews,
       moderation,
+      readiness: async () =>
+        (await connection.db.admin().command({ ping: 1, maxTimeMS: 1000 })).ok === 1,
       adminOrders: createAdminOrdersService(connection),
       adminLimits: { ipLimit: 100000, accountLimit: 100000 },
       security: authConfig,

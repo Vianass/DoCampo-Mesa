@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 export function DesktopNavigation() {
   return (
-    <nav className="desktop-navigation" aria-label="Navegação principal">
+    <nav className="desktop-navigation navbar" aria-label="Navegação principal">
       <NavLink to="/produtos">Produtos</NavLink>
       <NavLink to="/produtores">Produtores</NavLink>
       <NavLink to="/leiloes">

@@ -206,3 +206,11 @@ docker compose -f apps/api/compose.yaml --profile test stop mongo-test
 Respostas usam `codigo`, `mensagem` e `campos` quando aplicável, com nomes/mensagens controlados e sem stack, driver, URI ou valores rejeitados. Códigos técnicos: ROTA_NAO_ENCONTRADA (404), PEDIDO_INVALIDO e JSON_INVALIDO (400), PEDIDO_DEMASIADO_GRANDE (413; limite JSON 100 KiB) e ERRO_INTERNO (500). A infraestrutura suporta erros controlados 401/403/409, sem implementar ainda autenticação/autorização ou conflitos comerciais. Não se escolheu política 403/404 para propriedade, duração de JWT, paginação, requestId ou precondições de edição.
 
 Ver [documentação complementar](../../docs/api/README.md), [registo de decisões](../../docs/api/decisions.md) e [entrega 3.1](../../docs/api/foundation-implementation.md). Os nove documentos originais da Fase 0 e o frontend aprovado permanecem preservados.
+
+## Fase 12 — Swagger e configuração de produção
+
+Abrir `/api-docs` para Swagger UI real, ou `/api-docs/openapi.json` para o contrato das operações montadas. Authorize mantém o JWT apenas na memória; atualizar elimina-o. Os pedidos alteram o ambiente real do servidor: usar dados de teste na revisão. O build copia o contrato e os assets para dist, sem depender da pasta docs no servidor publicado.
+
+GET `/api/ready` distingue prontidão MongoDB de liveness HTTP (`/api/health`). O PATCH `/api/orders/:id/estado` exige If-Match do detalhe correspondente ao papel e reutiliza preparação/receção existentes. O corpo `estado: entregue` exige `confirmarRececao: true` e comprador proprietário; apenas a resposta de compatibilidade usa entregue, preservando concluida em MongoDB.
+
+A [configuração de produção](.env.production.example) permite PORT do PaaS, escuta em 0.0.0.0, CORS HTTPS exato e proxies explícitos. A integração de armazenamento Cloud é uma porta injetável; nenhum serviço foi publicado. Consultar [o relatório técnico da Fase 12](../../docs/api/phase-12-production-readiness.md) para contratos, segurança, a decisão Argon2id/bcrypt e dependências da Fase 13.
