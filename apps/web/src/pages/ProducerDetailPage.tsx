@@ -1,3 +1,4 @@
+import { ReportContent } from '../features/moderation/ReportContent';
 import { PublicProducerMap } from '../features/discovery/PublicProducerMap';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { Breadcrumbs } from '../components/Breadcrumbs';
@@ -184,6 +185,7 @@ export default function ProducerDetailPage() {
             eyebrow="A mesa também conta histórias"
             title="Palavras de quem se aproxima."
           />
+          <ReportContent kind="produtor" id={producer.id} label="este perfil" />
           <PublicReviews
             key={producer.id + 'produtor'}
             id={producer.id}

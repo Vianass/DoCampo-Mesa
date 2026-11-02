@@ -89,6 +89,7 @@ export function productOwn(product: ProductRecord, key: Uint8Array) {
     id: product._id.toHexString(),
     nome: product.nome,
     estadoPublicacao: product.estadoPublicacao,
+    estadoModeracao: product.moderacao?.estado ?? 'visivel',
     descricao: product.descricao,
     categoriaId: product.categoriaId,
     precoCent: product.precoCent,

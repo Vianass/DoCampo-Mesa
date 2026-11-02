@@ -1,17 +1,27 @@
 import { Button } from '../../components/Button';
 import { ReviewCard } from '../../components/ReviewCard';
 import type { PublicReview } from './contracts';
-export function RealReviewCard({ review }: { review: PublicReview }) {
+import { ReportContent } from '../moderation/ReportContent';
+export function RealReviewCard({
+  review,
+  reporting = false,
+}: {
+  review: PublicReview;
+  reporting?: boolean;
+}) {
   return (
-    <ReviewCard
-      verified
-      review={{
-        displayName: review.autorPublico,
-        rating: review.classificacao,
-        text: review.comentario,
-        createdAt: review.criadaEm,
-      }}
-    />
+    <div className="real-review-item">
+      <ReviewCard
+        verified
+        review={{
+          displayName: review.autorPublico,
+          rating: review.classificacao,
+          text: review.comentario,
+          createdAt: review.criadaEm,
+        }}
+      />
+      {reporting && <ReportContent kind="avaliacao" id={review.id} label="esta avaliação" />}
+    </div>
   );
 }
 export function ReviewPager({

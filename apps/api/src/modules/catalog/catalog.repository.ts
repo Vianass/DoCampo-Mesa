@@ -28,7 +28,7 @@ const producerProjection = {
 /** Conta interna usada só na elegibilidade; nunca sai da projeção pública. */
 function approvedProducerStages(): (PipelineStage.Match | PipelineStage.Lookup)[] {
   return [
-    { $match: { 'aprovacao.estado': 'aprovado' } },
+    { $match: { 'aprovacao.estado': 'aprovado', 'moderacao.estado': { $ne: 'oculta' } } },
     {
       $lookup: {
         from: 'users',
@@ -140,6 +140,7 @@ export function createCatalogRepository(connection: Connection) {
       {
         $match: {
           estadoPublicacao: 'publicado',
+          'moderacao.estado': { $ne: 'oculta' },
           ...(query.categoria ? { categoriaId: query.categoria } : {}),
           ...(months ? { epocaMeses: { $in: [...months] } } : {}),
           ...(query.precoMax !== undefined ? { precoCent: { $lte: query.precoMax } } : {}),
@@ -189,6 +190,7 @@ export function createCatalogRepository(connection: Connection) {
         'perfil.nomePublico',
         'perfil.localidade',
       ]),
+      { $project: { moderacao: 0 } },
     ];
   }
   return {

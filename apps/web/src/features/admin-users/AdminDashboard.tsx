@@ -31,6 +31,9 @@ export default function AdminDashboard() {
         <Button variant="secondary" to="/area/administrador/moderacao">
           Moderar avaliações
         </Button>
+        <Button variant="secondary" to="/area/administrador/moderacao/denuncias">
+          Analisar denúncias
+        </Button>
         <Button variant="secondary" to="/area/administrador/leiloes">
           Supervisionar leilões
         </Button>
@@ -86,7 +89,9 @@ export default function AdminDashboard() {
       )}
       <section className="admin-application-paper">
         <h2>Outras secções, em preparação.</h2>
-        <p>A moderação e os serviços serão disponibilizados nas fases próprias.</p>
+        <p>
+          A moderação está disponível. A monitorização real dos serviços continua em preparação.
+        </p>
         <div className="admin-quick-links">
           {privateSections.administrador
             .filter(

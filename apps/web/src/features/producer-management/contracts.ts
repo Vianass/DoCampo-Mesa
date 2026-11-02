@@ -1,3 +1,4 @@
+import { parseVisibility, type VisibilityState } from '../moderation/contracts';
 import { parsePublicLocation, type PublicLocation } from '../discovery/location';
 import { record, text, number, id } from '../auctions/contracts';
 import { InvalidResponse, parsePage } from '../api/catalog-contract';
@@ -28,6 +29,7 @@ export interface ProductInput {
   imagens: Photo[];
 }
 export interface OwnProduct extends ProductInput {
+  estadoModeracao?: VisibilityState;
   id: string;
   etag: string;
   estadoPublicacao: keyof typeof publicationLabels;
@@ -52,6 +54,7 @@ export interface Commercial {
   };
 }
 export interface Profile {
+  estadoModeracao?: VisibilityState;
   id: string;
   etag: string;
   nomePublico: string;
@@ -97,6 +100,7 @@ export function parseOwnProduct(v: unknown): OwnProduct {
     id: id(r.id),
     etag: tag(r.etag),
     nome: text(r.nome),
+    estadoModeracao: parseVisibility(r.estadoModeracao),
     estadoPublicacao: r.estadoPublicacao as OwnProduct['estadoPublicacao'],
     imagens: r.imagens.map(photo),
     ingredientes: strings(r.ingredientes),
@@ -224,6 +228,7 @@ export function parseProfile(v: unknown): Profile {
   return {
     id: id(r.id),
     etag: tag(r.etag),
+    estadoModeracao: parseVisibility(r.estadoModeracao),
     estadoAprovacao: state as Profile['estadoAprovacao'],
     nomePublico: text(r.nomePublico),
     localidade: text(r.localidade),

@@ -108,15 +108,34 @@ export function createImageService(
         producers = connection.db!.collection('producers');
       const product = await products.findOne(
         { produtor: asset.owner, 'imagens.url': uri },
-        { projection: { produtor: 1, estadoPublicacao: 1 }, maxTimeMS: 5000 },
+        {
+          projection: { produtor: 1, estadoPublicacao: 1, 'moderacao.estado': 1 },
+          maxTimeMS: 5000,
+        },
       );
       const profile = await producers.findOne(
         { userId: asset.owner, 'imagem.url': uri },
-        { projection: { userId: 1, aprovacao: 1 }, maxTimeMS: 5000 },
+        { projection: { userId: 1, aprovacao: 1, 'moderacao.estado': 1 }, maxTimeMS: 5000 },
       );
       const owner = product?.produtor ?? profile?.userId;
-      let allowed = user?.papeis.includes('produtor') && owner?.equals(new Types.ObjectId(user.id));
-      if (!allowed && owner && (product?.estadoPublicacao === 'publicado' || profile)) {
+      const current = user
+        ? await connection
+            .db!.collection('users')
+            .findOne(
+              { _id: new Types.ObjectId(user.id), ativo: { $ne: false } },
+              { projection: { papeis: 1 }, maxTimeMS: 5000 },
+            )
+        : null;
+      let allowed =
+        !!current &&
+        (current.papeis.includes('administrador') ||
+          (current.papeis.includes('produtor') && owner?.equals(new Types.ObjectId(user!.id))));
+      if (
+        !allowed &&
+        owner &&
+        ((product?.estadoPublicacao === 'publicado' && product.moderacao?.estado !== 'oculta') ||
+          (profile && profile.moderacao?.estado !== 'oculta'))
+      ) {
         const active = await connection
           .db!.collection('users')
           .findOne(
@@ -124,7 +143,7 @@ export function createImageService(
             { projection: { _id: 1 }, maxTimeMS: 5000 },
           );
         const approved = await producers.findOne(
-          { userId: owner, 'aprovacao.estado': 'aprovado' },
+          { userId: owner, 'aprovacao.estado': 'aprovado', 'moderacao.estado': { $ne: 'oculta' } },
           { projection: { _id: 1 }, maxTimeMS: 5000 },
         );
         allowed = !!active && !!approved;

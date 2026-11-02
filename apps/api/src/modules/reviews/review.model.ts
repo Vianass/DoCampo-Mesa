@@ -1,24 +1,11 @@
+import { moderationHistorySchema } from '../moderation/moderation.schema.js';
 import { Schema, type Model, type Connection } from 'mongoose';
 import type { ReviewRecord, ReviewDecision } from './review.types.js';
 import { reviewStates, reviewTargets, reviewText } from './review.validation.js';
 export function createReviewModel(connection: Connection): Model<ReviewRecord> {
   if (connection.models.Review) return connection.models.Review as Model<ReviewRecord>;
   const id = { type: Schema.Types.ObjectId, required: true, immutable: true };
-  const event = new Schema<ReviewDecision>(
-    {
-      administrador: id,
-      ocorridoEm: { type: Date, required: true },
-      anterior: { type: String, enum: reviewStates, required: true },
-      estado: { type: String, enum: reviewStates, required: true },
-      motivo: {
-        type: String,
-        required: true,
-        validate: (v: string) => reviewText(2000).safeParse(v).success,
-      },
-      versao: { type: Number, required: true, min: 1, validate: Number.isSafeInteger, cast: false },
-    },
-    { _id: false, strict: 'throw' },
-  );
+  const event = moderationHistorySchema(reviewStates);
   const schema = new Schema<ReviewRecord>(
     {
       autor: id,

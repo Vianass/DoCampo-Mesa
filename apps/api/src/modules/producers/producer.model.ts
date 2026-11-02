@@ -1,3 +1,5 @@
+import { contentVisibilitySchema } from '../moderation/moderation.schema.js';
+import type { ContentVisibility } from '../moderation/moderation.types.js';
 import type { ProducerPublicLocation } from './producer-location.validation.js';
 import { Error as MongooseError, Schema } from 'mongoose';
 import type { Connection, Model, Types } from 'mongoose';
@@ -47,6 +49,7 @@ export interface ProducerRecord {
   historicoCandidaturas?: ProducerApplicationHistory[];
   comercial?: ProducerCommercialSettings;
   revisaoOperacional?: number;
+  moderacao?: ContentVisibility;
   createdAt: Date;
   updatedAt: Date;
   /** Virtual de leitura: exige populate de userId com nome; nunca é persistido. */
@@ -147,6 +150,7 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
         select: false,
       },
       comercial: { type: createProducerCommercialSchema(), default: undefined },
+      moderacao: { type: contentVisibilitySchema(), default: undefined },
       revisaoOperacional: {
         type: Number,
         cast: false,
@@ -250,6 +254,7 @@ export function createProducerModel(connection: Connection): Model<ProducerRecor
   });
   schema.index({ userId: 1 }, { unique: true });
   schema.index({ 'aprovacao.estado': 1, 'aprovacao.submetidaEm': -1, _id: 1 });
+  schema.index({ 'moderacao.estado': 1, createdAt: -1, _id: -1 });
   requireDocumentValidation(schema);
   protectDocumentRevision(schema);
   return connection.model<ProducerRecord>('ProducerProfile', schema);

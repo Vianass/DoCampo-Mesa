@@ -24,10 +24,13 @@ export function AuctionBadge({ state }: { state: AuctionState }) {
   );
 }
 export function AuctionImage({ auction }: { auction: AuctionSummary }) {
-  const product = useRemote('auction-image:' + auction.produtoId, (signal) =>
-    catalogApi.product(auction.produtoId, signal),
+  const product = useRemote(
+    'auction-image:' + auction.produtoId + ':' + !!auction.conteudoModerado,
+    (signal) => catalogApi.product(auction.produtoId, signal),
   );
-  const image = product.data?.imagens.find((i) => i.principal) ?? product.data?.imagens[0];
+  const image = auction.conteudoModerado
+    ? undefined
+    : (product.data?.imagens.find((i) => i.principal) ?? product.data?.imagens[0]);
   return (
     <div className="auction-photo">
       <MarketImage

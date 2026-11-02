@@ -11,6 +11,7 @@ import { ApplicationEntry } from '../producer-application/ApplicationEntry';
 import { applicationPath } from '../producer-application/model';
 const AdminAuctionsArea = lazy(() => import('../admin-auctions/AdminAuctionsArea'));
 const AdminReviewsArea = lazy(() => import('../reviews/AdminReviewsArea'));
+const AdminContentArea = lazy(() => import('../moderation/AdminContentArea'));
 const BuyerReviewsArea = lazy(() => import('../reviews/BuyerReviewsArea'));
 const AdminOrdersArea = lazy(() => import('../admin-orders/AdminOrdersArea'));
 const AdminDashboard = lazy(() => import('../admin-users/AdminDashboard'));
@@ -59,7 +60,11 @@ export function AccountArea() {
   if (role === 'administrador' && pieces[2] === 'moderacao')
     return (
       <Suspense fallback={<LoadingSkeleton label="A carregar moderação real" count={2} />}>
-        <AdminReviewsArea />
+        {['denuncias', 'produtos', 'perfis'].includes(pieces[3] ?? '') ? (
+          <AdminContentArea />
+        ) : (
+          <AdminReviewsArea />
+        )}
       </Suspense>
     );
   if (role === 'comprador' && pieces[2] === 'avaliacoes')

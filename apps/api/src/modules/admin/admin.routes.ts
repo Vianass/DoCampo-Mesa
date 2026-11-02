@@ -1,3 +1,5 @@
+import { adminContentRoutes } from '../moderation/moderation.routes.js';
+import type { ModerationService } from '../moderation/moderation.service.js';
 import type { AdminAuctionsService } from '../admin-auctions/admin-auctions.service.js';
 import type { ReviewsService } from '../reviews/reviews.service.js';
 import { adminReviewRoutes } from '../reviews/reviews.routes.js';
@@ -23,6 +25,7 @@ export function adminRoutes(
   orders?: AdminOrdersService,
   auctions?: AdminAuctionsService,
   reviews?: ReviewsService,
+  moderation?: ModerationService,
 ) {
   const router = Router(),
     access = auth ? createAccessControl(auth) : undefined;
@@ -45,6 +48,7 @@ export function adminRoutes(
     rate.account(access!.principal(req).id, res);
     next();
   });
+  if (moderation) router.use(adminContentRoutes(moderation, (req) => access!.principal(req)));
   if (reviews)
     router.use(
       '/reviews',

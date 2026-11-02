@@ -1,3 +1,4 @@
+import { contentVisibilitySchema } from '../moderation/moderation.schema.js';
 import { Schema } from 'mongoose';
 import type { Connection, HydratedDocument, Model, SchemaTypeOptions } from 'mongoose';
 import { createProducerModel } from '../producers/producer.model.js';
@@ -152,6 +153,7 @@ export function createProductModel(connection: Connection): Model<ProductRecord>
       },
       limiarStockBaixo: { ...integerField(0), max: 10_000_000, default: undefined },
       revisaoOperacional: { ...integerField(0), required: true, default: 0 },
+      moderacao: { type: contentVisibilitySchema(), default: undefined },
       ingredientesAplicaveis: {
         type: Boolean,
         cast: false,
@@ -196,12 +198,14 @@ export function createProductModel(connection: Connection): Model<ProductRecord>
       toJSON: {
         transform: (_document, value) => {
           Reflect.deleteProperty(value, 'revisaoOperacional');
+          Reflect.deleteProperty(value, 'moderacao');
           return value;
         },
       },
       toObject: {
         transform: (_document, value) => {
           Reflect.deleteProperty(value, 'revisaoOperacional');
+          Reflect.deleteProperty(value, 'moderacao');
           return value;
         },
       },
@@ -281,6 +285,7 @@ export function createProductModel(connection: Connection): Model<ProductRecord>
       );
     }
   });
+  schema.index({ 'moderacao.estado': 1, createdAt: -1, _id: -1 });
   schema.index({ produtor: 1, estadoPublicacao: 1 });
   schema.index({ estadoPublicacao: 1, categoriaId: 1 });
   requireDocumentValidation(schema);

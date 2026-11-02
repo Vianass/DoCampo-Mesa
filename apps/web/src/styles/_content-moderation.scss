@@ -1,0 +1,71 @@
+@use 'tokens' as t;
+
+.moderation-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 1.5rem 2rem;
+  a {
+    padding: 0.65rem 1rem;
+    border: 1px solid currentColor;
+    border-radius: 2rem;
+    color: t.$forest;
+    text-decoration: none;
+    &[aria-current='page'] {
+      background: t.$forest;
+      color: t.$cream;
+    }
+  }
+}
+.content-report {
+  margin-block: 1.5rem;
+  padding: 1rem;
+  border-block: 1px solid t.$forest;
+  background: t.$cream;
+  min-width: 0;
+  h3 {
+    font-size: 1.4rem;
+  }
+  p,
+  blockquote {
+    overflow-wrap: anywhere;
+  }
+  fieldset {
+    min-width: 0;
+  }
+  textarea {
+    min-height: 7rem;
+  }
+}
+.content-moderation {
+  .moderation-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    margin-block: 1.5rem;
+  }
+  .moderation-photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    img {
+      width: min(100%, 20rem);
+      height: auto;
+      object-fit: contain;
+    }
+  }
+  .moderation-copy {
+    white-space: pre-wrap;
+  }
+  .moderation-id {
+    overflow-wrap: anywhere;
+  }
+  .admin-application-paper {
+    min-width: 0;
+  }
+  @media (min-width: 768px) {
+    .moderation-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}

@@ -65,7 +65,10 @@ describe('users/producers em MongoDB real e isolado', () => {
     expect(users).toContainEqual(
       expect.objectContaining({ key: { papeis: 1, ativo: 1, createdAt: -1, _id: 1 } }),
     );
-    expect(producers).toHaveLength(3);
+    expect(producers).toHaveLength(4);
+    expect(producers).toContainEqual(
+      expect.objectContaining({ key: { 'moderacao.estado': 1, createdAt: -1, _id: -1 } }),
+    );
     expect(producers).toContainEqual(
       expect.objectContaining({
         key: { 'aprovacao.estado': 1, 'aprovacao.submetidaEm': -1, _id: 1 },

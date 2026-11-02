@@ -2,14 +2,24 @@ import type { AuctionRecord } from './auction.types.js';
 import type { BidRecord } from './bid.types.js';
 import type { AuctionRepository } from './auction.repository.js';
 
-export function auctionDto(a: AuctionRecord, now: Date) {
+export function auctionDto(a: AuctionRecord, now: Date, restricted = false) {
   return {
     id: a._id.toHexString(),
     produtoId: a.produto.toHexString(),
-    produtor: { perfilId: a.produtorPublico.perfilId.toHexString(), nome: a.produtorPublico.nome },
-    titulo: a.titulo,
-    descricao: a.descricao,
-    lote: { nome: a.lote.nome, quantidade: a.lote.quantidade, unidadeVenda: a.lote.unidadeVenda },
+    produtor: {
+      perfilId: a.produtorPublico.perfilId.toHexString(),
+      nome: restricted ? 'Perfil temporariamente indisponível' : a.produtorPublico.nome,
+    },
+    titulo: restricted ? 'Conteúdo temporariamente indisponível' : a.titulo,
+    descricao: restricted
+      ? 'Apresentação restrita por moderação. As condições e obrigações do leilão mantêm-se.'
+      : a.descricao,
+    ...(restricted ? { conteudoModerado: true as const } : {}),
+    lote: {
+      nome: restricted ? 'Lote com apresentação restrita' : a.lote.nome,
+      quantidade: a.lote.quantidade,
+      unidadeVenda: a.lote.unidadeVenda,
+    },
     precoBaseCent: a.precoBaseCent,
     incrementoCent: a.incrementoCent,
     iniciaEm: a.iniciaEm.toISOString(),
@@ -42,10 +52,11 @@ export function auctionDetailDto(
   now: Date,
   user: string,
   repo: AuctionRepository,
+  restricted = false,
 ) {
   const leader = a.licitacaoAtual.comprador;
   return {
-    ...auctionDto(a, now),
+    ...auctionDto(a, now, restricted),
     lider: leader
       ? { referencia: repo.participant(a, leader), proprio: leader.toHexString() === user }
       : null,

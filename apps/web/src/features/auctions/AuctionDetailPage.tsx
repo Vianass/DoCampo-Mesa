@@ -138,6 +138,12 @@ export function AuctionRoom({
           {detail.lote.nome} · {lotLabel(detail)}
         </p>
       </header>
+      {detail.conteudoModerado && (
+        <p className="auction-notice" role="status">
+          A apresentação deste conteúdo está limitada por moderação. O preço, o prazo, as ofertas e
+          o resultado do leilão mantêm-se.
+        </p>
+      )}
       <div className="auction-room-grid auction-room-grid--participation">
         <aside className="auction-bid-panel" aria-label="Acompanhar e licitar">
           <div className="auction-card-top">

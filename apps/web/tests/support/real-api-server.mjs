@@ -1,3 +1,4 @@
+import { createModerationService } from '../../../api/src/modules/moderation/moderation.service.ts';
 import { orderReceiptReview } from './order-receipt-review.mjs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -123,6 +124,8 @@ try {
     );
   }
   const adminAuctions = createAdminAuctionsService(connection, authConfig.secret);
+  const moderation = createModerationService(connection, authConfig.secret);
+  await moderation.prepare();
   const reviews = createReviewsService(connection, authConfig.secret);
   await reviews.prepare();
   if (reviewReviews) {
@@ -185,6 +188,7 @@ try {
       admin,
       adminAuctions,
       reviews,
+      moderation,
       adminOrders: createAdminOrdersService(connection),
       adminLimits: { ipLimit: 100000, accountLimit: 100000 },
       security: authConfig,

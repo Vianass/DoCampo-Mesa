@@ -19,7 +19,8 @@ import {
 import { useReviewResource, reviewError } from './useReviewResource';
 import { RealReviewCard, ReviewPager } from './ReviewComponents';
 import { useReviewFocus } from './useReviewFocus';
-function ReviewHistory({ id, revision }: { id: string; revision: number }) {
+import { ModerationNav } from '../moderation/ModerationNav';
+export function ReviewHistory({ id, revision }: { id: string; revision: number }) {
   const [page, setPage] = useState(1),
     r = useReviewResource(
       `/admin/reviews/${id}/history?pagina=${page}&porPagina=12&ordem=recentes`,
@@ -69,7 +70,7 @@ function ReviewHistory({ id, revision }: { id: string; revision: number }) {
     </section>
   );
 }
-function ModerationDecision({
+export function ModerationDecision({
   data,
   done,
 }: {
@@ -417,6 +418,7 @@ export default function AdminReviewsArea() {
           histórico.
         </p>
       </header>
+      <ModerationNav />
       {parts.length > 4 || (id && !/^[a-fA-F0-9]{24}$/.test(id)) ? (
         <EmptyState title="A avaliação não está disponível." description="Revê o endereço." />
       ) : id ? (

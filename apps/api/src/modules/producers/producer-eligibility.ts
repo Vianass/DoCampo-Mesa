@@ -29,6 +29,7 @@ export interface ProducerEligibilityRecord {
   readonly aprovacao: { readonly estado: string };
   readonly comercial?: ProducerCommercialSettings;
   readonly revisaoOperacional?: number;
+  readonly moderacao?: { estado: string };
 }
 
 /** Instantes UTC explícitos; verifica a união das janelas locais, incluindo mudanças de hora. */
@@ -105,6 +106,7 @@ export function validateProducerGuardCandidate(
     !record ||
     !record.userId.equals(input.produtorId) ||
     record.aprovacao.estado !== 'aprovado' ||
+    record.moderacao?.estado === 'oculta' ||
     !record.comercial ||
     validateProducerCommercial(record.comercial).length
   ) {

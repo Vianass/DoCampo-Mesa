@@ -112,6 +112,7 @@ export function createCheckoutPreparationService(
                       precoCent: 1,
                       moeda: 1,
                       estadoPublicacao: 1,
+                      'moderacao.estado': 1,
                       unidadeVenda: 1,
                       stockDisponivel: 1,
                       revisaoOperacional: 1,
@@ -148,6 +149,7 @@ export function createCheckoutPreparationService(
                           userId: 1,
                           nomePublico: 1,
                           'aprovacao.estado': 1,
+                          'moderacao.estado': 1,
                           revisaoOperacional: 1,
                           'comercial.modalidades': 1,
                           'comercial.localLevantamento': 1,
@@ -161,6 +163,7 @@ export function createCheckoutPreparationService(
                   if (
                     !account ||
                     producer?.aprovacao.estado !== 'aprovado' ||
+                    producer.moderacao?.estado === 'oculta' ||
                     !producer.comercial ||
                     validateProducerCommercial(producer.comercial).length
                   )

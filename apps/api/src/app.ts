@@ -1,3 +1,5 @@
+import { contentReportRoutes } from './modules/moderation/moderation.routes.js';
+import type { ModerationService } from './modules/moderation/moderation.service.js';
 import type { OrderReceiptService } from './modules/orders/order-receipt.service.js';
 import type { AdminAuctionsService } from './modules/admin-auctions/admin-auctions.service.js';
 import type { ReviewsService } from './modules/reviews/reviews.service.js';
@@ -49,6 +51,7 @@ export function createApp(
     adminOrders?: AdminOrdersService;
     adminAuctions?: AdminAuctionsService;
     reviews?: ReviewsService;
+    moderation?: ModerationService;
     adminLimits?: AuctionRateOptions;
     security?: HttpSecurityConfiguration;
     rateLimit?: AuthRateLimitOptions;
@@ -67,6 +70,7 @@ export function createApp(
   app.use(express.json({ limit: '100kb', inflate: false }));
   if (options.auth) app.use('/api/auth', authRoutes(options.auth, options.rateLimit));
   if (options.reviews) app.use('/api', reviewsRoutes(options.reviews, options.auth));
+  if (options.moderation) app.use('/api', contentReportRoutes(options.moderation, options.auth));
   if (options.catalog) app.use('/api', catalogRoutes(options.catalog, options.auth));
   if (options.producerManagement)
     app.use('/api/me/producer', producerManagementRoutes(options.producerManagement, options.auth));
@@ -92,6 +96,7 @@ export function createApp(
         options.adminOrders,
         options.adminAuctions,
         options.reviews,
+        options.moderation,
       ),
     );
   app.use('/api', technicalRoutes());

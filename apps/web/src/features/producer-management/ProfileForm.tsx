@@ -143,6 +143,12 @@ export function ProfileForm({
       <p>
         <Link to={'/produtores/' + profile.id}>Consultar o perfil público ↗</Link>
       </p>
+      {profile.estadoModeracao === 'oculta' && (
+        <p role="status" className="management-feedback">
+          O perfil está oculto por moderação. Podes gerir a tua produção e cumprir as obrigações
+          existentes. A loja pública e novas compras estão temporariamente indisponíveis.
+        </p>
+      )}
       <MutationFeedback error={mutation.error} retry={refresh} />
       {validation && <p role="alert">{validation}</p>}
       <form

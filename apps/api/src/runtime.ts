@@ -1,3 +1,4 @@
+import { createModerationService } from './modules/moderation/moderation.service.js';
 import { createOrderReceiptService } from './modules/orders/order-receipt.service.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -53,6 +54,9 @@ export async function startApi(
   const reviews = authentication
     ? createReviewsService(database.connection!, authentication.secret)
     : undefined;
+  const moderation = authentication
+    ? createModerationService(database.connection!, authentication.secret)
+    : undefined;
   const catalog = authentication
     ? createCatalogService(database.connection!, authentication.secret)
     : undefined;
@@ -102,6 +106,7 @@ export async function startApi(
     if (auth) await auth.prepare();
     if (catalog) await catalog.prepare();
     if (reviews) await reviews.prepare();
+    if (moderation) await moderation.prepare();
     if (orders) await orders.prepare();
     if (preparation) await preparation.prepare();
     if (producerApplications) await producerApplications.prepare();
@@ -133,6 +138,7 @@ export async function startApi(
             admin,
             adminAuctions,
             reviews,
+            moderation,
             adminOrders: auth ? createAdminOrdersService(database.connection!) : undefined,
             security: authentication,
           }

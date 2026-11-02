@@ -72,7 +72,8 @@ export function validateProductStockCandidate(
     !product ||
     !product._id.equals(input.produtoId) ||
     !product.produtor.equals(input.produtorId) ||
-    product.estadoPublicacao !== 'publicado'
+    product.estadoPublicacao !== 'publicado' ||
+    product.moderacao?.estado === 'oculta'
   ) {
     throw new ConcurrencyError('PRODUTO_INDISPONIVEL', 'Produto indisponível para esta operação.');
   }
@@ -116,6 +117,7 @@ export async function decreaseProductStock(
     _id: input.produtoId,
     produtor: input.produtorId,
     estadoPublicacao: 'publicado',
+    'moderacao.estado': { $ne: 'oculta' },
     ...revisionCondition(input.revisaoEsperada),
     precoCent: input.precoAceiteCent,
     unidadeVenda: product.unidadeVenda,

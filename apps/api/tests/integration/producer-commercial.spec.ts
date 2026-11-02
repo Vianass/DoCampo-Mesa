@@ -74,7 +74,10 @@ describe('configuração comercial em MongoDB real', () => {
     expect(
       (await database!.connection.db!.listCollections().toArray()).map((item) => item.name).sort(),
     ).toEqual(['producers', 'users']);
-    expect(await Producer.listIndexes()).toHaveLength(3);
+    expect(await Producer.listIndexes()).toHaveLength(4);
+    expect(await Producer.listIndexes()).toContainEqual(
+      expect.objectContaining({ key: { 'moderacao.estado': 1, createdAt: -1, _id: -1 } }),
+    );
     expect(await Producer.listIndexes()).toContainEqual(
       expect.objectContaining({
         key: { 'aprovacao.estado': 1, 'aprovacao.submetidaEm': -1, _id: 1 },

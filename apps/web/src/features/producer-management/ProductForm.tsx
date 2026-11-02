@@ -45,6 +45,12 @@ export function ProductForm({
   const immutable = product?.estadoPublicacao === 'arquivado';
   return (
     <>
+      {product?.estadoModeracao === 'oculta' && (
+        <p role="status" className="management-feedback">
+          Este produto está oculto por moderação. Podes continuar a geri-lo. A edição não repõe a
+          visibilidade pública nem permite novas compras ou novos leilões.
+        </p>
+      )}
       <MutationFeedback error={mutation.error} retry={refresh} />
       {validation && <p role="alert">{validation}</p>}
       {reserved && (

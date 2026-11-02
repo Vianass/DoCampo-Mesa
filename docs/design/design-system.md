@@ -1,5 +1,13 @@
 # Sistema visual — Do Campo à Mesa
 
+## Fase 11D — Confiança e conteúdos
+
+A moderação real estende a área administrativa existente, com separadores Avaliações, Denúncias, Produtos e Perfis. Reutiliza tokens, formulários, feedback, diálogo de confirmação, paginação e linguagem editorial. Evidências original/atual ficam identificadas separadamente; identidade do denunciante e motivos administrativos permanecem privados.
+
+Produto, perfil e avaliação pública permitem denunciar após autenticação. O formulário explica a ausência de ocultação automática, pede motivo e confirmação, informa o resultado e recupera respostas incertas por consulta. As decisões administrativas têm motivo, confirmação, ETag e bloqueio até consulta em caso de conflito. Edição privada informa da ocultação sem alterar obrigações existentes.
+
+Revisão em 320, 430, 768, 1024, 1280 e 1440 px, com grelhas flexíveis, texto longo, navegação que quebra por elementos e fotografias limitadas ao espaço disponível. Teclado, foco, Escape, labels e contraste calculado são verificados; VoiceOver audível não foi verificado. Ver [contratos, efeitos e limitações](../api/phase-11d-content-moderation.md). Capturas ficam fora do repositório. Sem alterações aos documentos originais da Fase 0.
+
 ## Âmbito e estado
 
 Fase 1: configuração do monorepo e primeira implementação do sistema visual, em React/TypeScript/Vite. Esta documentação complementa os nove documentos da Fase 0, cujo conteúdo foi preservado. A aplicação funciona com dados fictícios em memória; não existem autenticação, endpoints, MongoDB, compras ou licitações reais.

@@ -1,3 +1,7 @@
+import {
+  auctionDiscoveryVisibility,
+  auctionContentHidden,
+} from '../moderation/content-visibility.js';
 import { createHash } from 'node:crypto';
 import { Types, mongo as mongoDriver } from 'mongoose';
 import type { ClientSession, Connection, mongo } from 'mongoose';
@@ -71,7 +75,16 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
   }
   async function result(a: AuctionRecord, user: string, session?: ClientSession) {
     const now = await repo.clock('auctions', a._id, session);
-    return { body: auctionDetailDto(a, now, user, repo), etag: repo.tag(a) };
+    return {
+      body: auctionDetailDto(
+        a,
+        now,
+        user,
+        repo,
+        a.produtor.toHexString() !== user && (await auctionContentHidden(connection, a, session)),
+      ),
+      etag: repo.tag(a),
+    };
   }
   async function release(a: AuctionRecord, session: ClientSession) {
     const amounts = await releaseAuctionStock(connection, a, session);
@@ -244,6 +257,12 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
         }
         await repo.guardUsers([{ id: owner, roles: ['produtor'] }], session);
         const profile = await repo.guardProfile(owner, session);
+        if (profile.moderacao?.estado === 'oculta')
+          throw new ApiError(
+            403,
+            'CONTEUDO_OCULTO',
+            'O perfil público está temporariamente indisponível para novos leilões.',
+          );
         const product = await connection
           .db!.collection<ProductRecord>('products')
           .findOne({ _id: new Types.ObjectId(input.produtoId), produtor: owner }, { session });
@@ -327,6 +346,7 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
           .aggregate<{ itens: AuctionRecord[]; contagem: { total: number }[] }>(
             [
               { $match: filter },
+              ...(!user ? auctionDiscoveryVisibility() : []),
               { $set: { observadoEm: '$$NOW' } },
               { $sort: { createdAt: direction, _id: direction } },
               {

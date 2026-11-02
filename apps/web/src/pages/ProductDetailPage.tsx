@@ -1,3 +1,4 @@
+import { ReportContent } from '../features/moderation/ReportContent';
 import { Link, useParams } from 'react-router';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { Container } from '../components/Container';
@@ -184,6 +185,7 @@ export default function ProductDetailPage() {
             <CommercialInfo value={dto.comercial} />
           </div>
         </section>
+        <ReportContent kind="produto" id={product.id} label="este produto" />
         <PublicReviews
           key={product.id}
           id={product.id}

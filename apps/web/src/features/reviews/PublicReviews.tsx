@@ -67,7 +67,7 @@ export function PublicReviews({
             {r.data.itens.length ? (
               <div className="review-grid">
                 {r.data.itens.map((item) => (
-                  <RealReviewCard key={item.id} review={item} />
+                  <RealReviewCard key={item.id} review={item} reporting />
                 ))}
               </div>
             ) : (

@@ -14,6 +14,7 @@ function pick(value: unknown, fields: readonly string[]): Record<string, unknown
 export function redactProducerSerialization(
   value: Record<string, unknown>,
 ): Record<string, unknown> {
+  Reflect.deleteProperty(value, 'moderacao');
   Reflect.deleteProperty(value, 'telefone');
   Reflect.deleteProperty(value, 'comercial');
   Reflect.deleteProperty(value, 'revisaoOperacional');

@@ -2,7 +2,7 @@
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa — contrato inicial da API
-  version: 0.11.1-local-discovery
+  version: 0.11.4-local-moderation
   description:
     'Contrato comercial da Fase 3.0 e fundação local 3.1; users/producers/products consolidados localmente em 3.2. O01–O16 aprovadas funcionalmente, com orders apenas em revisão documental e schemas legados incompletos assinalados. GET /api/health, autenticação da Fase 4 e catálogo/gestão de produtos da Fase 5A estão implementados localmente. As Fases 5D/5E expõem checkout, preparação, recuperação privada e consultas próprias, com integração React local; A Fase 5F acrescenta consulta e avanço operacional de encomendas pelo produtor autenticado, com ETag, auditoria e indicadores; A Fase 6A implementa leilões e licitações REST transacionais, sem encomenda automática, pagamentos ou Socket.IO; não existe publicação de produção. Métodos/códigos
     académicos são preservados; C01/C02/C04/C06 aprovadas no âmbito de decisions.md. Campos públicos em português, IDs estáveis, DTOs próprios e PUT completo aprovados; detalhes adicionais continuam propostas. Q01/Q03/Q04/Q06/Q14 foram aprovadas funcionalmente; T32-01–T32-06 aprovadas no âmbito explícito; detalhes residuais continuam pendentes. x-decision-dependencies rastreia Q:
@@ -25,6 +25,7 @@ tags:
   - name: Leilões
   - name: Licitações
   - name: Administração
+  - name: Denúncias
 x-contract-status: aprovacao-parcial-com-fundacao-local
 x-local-implementation: foundation-implementation.md
 x-local-admin-users: phase-8a-admin-dashboard-users.md
@@ -37,6 +38,7 @@ x-admin-auction-realtime:
   payload: apenas-consultar-true-sem-dados-comerciais
   authority: REST-MongoDB
   recovery: consulta-periodica-15-segundos-e-reconexao
+x-local-content-moderation: phase-11d-content-moderation.md
 x-local-discovery-and-maps: phase-11b-discovery-and-maps.md
 x-local-producer-management: phase-11a-producer-management.md
 x-stock-alert-decision: Limiar opcional por produto, sem valor por defeito; stock zero indisponível.
@@ -1915,57 +1917,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ReviewCreate9'
-  /reviews/{id}/reports:
-    post:
-      operationId: reportReview
-      tags:
-        - Avaliações
-      summary: Denunciar avaliação
-      description:
-        Denúncia autenticada é a recomendação Q10. Papel autorizado final e repetição por autor
-        dependem dessa aprovação; não oculta automaticamente a avaliação.
-      security:
-        - bearerAuth: []
-      x-authorized-roles: *id007
-      x-decision-dependencies:
-        - Q10
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
-      parameters:
-        - { $ref: '#/components/parameters/Id' }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReportWrite'
-      responses:
-        '201':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Report'
-          headers:
-            Location:
-              description: URI do recurso criado. Para checkout, forma final depende de Q02.
-              schema:
-                type: string
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '500':
-          $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
   /auctions:
     get:
       operationId: listAuctions
@@ -2969,130 +2920,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Application'
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '409':
-          $ref: '#/components/responses/Error409'
-        '500':
-          $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
-  /admin/review-reports:
-    get:
-      operationId: listModerationCases
-      tags:
-        - Administração
-      summary: Consultar avaliações denunciadas
-      description: Consultar avaliações denunciadas. Operação proposta; não implementada.
-      security:
-        - bearerAuth: []
-      x-authorized-roles: *id008
-      x-decision-dependencies:
-        - Q10
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
-      parameters:
-        - { $ref: '#/components/parameters/Q' }
-        - { $ref: '#/components/parameters/Page' }
-        - { $ref: '#/components/parameters/PageSize' }
-        - $ref: '#/components/parameters/State'
-      responses:
-        '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ModerationCase'
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '500':
-          $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
-  /admin/review-reports/{id}:
-    get:
-      operationId: getModerationCase
-      tags:
-        - Administração
-      summary: Consultar avaliação e denúncias
-      description:
-        Consultar avaliação e denúncias. Operação proposta; não implementada. ID refere a review
-        projetada e as suas denúncias, proposta C01; não um denunciante ou autorização.
-      security:
-        - bearerAuth: []
-      x-authorized-roles: *id008
-      x-decision-dependencies:
-        - Q10
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
-      parameters:
-        - { $ref: '#/components/parameters/Id' }
-      responses:
-        '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ModerationCase'
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
-        '403':
-          $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
-        '500':
-          $ref: '#/components/responses/Error500'
-        '503':
-          $ref: '#/components/responses/Error503'
-  /admin/review-reports/{id}/decision:
-    patch:
-      operationId: decideModeration
-      tags:
-        - Administração
-      summary: Manter ou ocultar avaliação
-      description:
-        Preservar texto, classificação e evidência; após decisão persistida, consultas públicas/agregados
-        refletem ocultação. Conflito/repetição por acordar em Q10/Q12 e C02; não inventar remoção de outros
-        conteúdos. ID refere a review projetada e as suas denúncias, proposta C01; não um denunciante ou autorização.
-      security:
-        - bearerAuth: []
-      x-authorized-roles: *id008
-      x-decision-dependencies:
-        - Q10
-        - Q12
-      x-contract-status: proposta-bloqueada
-      x-implementation-stage: '3.5'
-      parameters:
-        - { $ref: '#/components/parameters/Id' }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ModerationDecision'
-      responses:
-        '200':
-          description: Resultado da operação; contrato inicial sujeito às dependências indicadas.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ModerationCase'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -4868,6 +4695,712 @@ paths:
           $ref: '#/components/responses/Error404'
         '500':
           $ref: '#/components/responses/Error500'
+  /content-reports:
+    post:
+      operationId: createContentReport11D
+      tags:
+        - Denúncias
+      summary: Denunciar um conteúdo público
+      description:
+        Uma denúncia por conta/tipo/conteúdo, garantida por índice único; duplicado 409. Motivo obrigatório.
+        12 tentativas por conta/minuto e 120 por IP/minuto. Não oculta automaticamente. Snapshot restrito à administração.
+        JWT válido, conta ativa e papéis atuais verificados no backend. Query desconhecida ou duplicada é rejeitada.
+        Sem identidade do denunciante ou motivos administrativos nas respostas públicas.
+      security:
+        - bearerAuth: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11D
+      x-authorized-roles:
+        - comprador
+        - produtor
+        - administrador
+      responses:
+        '201':
+          description: Resultado confirmado pelo serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnContentReport11D'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - no-store
+              description: Sem armazenamento em cache.
+            Location:
+              schema:
+                type: string
+              description: 'Consulta privada do autor: /api/me/content-reports?alvoTipo=...&alvoId=...'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentReportWrite11D'
+  /me/content-reports:
+    get:
+      operationId: getOwnContentReport11D
+      tags:
+        - Denúncias
+      summary: Consultar a própria denúncia por conteúdo
+      description:
+        'Recuperação segura após resposta perdida: denuncia null confirma ausência. Sem consulta de outras
+        contas. 120 pedidos por conta/minuto e 240 por IP/minuto. JWT válido, conta ativa e papéis atuais verificados
+        no backend. Query desconhecida ou duplicada é rejeitada. Sem identidade do denunciante ou motivos administrativos
+        nas respostas públicas.'
+      security:
+        - bearerAuth: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11D
+      x-authorized-roles:
+        - comprador
+        - produtor
+        - administrador
+      responses:
+        '200':
+          description: Resultado confirmado pelo serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnContentReportLookup11D'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - no-store
+              description: Sem armazenamento em cache.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+        - name: alvoTipo
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - produto
+              - produtor
+              - avaliacao
+        - name: alvoId
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+  /admin/content-reports:
+    get:
+      operationId: listContentReports11D
+      tags:
+        - Administração
+      summary: Consultar denúncias globais
+      description:
+        ' JWT válido, conta ativa e papéis atuais verificados no backend. Query desconhecida ou duplicada
+        é rejeitada. Sem identidade do denunciante ou motivos administrativos nas respostas públicas.'
+      security:
+        - bearerAuth: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11D
+      x-authorized-roles:
+        - administrador
+      responses:
+        '200':
+          description: Resultado confirmado pelo serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminContentReportPage11D'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - no-store
+              description: Sem armazenamento em cache.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: porPagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            enum:
+              - 12
+              - 24
+              - 36
+            default: 12
+        - name: ordem
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - pendente
+              - resolvida
+              - rejeitada
+        - name: alvoTipo
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - produto
+              - produtor
+              - avaliacao
+        - name: identificador
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+  /admin/content-reports/{id}:
+    get:
+      operationId: getContentReport11D
+      tags:
+        - Administração
+      summary: Consultar denúncia, evidência e conteúdo atual
+      description:
+        O ETag inclui a versão da denúncia e a revisão do conteúdo atual. O snapshot original não é reescrito
+        por edições posteriores. JWT válido, conta ativa e papéis atuais verificados no backend. Query desconhecida
+        ou duplicada é rejeitada. Sem identidade do denunciante ou motivos administrativos nas respostas públicas.
+      security:
+        - bearerAuth: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11D
+      x-authorized-roles:
+        - administrador
+      responses:
+        '200':
+          description: Resultado confirmado pelo serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminContentReportDetail11D'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - no-store
+              description: Sem armazenamento em cache.
+            ETag:
+              schema:
+                type: string
+                pattern: ^"[A-Za-z0-9_-]{43}"$
+              description: ETag forte; enviar como If-Match na decisão.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+  /admin/content-reports/{id}/decision:
+    patch:
+      operationId: decideContentReport11D
+      tags:
+        - Administração
+      summary: Resolver ou rejeitar denúncia pendente
+      description:
+        'Transação MongoDB: CAS, auditoria única e contexto da visibilidade na decisão. Estado final imutável.
+        Não muda a visibilidade: ocultar/restaurar é ação separada. Resultado incerto: consultar antes de repetir.
+        JWT válido, conta ativa e papéis atuais verificados no backend. Query desconhecida ou duplicada é rejeitada.
+        Sem identidade do denunciante ou motivos administrativos nas respostas públicas.'
+      security:
+        - bearerAuth: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11D
+      x-authorized-roles:
+        - administrador
+      responses:
+        '200':
+          description: Resultado confirmado pelo serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminContentReportDetail11D'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - no-store
+              description: Sem armazenamento em cache.
+            ETag:
+              schema:
+                type: string
+                pattern: ^"[A-Za-z0-9_-]{43}"$
+              description: ETag forte; enviar como If-Match na decisão.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+        - name: If-Match
+          in: header
+          required: true
+          description: Um único ETag forte da última consulta confirmada. 428 se ausente, 400 inválido, 412 se desatualizado.
+          schema:
+            type: string
+            pattern: ^"[A-Za-z0-9_-]{43}"$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentReportDecision11D'
+  /admin/content:
+    get:
+      operationId: listModeratedContent11D
+      tags:
+        - Administração
+      summary: Supervisionar produtos e perfis
+      description:
+        Filtragem e paginação MongoDB; sinalizados refere denúncias pendentes. Estados comerciais independentes
+        da moderação. JWT válido, conta ativa e papéis atuais verificados no backend. Query desconhecida ou duplicada
+        é rejeitada. Sem identidade do denunciante ou motivos administrativos nas respostas públicas.
+      security:
+        - bearerAuth: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11D
+      x-authorized-roles:
+        - administrador
+      responses:
+        '200':
+          description: Resultado confirmado pelo serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminModeratedContentPage11D'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - no-store
+              description: Sem armazenamento em cache.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: porPagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            enum:
+              - 12
+              - 24
+              - 36
+            default: 12
+        - name: ordem
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+        - name: tipo
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - produto
+              - produtor
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - visivel
+              - oculta
+        - name: identificador
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+        - name: sinalizados
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+  /admin/content/{tipo}/{id}:
+    get:
+      operationId: getModeratedContent11D
+      tags:
+        - Administração
+      summary: Consultar conteúdo para moderação
+      description:
+        ' JWT válido, conta ativa e papéis atuais verificados no backend. Query desconhecida ou duplicada
+        é rejeitada. Sem identidade do denunciante ou motivos administrativos nas respostas públicas.'
+      security:
+        - bearerAuth: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11D
+      x-authorized-roles:
+        - administrador
+      responses:
+        '200':
+          description: Resultado confirmado pelo serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminModeratedContent11D'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - no-store
+              description: Sem armazenamento em cache.
+            ETag:
+              schema:
+                type: string
+                pattern: ^"[A-Za-z0-9_-]{43}"$
+              description: ETag forte; enviar como If-Match na decisão.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+        - name: tipo
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - produto
+              - produtor
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+  /admin/content/{tipo}/{id}/history:
+    get:
+      operationId: getContentVisibilityHistory11D
+      tags:
+        - Administração
+      summary: Consultar auditoria de visibilidade
+      description:
+        ' JWT válido, conta ativa e papéis atuais verificados no backend. Query desconhecida ou duplicada
+        é rejeitada. Sem identidade do denunciante ou motivos administrativos nas respostas públicas.'
+      security:
+        - bearerAuth: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11D
+      x-authorized-roles:
+        - administrador
+      responses:
+        '200':
+          description: Resultado confirmado pelo serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentVisibilityHistory11D'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - no-store
+              description: Sem armazenamento em cache.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+        - name: tipo
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - produto
+              - produtor
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+        - name: pagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: porPagina
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            enum:
+              - 12
+              - 24
+              - 36
+            default: 12
+        - name: ordem
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - recentes
+              - antigas
+            default: recentes
+  /admin/content/{tipo}/{id}/moderation:
+    patch:
+      operationId: decideContentVisibility11D
+      tags:
+        - Administração
+      summary: Ocultar ou restaurar produto ou perfil
+      description:
+        Transação com motivo, administrador, CAS e auditoria incorporada. Ocultação retira descoberta e
+        novas compras/novos leilões; não altera stock, aprovação, conta ou obrigações. Restauro respeita os estados
+        comerciais atuais. Leilões existentes mantêm regras e apresentação neutra. Avaliações usam exclusivamente
+        /admin/reviews/{id}/moderation. Limite de 1000 decisões, sem eliminação do histórico. JWT válido, conta ativa
+        e papéis atuais verificados no backend. Query desconhecida ou duplicada é rejeitada. Sem identidade do denunciante
+        ou motivos administrativos nas respostas públicas.
+      security:
+        - bearerAuth: []
+      x-contract-status: implementado-localmente
+      x-implementation-stage: 11D
+      x-authorized-roles:
+        - administrador
+      responses:
+        '200':
+          description: Resultado confirmado pelo serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminModeratedContent11D'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - no-store
+              description: Sem armazenamento em cache.
+            ETag:
+              schema:
+                type: string
+                pattern: ^"[A-Za-z0-9_-]{43}"$
+              description: ETag forte; enviar como If-Match na decisão.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '412':
+          $ref: '#/components/responses/Error412'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '428':
+          $ref: '#/components/responses/Error428'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+        - name: tipo
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - produto
+              - produtor
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{24}$
+        - name: If-Match
+          in: header
+          required: true
+          description: Um único ETag forte da última consulta confirmada. 428 se ausente, 400 inválido, 412 se desatualizado.
+          schema:
+            type: string
+            pattern: ^"[A-Za-z0-9_-]{43}"$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentVisibilityDecision11D'
 components:
   securitySchemes:
     bearerAuth:
@@ -5784,6 +6317,10 @@ components:
         - serverNow
         - moeda
       properties:
+        conteudoModerado:
+          type: boolean
+          enum: [true]
+          description: Apresentação neutra de conteúdo moderado; preserva regras e valores.
         id:
           type: string
           pattern: ^[a-f0-9]{24}$
@@ -6655,6 +7192,10 @@ components:
       type: object
       additionalProperties: false
       properties:
+        estadoModeracao:
+          type: string
+          enum: [visivel, oculta]
+          description: Ausente em dados antigos significa visível; independente do estado comercial.
         id:
           $ref: '#/components/schemas/Id'
         nome:
@@ -12053,6 +12594,10 @@ components:
         - etag
         - estadoAprovacao
       properties:
+        estadoModeracao:
+          type: string
+          enum: [visivel, oculta]
+          description: Ausente em dados antigos significa visível; independente do estado comercial.
         nomePublico:
           type: string
           minLength: 1
@@ -12364,3 +12909,573 @@ components:
           enum:
             - true
       description: Ponto próprio, com autorização explícita; omitido quando removido.
+    ContentEvidence11D:
+      type: object
+      additionalProperties: false
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 300
+        descricao:
+          type: string
+          maxLength: 10000
+        imagens:
+          type: array
+          maxItems: 2
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              url:
+                type: string
+                format: uri
+                maxLength: 4096
+                description: HTTP(S) sem credenciais; adaptador local ou URL publicada.
+              alt:
+                type: string
+                maxLength: 500
+            required:
+              - url
+        ingredientes:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            maxLength: 500
+        etiquetas:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            maxLength: 300
+        modoProducao:
+          type: string
+          maxLength: 300
+        classificacao:
+          type: integer
+          minimum: 1
+          maximum: 5
+      required:
+        - nome
+        - descricao
+        - imagens
+    OwnContentReport11D:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+            - avaliacao
+        alvoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        estado:
+          type: string
+          enum:
+            - pendente
+            - resolvida
+            - rejeitada
+        criadaEm:
+          type: string
+          format: date-time
+        atualizadaEm:
+          type: string
+          format: date-time
+      required:
+        - id
+        - alvoTipo
+        - alvoId
+        - motivo
+        - estado
+        - criadaEm
+        - atualizadaEm
+    ContentDecisionAudit11D:
+      type: object
+      additionalProperties: false
+      properties:
+        administradorId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        ocorridoEm:
+          type: string
+          format: date-time
+        anterior:
+          type: string
+          enum:
+            - pendente
+            - visivel
+            - oculta
+        estado:
+          type: string
+          enum:
+            - resolvida
+            - rejeitada
+            - visivel
+            - oculta
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        versao:
+          type: integer
+          minimum: 1
+      required:
+        - administradorId
+        - ocorridoEm
+        - anterior
+        - estado
+        - motivo
+        - versao
+    AdminModeratedContent11D:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        tipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+            - avaliacao
+        evidencia:
+          $ref: '#/components/schemas/ContentEvidence11D'
+        estadoModeracao:
+          type: string
+          enum:
+            - visivel
+            - oculta
+        versao:
+          type: integer
+          minimum: 0
+        etag:
+          type: string
+          pattern: ^"[A-Za-z0-9_-]{43}"$
+        estadoComercial:
+          type: string
+          nullable: true
+        perfilId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+          nullable: true
+      required:
+        - id
+        - tipo
+        - evidencia
+        - estadoModeracao
+        - versao
+        - etag
+        - estadoComercial
+        - perfilId
+    AdminContentReport11D:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+            - avaliacao
+        alvoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        estado:
+          type: string
+          enum:
+            - pendente
+            - resolvida
+            - rejeitada
+        criadaEm:
+          type: string
+          format: date-time
+        atualizadaEm:
+          type: string
+          format: date-time
+        autorId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        evidencia:
+          $ref: '#/components/schemas/ContentEvidence11D'
+        versao:
+          type: integer
+          minimum: 0
+          maximum: 1
+        historico:
+          type: array
+          maxItems: 1
+          items:
+            $ref: '#/components/schemas/ContentDecisionAudit11D'
+        conteudoNaDecisao:
+          type: object
+          additionalProperties: false
+          properties:
+            disponivel:
+              type: boolean
+            estado:
+              type: string
+              enum:
+                - visivel
+                - oculta
+            versao:
+              type: integer
+              minimum: 0
+          required:
+            - disponivel
+          nullable: true
+      required:
+        - id
+        - alvoTipo
+        - alvoId
+        - motivo
+        - estado
+        - criadaEm
+        - atualizadaEm
+        - autorId
+        - evidencia
+        - versao
+        - historico
+        - conteudoNaDecisao
+    AdminContentReportDetail11D:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+            - avaliacao
+        alvoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        estado:
+          type: string
+          enum:
+            - pendente
+            - resolvida
+            - rejeitada
+        criadaEm:
+          type: string
+          format: date-time
+        atualizadaEm:
+          type: string
+          format: date-time
+        autorId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        evidencia:
+          $ref: '#/components/schemas/ContentEvidence11D'
+        versao:
+          type: integer
+          minimum: 0
+          maximum: 1
+        historico:
+          type: array
+          maxItems: 1
+          items:
+            $ref: '#/components/schemas/ContentDecisionAudit11D'
+        conteudoNaDecisao:
+          type: object
+          additionalProperties: false
+          properties:
+            disponivel:
+              type: boolean
+            estado:
+              type: string
+              enum:
+                - visivel
+                - oculta
+            versao:
+              type: integer
+              minimum: 0
+          required:
+            - disponivel
+          nullable: true
+        conteudo:
+          type: object
+          additionalProperties: false
+          properties:
+            id:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+            tipo:
+              type: string
+              enum:
+                - produto
+                - produtor
+                - avaliacao
+            evidencia:
+              $ref: '#/components/schemas/ContentEvidence11D'
+            estadoModeracao:
+              type: string
+              enum:
+                - visivel
+                - oculta
+            versao:
+              type: integer
+              minimum: 0
+            etag:
+              type: string
+              pattern: ^"[A-Za-z0-9_-]{43}"$
+            estadoComercial:
+              type: string
+              nullable: true
+            perfilId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+              nullable: true
+          required:
+            - id
+            - tipo
+            - evidencia
+            - estadoModeracao
+            - versao
+            - etag
+            - estadoComercial
+            - perfilId
+          nullable: true
+        etag:
+          type: string
+          pattern: ^"[A-Za-z0-9_-]{43}"$
+      required:
+        - id
+        - alvoTipo
+        - alvoId
+        - motivo
+        - estado
+        - criadaEm
+        - atualizadaEm
+        - autorId
+        - evidencia
+        - versao
+        - historico
+        - conteudoNaDecisao
+        - conteudo
+        - etag
+    OwnContentReportLookup11D:
+      type: object
+      additionalProperties: false
+      properties:
+        denuncia:
+          type: object
+          additionalProperties: false
+          properties:
+            id:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+            alvoTipo:
+              type: string
+              enum:
+                - produto
+                - produtor
+                - avaliacao
+            alvoId:
+              type: string
+              pattern: ^[a-f0-9]{24}$
+            motivo:
+              type: string
+              minLength: 1
+              maxLength: 1000
+            estado:
+              type: string
+              enum:
+                - pendente
+                - resolvida
+                - rejeitada
+            criadaEm:
+              type: string
+              format: date-time
+            atualizadaEm:
+              type: string
+              format: date-time
+          required:
+            - id
+            - alvoTipo
+            - alvoId
+            - motivo
+            - estado
+            - criadaEm
+            - atualizadaEm
+          nullable: true
+      required:
+        - denuncia
+    ContentReportWrite11D:
+      type: object
+      additionalProperties: false
+      properties:
+        alvoTipo:
+          type: string
+          enum:
+            - produto
+            - produtor
+            - avaliacao
+        alvoId:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description:
+            Normalizado NFC e aparado. Sem caracteres de controlo exceto tabulação e mudanças de linha. Texto
+            simples, nunca HTML executável.
+      required:
+        - alvoTipo
+        - alvoId
+        - motivo
+    ContentReportDecision11D:
+      type: object
+      additionalProperties: false
+      properties:
+        estado:
+          type: string
+          enum:
+            - resolvida
+            - rejeitada
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required:
+        - estado
+        - motivo
+    ContentVisibilityDecision11D:
+      type: object
+      additionalProperties: false
+      properties:
+        estado:
+          type: string
+          enum:
+            - visivel
+            - oculta
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required:
+        - estado
+        - motivo
+    AdminContentReportPage11D:
+      type: object
+      additionalProperties: false
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminContentReport11D'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          minimum: 0
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+        totalPaginas:
+          type: integer
+          minimum: 0
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+    AdminModeratedContentPage11D:
+      type: object
+      additionalProperties: false
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminModeratedContent11D'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          minimum: 0
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+        totalPaginas:
+          type: integer
+          minimum: 0
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+    ContentVisibilityHistory11D:
+      type: object
+      additionalProperties: false
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentDecisionAudit11D'
+        pagina:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        porPagina:
+          type: integer
+          minimum: 0
+          enum:
+            - 12
+            - 24
+            - 36
+        total:
+          type: integer
+          minimum: 0
+        totalPaginas:
+          type: integer
+          minimum: 0
+        versao:
+          type: integer
+          minimum: 0
+      required:
+        - itens
+        - pagina
+        - porPagina
+        - total
+        - totalPaginas
+        - versao

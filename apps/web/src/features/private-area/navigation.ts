@@ -143,6 +143,15 @@ export function demoDestination(raw: string | null, role: Role) {
 }
 
 export function accountDestination(raw: string | null, papeis: readonly Role[]) {
+  if (raw && /^\/(produtos|produtores)\/[a-fA-F0-9]{24}$/.test(raw) && papeis.length) return raw;
+  if (
+    raw &&
+    papeis.includes('administrador') &&
+    /^\/area\/administrador\/moderacao\/(denuncias|produtos|perfis)(?:\/[a-fA-F0-9]{24})?$/.test(
+      raw,
+    )
+  )
+    return raw;
   if (raw === '/area/candidatura-produtor' && papeis.length) return raw;
   if (raw === '/leiloes' || (raw && /^\/leiloes\/[a-fA-F0-9]{24}$/.test(raw))) return raw;
   if ((raw === '/checkout' || raw === '/checkout/confirmacao') && papeis.includes('comprador'))

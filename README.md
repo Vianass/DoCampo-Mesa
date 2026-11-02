@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 11D — denúncias e moderação de conteúdos, implementação local para revisão.** Contas ativas sinalizam produtos, perfis e avaliações; a administração analisa evidências e decide com motivo, ETag e auditoria persistida. A ocultação respeita o catálogo e novas compras, preservando gestão privada, encomendas e regras de leilões existentes. Ver [âmbito aprovado, contratos e limitações](docs/api/phase-11d-content-moderation.md). Sem commit ou push nesta fase.
+
 **Fase 11C — licitações rápidas, implementação local para revisão.** Atalhos +5/+10/+25 € preparam uma oferta sobre o último valor confirmado, com confirmação explícita, revisão de valores desatualizados e recuperação pelos mecanismos reais existentes. Regras transacionais e permissões permanecem no backend. Ver [semântica aprovada, interface, testes e limitações](docs/api/phase-11c-quick-bidding.md).
 
 **Fase 11B — pesquisa, localização e descoberta, implementação local para revisão.** Pesquisa MongoDB por ingredientes com os filtros existentes, ponto público opcional autorizado pelo produtor e mapa interativo mediante escolha do visitante. A homepage destaca leilões reais, com relógio sincronizado e reconciliação REST. Sem geocodificação automática ou divulgação da morada privada. Ver [arquitetura, privacidade, testes e limitações](docs/api/phase-11b-discovery-and-maps.md).

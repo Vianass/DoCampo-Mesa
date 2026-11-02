@@ -1,3 +1,4 @@
+import { moderationAccount } from '../moderation/moderation.control.js';
 import { createHmac } from 'node:crypto';
 import {
   Types,
@@ -7,13 +8,11 @@ import {
   type ClientSession,
 } from 'mongoose';
 import { ApiError } from '../../http/api-error.js';
-import { unauthorized, type AuthPrincipal } from '../auth/auth.service.js';
+import type { AuthPrincipal } from '../auth/auth.service.js';
 import { createCatalogService } from '../catalog/catalog.service.js';
-import { operationalRevision, revisionCondition } from '../concurrency/concurrency-error.js';
 import { isCheckoutReadUnavailable } from '../orders/checkout.idempotency.js';
 import type { OrderRecord } from '../orders/order.types.js';
 import type { OrderListQuery } from '../orders/orders.validation.js';
-import type { UserRecord } from '../users/user.model.js';
 import { createReviewModel } from './review.model.js';
 import type { ReviewRecord } from './review.types.js';
 import {
@@ -28,7 +27,6 @@ export function reviewEligible(order: Pick<OrderRecord, 'estado' | 'rececao'>) {
 }
 const missing = () =>
   new ApiError(404, 'AVALIACAO_NAO_ENCONTRADA', 'A avaliação não está disponível.');
-const forbidden = () => new ApiError(403, 'ACESSO_PROIBIDO', 'Não tens acesso a esta operação.');
 export function createReviewsService(connection: Connection, key: Uint8Array) {
   const Review = createReviewModel(connection),
     catalog = createCatalogService(connection, key),
@@ -85,40 +83,12 @@ export function createReviewsService(connection: Connection, key: Uint8Array) {
       await s.endSession();
     }
   }
-  async function account(
+  const account = (
     p: AuthPrincipal,
     role: 'comprador' | 'administrador',
-    s?: ClientSession,
+    session?: ClientSession,
     fence = false,
-  ) {
-    const users = connection.db!.collection<UserRecord>('users'),
-      id = new Types.ObjectId(p.id);
-    const u = await users.findOne(
-      { _id: id },
-      {
-        session: s,
-        projection: { _id: 1, papeis: 1, ativo: 1, revisaoOperacional: 1 },
-        maxTimeMS: 5000,
-      },
-    );
-    if (!u || u.ativo === false) throw unauthorized();
-    if (!u.papeis.includes(role)) throw forbidden();
-    if (fence) {
-      const result = await users.updateOne(
-        {
-          _id: id,
-          ativo: { $ne: false },
-          papeis: role,
-          ...revisionCondition(operationalRevision(u.revisaoOperacional)),
-        },
-        { $inc: { revisaoOperacional: 1 } },
-        { session: s },
-      );
-      if (result.matchedCount !== 1)
-        throw new ApiError(409, 'CONFLITO_REVISAO', 'O acesso mudou. Consulta novamente.');
-    }
-    return id;
-  }
+  ) => moderationAccount(connection, p, role, session, fence);
   function publicDto(r: ReviewRecord) {
     return {
       id: r._id.toHexString(),
@@ -182,6 +152,24 @@ export function createReviewsService(connection: Connection, key: Uint8Array) {
       }>(
         [
           { $match: filter },
+          ...(mode === 'public' && filter.alvoTipo === 'produto'
+            ? [
+                {
+                  $lookup: {
+                    from: 'products',
+                    localField: 'produto',
+                    foreignField: '_id',
+                    pipeline: [
+                      { $match: { 'moderacao.estado': 'oculta' } },
+                      { $project: { _id: 1 } },
+                    ],
+                    as: 'produtoModerado',
+                  },
+                },
+                { $match: { 'produtoModerado.0': { $exists: false } } },
+                { $project: { produtoModerado: 0 } },
+              ]
+            : []),
           { $sort: { createdAt: d, _id: d } },
           {
             $facet: {

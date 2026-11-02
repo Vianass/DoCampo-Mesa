@@ -1,5 +1,9 @@
 # Decisões de entrada — análise Q01–Q16
 
+## Atualização vigente — Fase 11D, Q10/Q12
+
+O utilizador aprovou expressamente denúncias de produtos (descrições/fotografias), perfis públicos e avaliações, por contas autenticadas e ativas de qualquer papel, com motivo, uma denúncia por conta/conteúdo e sem ocultação automática. A administração oculta/restaura com motivo, ETag e auditoria; avaliações reutilizam a Fase 9. A ocultação retira descoberta e novas compras/novos leilões, preservando conta, aprovação, gestão privada e obrigações existentes. Leilões já criados preservam regras e resultados, saem da descoberta e apresentam conteúdo neutro a compradores. Resolver/rejeitar uma denúncia é separado da visibilidade, com contexto persistido. Ver [Fase 11D](phase-11d-content-moderation.md). As pendências históricas ficam resolvidas apenas neste âmbito; retenção, recursos, automoderação e fases posteriores não ficam aprovados. Implementação local, sem autorização de publicação Git.
+
 ## Atualização vigente — Fase 7A
 
 O pedido explícito da Fase 7A autoriza candidatura real e decisão administrativa usando `users`/`producers`, com reapresentação após rejeição e preservação do histórico. A submissão não concede produtor; aprovação e adição cumulativa do papel são transacionais. Não publica rascunhos, inventa dados comerciais, revoga papéis legados ou atribui outros poderes administrativos. Endpoints e escolhas técnicas de concorrência/privacidade estão em [phase-7a-producer-applications.md](phase-7a-producer-applications.md). As pendências históricas de recandidatura abaixo ficam resolvidas neste âmbito; direitos adicionais e fases seguintes continuam pendentes. Implementação apenas local, sem autorização de publicação Git.

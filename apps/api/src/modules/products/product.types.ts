@@ -1,3 +1,4 @@
+import type { ContentVisibility } from '../moderation/moderation.types.js';
 import type { Types } from 'mongoose';
 import type { productCategories, productStates, saleModalities } from './product.constants.js';
 
@@ -43,4 +44,5 @@ export interface ProductRecord {
   createdAt: Date;
   updatedAt: Date;
   revisaoOperacional?: number;
+  moderacao?: ContentVisibility;
 }

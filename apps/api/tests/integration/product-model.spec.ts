@@ -90,7 +90,10 @@ describe('products com MongoDB real e os modelos existentes', () => {
       'User',
     ]);
     const indexes = await Product.listIndexes();
-    expect(indexes).toHaveLength(3);
+    expect(indexes).toHaveLength(4);
+    expect(indexes).toContainEqual(
+      expect.objectContaining({ key: { 'moderacao.estado': 1, createdAt: -1, _id: -1 } }),
+    );
     expect(indexes).toContainEqual(
       expect.objectContaining({ key: { produtor: 1, estadoPublicacao: 1 } }),
     );

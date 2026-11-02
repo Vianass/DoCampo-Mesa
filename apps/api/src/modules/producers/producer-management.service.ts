@@ -27,6 +27,7 @@ export function createProducerManagementService(connection: Connection, key: Uin
     ...(p.imagem ? { imagem: p.imagem } : {}),
     comercial: p.comercial ?? null,
     estadoAprovacao: p.aprovacao.estado,
+    estadoModeracao: p.moderacao?.estado ?? 'visivel',
     etag: tag(p),
   });
   function capability(user: AuthPrincipal) {

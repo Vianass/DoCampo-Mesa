@@ -22,6 +22,7 @@ export interface AuctionResult {
   bidId: string | null;
 }
 export interface AuctionSummary {
+  conteudoModerado?: boolean;
   id: string;
   produtoId: string;
   produtor: { perfilId: string; nome: string };
@@ -154,7 +155,9 @@ export function parseAuction(v: unknown): AuctionSummary {
     producer = record(a.produtor),
     lot = record(a.lote),
     current = record(a.licitacaoAtual);
+  if (a.conteudoModerado !== undefined && a.conteudoModerado !== true) throw new InvalidResponse();
   const data: AuctionSummary = {
+    ...(a.conteudoModerado === true ? { conteudoModerado: true } : {}),
     id: id(a.id),
     produtoId: id(a.produtoId),
     produtor: { perfilId: id(producer.perfilId), nome: text(producer.nome) },

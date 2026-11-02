@@ -131,6 +131,10 @@ export async function requestJson<T>(
           'PRODUTO_NAO_COMPRADO',
           'AVALIACAO_NAO_ENCONTRADA',
           'DECISAO_INVALIDA',
+          'DENUNCIA_DUPLICADA',
+          'CONTEUDO_OCULTO',
+          'CONTEUDO_NAO_ENCONTRADO',
+          'DENUNCIA_NAO_ENCONTRADA',
         ];
         if (known.includes(value?.codigo)) codigo = value.codigo;
         if (value?.repetirComMesmaChave === true) repeat = true;

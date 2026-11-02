@@ -18,6 +18,7 @@ export function useReviewResource<T>(
   path: string,
   parse: (v: unknown, m: JsonResponseMetadata) => T,
   revision = 0,
+  describeError: (e: unknown) => string = reviewError,
 ) {
   const { session, request } = useAuth(),
     owner = session.kind === 'authenticated' ? session.user.id + ':' + session.expiresAt : '',
@@ -35,12 +36,12 @@ export function useReviewResource<T>(
         if (!c.signal.aborted)
           set({
             key,
-            error: reviewError(e),
+            error: describeError(e),
             forbidden: e instanceof ApiFailure && e.status === 403,
           });
       });
     return () => c.abort();
-  }, [key, owner, path, parse, request]);
+  }, [key, owner, path, parse, request, describeError]);
   const current = owner && state?.key === key ? state : undefined;
   return {
     data: current?.data,
