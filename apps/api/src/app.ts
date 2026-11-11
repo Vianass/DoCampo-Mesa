@@ -69,7 +69,14 @@ export function createApp(
     allowedOrigins: [],
     trustedProxies: [],
   };
-  app.set('trust proxy', security.trustedProxies.length ? [...security.trustedProxies] : false);
+  app.set(
+    'trust proxy',
+    security.trustedProxyHops === 1
+      ? 1
+      : security.trustedProxies.length
+        ? [...security.trustedProxies]
+        : false,
+  );
   app.use(httpSecurity(security));
   app.use(express.json({ limit: '100kb', inflate: false }));
   if (options.auth) mountRoutes(app, '/api/auth', authRoutes(options.auth, options.rateLimit));

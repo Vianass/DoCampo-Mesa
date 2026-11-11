@@ -31,8 +31,22 @@ const schema = z
       .optional()
       .transform(csv)
       .pipe(z.array(z.string().refine((value) => isIP(value) !== 0))),
+    PROXY_MODE: z.enum(['ips', 'render']).default('ips'),
+    RENDER: z.string().optional(),
   })
   .superRefine((value, context) => {
+    if (
+      value.PROXY_MODE === 'render' &&
+      (value.NODE_ENV !== 'production' ||
+        value.RENDER !== 'true' ||
+        value.TRUSTED_PROXY_IPS.length > 0)
+    )
+      context.addIssue({
+        code: 'custom',
+        path: ['PROXY_MODE'],
+        message:
+          'O modo Render exige produção, o ambiente da plataforma e uma única política de proxy.',
+      });
     if (
       value.NODE_ENV === 'production' &&
       value.CORS_ORIGINS.some((item) => !item.startsWith('https://'))
@@ -53,6 +67,7 @@ export function parseAuthEnvironment(environment: NodeJS.ProcessEnv = process.en
     allowedOrigins: value.CORS_ORIGINS,
     trustedProxies: value.TRUSTED_PROXY_IPS,
     production: value.NODE_ENV === 'production',
+    ...(value.PROXY_MODE === 'render' ? { trustedProxyHops: 1 as const } : {}),
   };
 }
 export type AuthConfiguration = ReturnType<typeof parseAuthEnvironment>;

@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import { retainManagedImages } from '../images/image.references.js';
 import { Error as MongooseError, Types, type Connection } from 'mongoose';
 import { createProducerModel, type ProducerRecord } from './producer.model.js';
 import { guardUserCapabilities, UserCapabilityError } from '../users/user-capability.repository.js';
@@ -93,6 +94,7 @@ export function createProducerManagementService(connection: Connection, key: Uin
             p.set('comercial', parsed.comercial ?? undefined);
             p.set('localizacaoPublica', parsed.localizacaoPublica ?? undefined);
             await p.save({ session });
+            await retainManagedImages(connection, parsed.imagem, session);
             return dto(p.toObject({ transform: false }) as ProducerRecord);
           },
           {

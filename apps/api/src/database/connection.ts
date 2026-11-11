@@ -14,6 +14,9 @@ export async function connectDatabase(configuration: ApiConfiguration) {
     serverSelectionTimeoutMS: configuration.selectionTimeoutMs,
     bufferCommands: false,
     autoIndex: false,
+    maxPoolSize: configuration.maxPoolSize,
+    minPoolSize: 0,
+    waitQueueTimeoutMS: configuration.waitQueueTimeoutMs,
   });
 
   try {

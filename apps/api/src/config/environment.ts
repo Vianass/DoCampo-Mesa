@@ -8,6 +8,8 @@ const environmentSchema = z
     MONGODB_URI: z.string().regex(/^mongodb(?:\+srv)?:\/\/\S+$/),
     MONGODB_DB_NAME: z.string().regex(/^[a-zA-Z0-9_-]+$/),
     MONGODB_SERVER_SELECTION_TIMEOUT_MS: z.coerce.number().int().min(100).max(60_000).default(5000),
+    MONGODB_MAX_POOL_SIZE: z.coerce.number().int().min(1).max(50).default(10),
+    MONGODB_WAIT_QUEUE_TIMEOUT_MS: z.coerce.number().int().min(100).max(30_000).default(5000),
     SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().min(100).max(60_000).default(10_000),
   })
   .superRefine((value, context) => {
@@ -41,6 +43,23 @@ export function parseEnvironment(environment: NodeJS.ProcessEnv = process.env) {
     throw new ConfigurationError(result.error.issues.map((issue) => issue.path.join('.')));
   }
 
+  if (result.data.NODE_ENV === 'production') {
+    const uri = result.data.MONGODB_URI.toLowerCase();
+    const insecureTls = [...new URLSearchParams(uri.split('?')[1] ?? '')].some(([key, value]) => {
+      const option = key.toLowerCase(),
+        setting = value.trim().toLowerCase();
+      return (
+        (['tls', 'ssl'].includes(option) && setting === 'false') ||
+        (['tlsinsecure', 'tlsallowinvalidcertificates', 'tlsallowinvalidhostnames'].includes(
+          option,
+        ) &&
+          setting === 'true')
+      );
+    });
+    if (insecureTls || (environment.PROXY_MODE === 'render' && !uri.startsWith('mongodb+srv://')))
+      throw new ConfigurationError(['MONGODB_URI']);
+  }
+
   const value = result.data;
   return {
     environment: value.NODE_ENV,
@@ -49,6 +68,8 @@ export function parseEnvironment(environment: NodeJS.ProcessEnv = process.env) {
     mongoUri: value.MONGODB_URI,
     databaseName: value.MONGODB_DB_NAME,
     selectionTimeoutMs: value.MONGODB_SERVER_SELECTION_TIMEOUT_MS,
+    maxPoolSize: value.MONGODB_MAX_POOL_SIZE,
+    waitQueueTimeoutMs: value.MONGODB_WAIT_QUEUE_TIMEOUT_MS,
     shutdownTimeoutMs: value.SHUTDOWN_TIMEOUT_MS,
   };
 }

@@ -1,11 +1,12 @@
 import type { RequestHandler } from 'express';
+import { isIP } from 'node:net';
 import type { AuthConfiguration } from '../config/auth-environment.js';
 import { ApiError } from './api-error.js';
 
 export type HttpSecurityConfiguration = Pick<
   AuthConfiguration,
   'production' | 'allowedOrigins' | 'trustedProxies'
->;
+> & { trustedProxyHops?: 1 };
 export function httpSecurity(settings: HttpSecurityConfiguration): RequestHandler {
   return (request, response, next) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
@@ -14,7 +15,16 @@ export function httpSecurity(settings: HttpSecurityConfiguration): RequestHandle
     response.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
     if (request.path.startsWith('/api/auth/')) response.setHeader('Cache-Control', 'no-store');
     if (settings.production) {
-      if (!request.secure)
+      const forwarded =
+        String(request.headers['x-forwarded-for'] ?? '')
+          .split(',')
+          .at(-1)
+          ?.trim() ?? '';
+      if (
+        !request.secure ||
+        (settings.trustedProxyHops === 1 &&
+          (request.headers['x-forwarded-proto'] !== 'https' || !isIP(forwarded)))
+      )
         throw new ApiError(400, 'HTTPS_OBRIGATORIO', 'Esta ligação exige HTTPS.');
       response.setHeader('Strict-Transport-Security', 'max-age=31536000');
     }

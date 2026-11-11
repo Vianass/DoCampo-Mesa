@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 13A — preparação local da infraestrutura Cloud.** Templates Vercel/Render, configuração Atlas/proxy, inventário e manutenção segura de fotografias. O fornecedor de armazenamento permanece por escolher; não há contas configuradas, recursos criados ou deployment realizado. Ver [comparação, configuração, autorizações e limitações](docs/deployment/phase-13a-cloud-deployment.md). Sem staging, commit ou push nesta fase. Os registos abaixo descrevem entregas anteriores.
+
 **Fase 12 — Swagger UI, conformidade REST e preparação de produção, implementação local.** Documentação interativa real, compatibilidade segura de estados e configuração independente de localhost. Ver [entrega, segurança e limitações](docs/api/phase-12-production-readiness.md). Sem staging, commit, push ou deployment nesta fase. Os registos seguintes descrevem o estado histórico de cada entrega.
 
 **Fase 11D — denúncias e moderação de conteúdos, implementação local para revisão.** Contas ativas sinalizam produtos, perfis e avaliações; a administração analisa evidências e decide com motivo, ETag e auditoria persistida. A ocultação respeita o catálogo e novas compras, preservando gestão privada, encomendas e regras de leilões existentes. Ver [âmbito aprovado, contratos e limitações](docs/api/phase-11d-content-moderation.md). Sem commit ou push nesta fase.

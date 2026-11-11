@@ -200,8 +200,10 @@ test('recuperação navega desde login e informa que nenhum email foi enviado', 
   await page.goto('/entrar');
   await page.getByRole('link', { name: 'Esqueceste-te da palavra-passe?' }).click();
   await expect(page).toHaveURL(/\/recuperar-palavra-passe$/);
-  await page.getByLabel('Email', { exact: true }).fill('pessoa@example.test');
-  await page.getByRole('button', { name: 'Verificar formulário' }).click();
+  const recoveryForm = page.getByRole('form', { name: 'Formulário de recuperação', exact: true });
+  await expect(recoveryForm).toBeVisible();
+  await recoveryForm.getByLabel('Email', { exact: true }).fill('pessoa@example.test');
+  await recoveryForm.getByRole('button', { name: 'Verificar formulário' }).click();
   await expect(page.locator('.auth-form-status')).toContainText('Nenhum email foi enviado');
   await page.getByRole('link', { name: '← Voltar à entrada' }).click();
   await expect(page).toHaveURL(/\/entrar$/);

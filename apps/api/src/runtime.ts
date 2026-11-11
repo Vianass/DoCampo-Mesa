@@ -6,6 +6,9 @@ import { createProducerManagementService } from './modules/producers/producer-ma
 import { createImageService } from './modules/images/image.service.js';
 import { developmentImageStorage } from './modules/images/image.storage.js';
 import type { ImageStorage } from './modules/images/image.storage.js';
+import { cloudinaryImageStorage } from './modules/images/cloudinary.storage.js';
+import { parseCloudinaryEnvironment } from './config/media-environment.js';
+import { prepareImageAssets } from './modules/images/image.references.js';
 import { createOrderNotificationsService } from './modules/orders/order-notifications.service.js';
 import { createAdminAuctionsService } from './modules/admin-auctions/admin-auctions.service.js';
 import { createReviewsService } from './modules/reviews/reviews.service.js';
@@ -91,22 +94,34 @@ export async function startApi(
   }
   let images: ReturnType<typeof createImageService> | undefined;
   try {
+    const configuredStorage =
+      dependencies.imageStorage ??
+      (process.env.MEDIA_STORAGE === 'cloudinary'
+        ? cloudinaryImageStorage(parseCloudinaryEnvironment())
+        : undefined);
     images =
       authentication &&
+      process.env.MEDIA_STORAGE !== 'disabled' &&
       catalog &&
       producerManagement &&
-      (configuration.environment !== 'production' || dependencies.imageStorage)
+      (configuration.environment !== 'production' || configuredStorage)
         ? createImageService(
             database.connection!,
             catalog,
             producerManagement,
-            dependencies.imageStorage ??
+            configuredStorage ??
               developmentImageStorage(
                 process.env.MEDIA_DIRECTORY ?? join(tmpdir(), 'docampo-media-development'),
                 process.env.MEDIA_PUBLIC_BASE ?? `http://127.0.0.1:${configuration.port}/api/media`,
               ),
           )
         : undefined;
+    if (
+      process.env.MEDIA_STORAGE &&
+      !['development', 'cloudinary', 'disabled'].includes(process.env.MEDIA_STORAGE)
+    )
+      throw Error();
+    if (process.env.MEDIA_STORAGE === 'disabled') images = undefined;
   } catch {
     await database.close();
     throw new Error('Configuração de armazenamento de imagens inválida.');
@@ -127,6 +142,7 @@ export async function startApi(
     ? createAdminService(database.connection!, authentication.secret)
     : undefined;
   try {
+    if (images) await prepareImageAssets(database.connection!);
     if (admin) await admin.prepare();
     if (auth) await auth.prepare();
     if (catalog) await catalog.prepare();

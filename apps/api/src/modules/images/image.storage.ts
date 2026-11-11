@@ -2,9 +2,17 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, isAbsolute, relative } from 'node:path';
 export interface ImageStorage {
   readonly kind?: 'development' | 'cloud';
+  readonly provider?: 'development' | 'cloudinary';
+  readonly namespace?: string;
   readonly publicBase: string;
   put: (id: string, bytes: Buffer) => Promise<void>;
   read: (id: string) => Promise<Buffer>;
+  remove?: (id: string) => Promise<void>;
+}
+export class ImageStorageUnavailable extends Error {
+  constructor() {
+    super('O armazenamento de fotografias está temporariamente indisponível.');
+  }
 }
 /** Adaptador exclusivamente local. A futura implementação Cloud mantém esta porta. */
 export function developmentImageStorage(
@@ -33,6 +41,7 @@ export function developmentImageStorage(
   }
   return {
     kind: 'development',
+    provider: 'development',
     publicBase: publicBase.replace(/\/+$/, ''),
     async put(id, bytes) {
       await mkdir(root, { recursive: true, mode: 0o700 });

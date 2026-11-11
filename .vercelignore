@@ -1,0 +1,16 @@
+# Apenas para uma futura publicação CLI aprovada; não contém segredos.
+.git/
+.aws/
+.codex/
+.agents/
+.vercel/
+node_modules/
+**/node_modules/
+.env
+.env.*
+**/.env
+**/.env.*
+**/dist/
+test-results/
+playwright-report/
+**/*.log

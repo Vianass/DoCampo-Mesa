@@ -5,7 +5,7 @@ import type { CatalogService } from '../catalog/catalog.service.js';
 import { productReplaceSchema, productWriteFields } from '../catalog/catalog.validation.js';
 import type { ProducerManagementService } from '../producers/producer-management.service.js';
 import { profileInput } from '../producers/producer-management.validation.js';
-import type { ImageStorage } from './image.storage.js';
+import { ImageStorageUnavailable, type ImageStorage } from './image.storage.js';
 import { normalizeImage } from './image.validation.js';
 import { ApiError } from '../../http/api-error.js';
 export function createImageService(
@@ -18,13 +18,45 @@ export function createImageService(
   async function create(owner: string, input: unknown, type: string) {
     const bytes = await normalizeImage(input, type),
       id = randomUUID() + '.webp';
-    await storage.put(id, bytes);
-    // Associação imutável do ficheiro ao autor; uma URL copiada não concede acesso.
+    // Write-ahead: uma interrupção externa nunca deixa um upload sem identificador no inventário.
     await connection
-      .db!.collection<{ _id: string; owner: Types.ObjectId; createdAt: Date }>('imageAssets')
-      .insertOne({ _id: id, owner: new Types.ObjectId(owner), createdAt: new Date() });
-    return url(id);
+      .db!.collection<{
+        _id: string;
+        owner: Types.ObjectId;
+        createdAt: Date;
+        status: string;
+        storageProvider: string;
+        storageNamespace?: string;
+        uri: string;
+      }>('imageAssets')
+      .insertOne({
+        _id: id,
+        owner: new Types.ObjectId(owner),
+        createdAt: new Date(),
+        status: 'pending',
+        storageProvider: storage.provider ?? 'development',
+        ...(storage.namespace ? { storageNamespace: storage.namespace } : {}),
+        uri: url(id),
+      });
+    try {
+      await storage.put(id, bytes);
+      await connection
+        .db!.collection<{ _id: string }>('imageAssets')
+        .updateOne({ _id: id }, { $set: { status: 'stored' } });
+      return { id, uri: url(id) };
+    } catch {
+      throw new ApiError(
+        503,
+        'ARMAZENAMENTO_INDISPONIVEL',
+        'Não foi possível confirmar o upload. Consulta o produto ou perfil antes de repetir.',
+      );
+    }
   }
+  const attached = (id: string) =>
+    connection
+      .db!.collection<{ _id: string }>('imageAssets')
+      .updateOne({ _id: id }, { $set: { status: 'attached' }, $unset: { orphanSince: '' } })
+      .catch(() => undefined);
   return {
     async product(
       user: AuthPrincipal,
@@ -47,8 +79,9 @@ export function createImageService(
         throw new ApiError(409, 'LIMITE_IMAGENS', 'Podes associar até duas fotografias.');
       if (replace !== undefined && !item.imagens[replace])
         throw new ApiError(400, 'IMAGEM_INVALIDA', 'A fotografia a substituir não existe.');
+      const asset = await create(user.id, input, type);
       const image = {
-        url: await create(user.id, input, type),
+        url: asset.uri,
         alt: item.nome,
         principal:
           replace === undefined
@@ -63,7 +96,7 @@ export function createImageService(
           .filter((k) => k in item)
           .map((k) => [k, item[k as keyof typeof item]]),
       );
-      return catalog.replace(
+      const result = await catalog.replace(
         user,
         id,
         productReplaceSchema.parse({
@@ -73,6 +106,8 @@ export function createImageService(
         }),
         tag,
       );
+      await attached(asset.id);
+      return result;
     },
     async profile(user: AuthPrincipal, input: unknown, type: string, tag?: string) {
       const item = await profiles.detail(user);
@@ -89,14 +124,17 @@ export function createImageService(
         comercial: item.comercial,
         localizacaoPublica: item.localizacaoPublica,
       };
-      return profiles.replace(
+      const asset = await create(user.id, input, type);
+      const result = await profiles.replace(
         user,
         profileInput.parse({
           ...fields,
-          imagem: { url: await create(user.id, input, type), alt: item.nomePublico },
+          imagem: { url: asset.uri, alt: item.nomePublico },
         }),
         tag,
       );
+      await attached(asset.id);
+      return result;
     },
     async read(id: string, user?: AuthPrincipal) {
       const asset = await connection
@@ -151,7 +189,13 @@ export function createImageService(
       if (!allowed) throw new ApiError(404, 'IMAGEM_NAO_ENCONTRADA', 'Imagem não disponível.');
       try {
         return await storage.read(id);
-      } catch {
+      } catch (error) {
+        if (error instanceof ImageStorageUnavailable)
+          throw new ApiError(
+            503,
+            'ARMAZENAMENTO_INDISPONIVEL',
+            'A fotografia está temporariamente indisponível.',
+          );
         throw new ApiError(404, 'IMAGEM_NAO_ENCONTRADA', 'Imagem não disponível.');
       }
     },

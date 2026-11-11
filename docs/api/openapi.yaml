@@ -4555,8 +4555,9 @@ paths:
       description:
         Até 5 MiB e 16 megapíxeis; JPEG/PNG/WebP estáticos, MIME verificado contra o descodificador,
         metadados removidos, redimensionado até 1600 px. Duas conversões simultâneas por processo; sem fila
-        ilimitada. Adaptador local só em desenvolvimento/teste; não disponível em produção até integração
-        Cloud.
+        ilimitada. Adaptador local só em desenvolvimento/teste. Produção exige adaptador Cloud configurado;
+        escolha do fornecedor pendente na Fase 13A. Falha do armazenamento devolve 503 sem detalhes privados.
+        Consulta o recurso antes de repetir um upload cujo resultado não foi confirmado.
       responses:
         '200':
           description: Estado persistido do próprio produtor.
@@ -4641,8 +4642,9 @@ paths:
       description:
         Até 5 MiB e 16 megapíxeis; JPEG/PNG/WebP estáticos, MIME verificado contra o descodificador,
         metadados removidos, redimensionado até 1600 px. Duas conversões simultâneas por processo; sem fila
-        ilimitada. Adaptador local só em desenvolvimento/teste; não disponível em produção até integração
-        Cloud.
+        ilimitada. Adaptador local só em desenvolvimento/teste. Produção exige adaptador Cloud configurado;
+        escolha do fornecedor pendente na Fase 13A. Falha do armazenamento devolve 503 sem detalhes privados.
+        Consulta o recurso antes de repetir um upload cujo resultado não foi confirmado.
       responses:
         '200':
           description: Estado persistido do próprio produtor.
@@ -4741,6 +4743,8 @@ paths:
           $ref: '#/components/responses/Error404'
         '500':
           $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
   /content-reports:
     post:
       operationId: createContentReport11D

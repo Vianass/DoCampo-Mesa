@@ -1,3 +1,4 @@
+import { retainManagedImages } from '../images/image.references.js';
 import { Error as MongooseError, Types, mongo } from 'mongoose';
 import type { Connection, ClientSession } from 'mongoose';
 import { ApiError } from '../../http/api-error.js';
@@ -244,6 +245,7 @@ export function createCatalogService(connection: Connection, key: Uint8Array) {
           moeda: 'EUR',
         });
         await product.save({ session });
+        await retainManagedImages(connection, input.imagens, session);
         return productOwn(product.toObject({ transform: false }), key);
       });
     },
@@ -294,6 +296,7 @@ export function createCatalogService(connection: Connection, key: Uint8Array) {
         }
         product.set('estadoPublicacao', input.estadoPublicacao);
         await product.save({ session });
+        await retainManagedImages(connection, input.imagens, session);
         return productOwn(product.toObject({ transform: false }), key);
       });
     },

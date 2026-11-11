@@ -1,0 +1,42 @@
+# Proposta local: não aplicar sem aprovação da criação e da primeira publicação.
+services:
+  - type: web
+    name: docampo-api-demo
+    runtime: node
+    plan: free
+    region: frankfurt
+    numInstances: 1
+    branch: feat/api-foundation
+    autoDeployTrigger: 'off'
+    buildCommand: SCARF_ANALYTICS=false npm ci --include=dev && npm run build --workspace @docampo/api
+    startCommand: npm start --workspace @docampo/api
+    # Probes TCP: HTTPS continua obrigatório nos endpoints HTTP públicos.
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: SCARF_ANALYTICS
+        value: 'false'
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: PROXY_MODE
+        value: render
+      - key: MONGODB_DB_NAME
+        value: docampo_demo
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_MAX_POOL_SIZE
+        value: '10'
+      - key: MONGODB_WAIT_QUEUE_TIMEOUT_MS
+        value: '5000'
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: MEDIA_STORAGE
+        sync: false
+      - key: MEDIA_PUBLIC_BASE
+        sync: false
+      - key: SOCKET_ENABLED
+        value: 'true'

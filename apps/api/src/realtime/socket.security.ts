@@ -10,7 +10,14 @@ export function socketPeer(req: IncomingMessage, config: AuthConfiguration) {
   const direct = normal(req.socket.remoteAddress ?? ''),
     trusted = config.trustedProxies.map(normal);
   let ip = direct;
-  if (trusted.includes(direct)) {
+  if (config.trustedProxyHops === 1) {
+    const last =
+      String(req.headers['x-forwarded-for'] ?? '')
+        .split(',')
+        .at(-1)
+        ?.trim() ?? '';
+    if (isIP(last)) ip = normal(last);
+  } else if (trusted.includes(direct)) {
     const chain = String(req.headers['x-forwarded-for'] ?? '')
       .split(',')
       .map((s) => normal(s.trim()))
@@ -22,7 +29,17 @@ export function socketPeer(req: IncomingMessage, config: AuthConfiguration) {
     }
   }
   const tls = 'encrypted' in req.socket && req.socket.encrypted === true;
-  const secure = tls || (trusted.includes(direct) && req.headers['x-forwarded-proto'] === 'https');
+  const singleHop =
+    config.trustedProxyHops === 1 &&
+    isIP(
+      String(req.headers['x-forwarded-for'] ?? '')
+        .split(',')
+        .at(-1)
+        ?.trim() ?? '',
+    ) !== 0;
+  const secure =
+    tls ||
+    ((singleHop || trusted.includes(direct)) && req.headers['x-forwarded-proto'] === 'https');
   return { ip, secure };
 }
 export function allowSocketRequest(req: IncomingMessage, config: AuthConfiguration) {
