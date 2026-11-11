@@ -1,4 +1,8 @@
-# API — Socket.IO da Fase 6B
+# API — estado atual e execução local
+
+A API integra autenticação, catálogo, gestão do produtor, encomendas, candidaturas, administração, avaliações, moderação e leilões com Socket.IO. O [guia atual de execução e revisão](../../docs/delivery/local-execution.md) descreve o ambiente local completo, contas fictícias isoladas e validações. Swagger está em `/api-docs/`; `/api/health` verifica o processo e `/api/ready` verifica a ligação MongoDB. Cloud permanece facultativa e inativa. As secções seguintes são registos históricos e as suas limitações referem-se à fase indicada.
+
+## Registo da Fase 6B — Socket.IO
 
 O mesmo servidor Express/HTTP recebe o namespace autenticado `/auctions`, no path `/socket.io`. Dependências: `socket.io@4.8.4` e cliente apenas de desenvolvimento `socket.io-client@4.8.4`. Reutiliza JWT/CORS/proxy e o serviço de licitações, com publicação após commit e recuperação de estado. Não há nova porta, interface React, encomenda ou pagamento de leilão.
 

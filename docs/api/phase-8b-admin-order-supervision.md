@@ -8,7 +8,7 @@ Implementação local sobre `dd1e7f9`, em `feat/api-foundation`. Concretiza a co
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /api/admin/orders`             | Listagem global paginada, filtros combináveis e contagens por estado do mesmo conjunto filtrado. Resumos sem linhas, moradas, contactos ou emails.                   |
 | `GET /api/admin/orders/:id`         | Linhas, quantidades, preços de referência, unidades, subtotais, taxa, total, estados e local/período inicial da compra. Identidades mínimas das contas relacionadas. |
-| `GET /api/admin/orders/:id/history` | Histórico paginado de `historicoEstado` ou `pagamento.historico`, escolhido por `dominio=operacional                                                                 | pagamento`. Não agrega outros domínios de auditoria. |
+| `GET /api/admin/orders/:id/history` | Histórico paginado de `historicoEstado` ou `pagamento.historico`, escolhido por `dominio=operacional \| pagamento`. Não agrega outros domínios de auditoria.         |
 
 Contratos executáveis no [OpenAPI](openapi.yaml). Módulo `admin-orders` separa validação, projeções e consultas. As rotas integram o router administrativo existente: as mesmas guardas JWT/papéis, cache privada e limites da Fase 8A, sem uma segunda administração. O runtime e o servidor de integração real ligam o serviço à mesma conexão MongoDB. Não há comandos novos, listeners de encomendas, polling ou escrita comercial.
 

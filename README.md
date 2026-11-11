@@ -1,5 +1,7 @@
 # Do Campo à Mesa
 
+**Fase 14 — auditoria final e preparação da entrega local.** Catálogo, autenticação JWT, encomendas, gestão do produtor, administração, avaliações e leilões integram a API e o MongoDB reais. O [guia de execução e revisão académica](docs/delivery/local-execution.md) reúne instalação, ambiente isolado com contas fictícias, percursos por papel, Swagger e testes. Segundo os esclarecimentos do docente, Cloud e Laravel são facultativos; não foi realizado deployment. Os nove documentos da Fase 0 são preservados como análise histórica. Os registos de fases abaixo não substituem este guia atual.
+
 **Fase 13A — preparação local da infraestrutura Cloud.** Templates Vercel/Render, configuração Atlas/proxy, inventário e manutenção segura de fotografias. O fornecedor de armazenamento permanece por escolher; não há contas configuradas, recursos criados ou deployment realizado. Ver [comparação, configuração, autorizações e limitações](docs/deployment/phase-13a-cloud-deployment.md). Sem staging, commit ou push nesta fase. Os registos abaixo descrevem entregas anteriores.
 
 **Fase 12 — Swagger UI, conformidade REST e preparação de produção, implementação local.** Documentação interativa real, compatibilidade segura de estados e configuração independente de localhost. Ver [entrega, segurança e limitações](docs/api/phase-12-production-readiness.md). Sem staging, commit, push ou deployment nesta fase. Os registos seguintes descrevem o estado histórico de cada entrega.

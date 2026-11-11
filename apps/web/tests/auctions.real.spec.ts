@@ -60,8 +60,27 @@ async function readyImages(page: Page) {
 }
 function localDate(ms: number) {
   const date = new Date(ms);
-  return new Date(ms - date.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+  // datetime-local normaliza segundos zero; fill() exige a mesma representação canónica.
+  return new Date(ms - date.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 19)
+    .replace(/:00$/, '');
 }
+test('formulário nativo aceita segundos zero e não zero sem alterar a data pretendida', async ({
+  page,
+}) => {
+  await login(page, 2);
+  await navigate(page, '/area/produtor/leiloes/novo');
+  const end = page.getByLabel('Fim do leilão');
+  await expect(end).toBeVisible();
+  for (const seconds of [0, 1, 30, 59]) {
+    const date = new Date(Date.now() + 7200000);
+    date.setSeconds(seconds, 0);
+    await end.fill(localDate(date.getTime()));
+    expect(new Date(await end.inputValue()).getTime()).toBe(date.getTime());
+    expect(await end.evaluate((element: HTMLInputElement) => element.validity.valid)).toBe(true);
+  }
+});
 test('catálogo REST público: estados, pesquisa local, filtros, imagens e detalhe sem sessão', async ({
   page,
 }) => {

@@ -163,6 +163,49 @@ async function capture(page: Page, name: string) {
     animations: 'disabled',
   });
 }
+test('histórico desatualizado não afirma ausência de ofertas após confirmação em direto', async ({
+  page,
+  request,
+}) => {
+  const s = await fixture(request);
+  await enter(page, s.users[0]!, s.lot.id);
+  await expect(page.locator('.auction-history')).toContainText('Ainda não foram aceites');
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  // A resposta continua a vir da API/MongoDB reais; apenas atrasamos a rede para observar a transição.
+  await page.route('**/api/auctions/' + s.lot.id + '/bids?*', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  const transition = page.evaluate(
+    () =>
+      new Promise<{ emptyClaim: boolean; loading: boolean }>((resolve) => {
+        const observer = new MutationObserver(() => {
+          if (!document.querySelector('.auction-current-value')?.textContent?.includes('17,00'))
+            return;
+          const history = document.querySelector('.auction-history')!;
+          observer.disconnect();
+          resolve({
+            emptyClaim: history.textContent!.includes('Ainda não foram aceites'),
+            loading: !!history.querySelector('[role="status"]'),
+          });
+        });
+        observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+      }),
+  );
+  try {
+    await shortcut(page, 5).click();
+    await confirm(page).click();
+    expect(await transition).toEqual({ emptyClaim: false, loading: true });
+    await expect(page.locator('.auction-bid-feedback')).toContainText('aceite e registada');
+    expect(await count(s.lot.id)).toBe(1);
+  } finally {
+    release();
+  }
+  await expect(page.locator('.auction-bid-ledger li')).toHaveCount(1);
+  await expect(page.locator('.auction-history')).toContainText('1 ofertas confirmadas');
+  await capture(page, 'historico-confirmado');
+});
 test('os três atalhos preparam sem submeter, não acumulam, permitem editar/cancelar e só a confirmação grava', async ({
   page,
   request,
@@ -205,6 +248,7 @@ test('os três atalhos preparam sem submeter, não acumulam, permitem editar/can
     .db!.collection('products')
     .findOne({ _id: new Types.ObjectId(s.productId) });
   expect(product!.stockDisponivel).toBe(s.initialStock! - 500);
+  await expect(page.locator('.auction-bid-ledger li')).toHaveCount(3);
   await capture(page, 'ofertas-aceites');
 });
 test('dupla submissão da mesma preparação confirma apenas uma licitação', async ({

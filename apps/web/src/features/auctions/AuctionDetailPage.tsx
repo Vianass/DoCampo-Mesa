@@ -69,6 +69,8 @@ export function AuctionRoom({
         signal,
       ),
   );
+  const historyPending =
+    history.loading || (!!history.data && history.data.sequenciaSnapshot < sequence);
   const owner = !!detail.reserva,
     canBid =
       auth.session.kind === 'authenticated' &&
@@ -315,7 +317,7 @@ export function AuctionRoom({
             Atualizar histórico ↻
           </Button>
         </div>
-        {history.loading && <LoadingSkeleton label="A carregar o histórico de ofertas" count={1} />}
+        {historyPending && <LoadingSkeleton label="A carregar o histórico de ofertas" count={1} />}
         {history.error && (
           <p role="alert">
             Não foi possível consultar o histórico.{' '}
@@ -324,10 +326,10 @@ export function AuctionRoom({
             </button>
           </p>
         )}
-        {history.data && !history.data.itens.length && (
+        {!historyPending && history.data && !history.data.itens.length && (
           <p>A primeira oferta pode ser a tua. Ainda não foram aceites licitações neste lote.</p>
         )}
-        {history.data && (
+        {!historyPending && history.data && (
           <>
             <ol className="auction-bid-ledger">
               {history.data.itens.map((b) => (
