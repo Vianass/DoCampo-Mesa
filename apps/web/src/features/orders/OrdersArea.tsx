@@ -163,6 +163,7 @@ export default function OrdersArea() {
                       {orderDate(order.criadaEm)} · {stateLabels[order.estado]}
                     </p>
                     <p>{order.linhas.map((l) => l.nome).join(' · ')}</p>
+                    {order.leilaoOrigemId && <p>Compra de leilão</p>}
                     <PriceDisplay amountCents={order.totalCent} />
                     <Link
                       className="editorial-text-link"

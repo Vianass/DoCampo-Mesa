@@ -30,6 +30,7 @@ function period(value: OrderRecord['entrega']['snapshot']['periodoInicial']) {
 export function buyerOrderDto(order: OrderRecord) {
   return {
     id: order._id.toHexString(),
+    ...(order.leilaoOrigem ? { leilaoOrigemId: order.leilaoOrigem.toHexString() } : {}),
     operacaoCompraId: order.operacaoCompraId,
     produtorContaId: order.produtor.toHexString(),
     estado: order.estado,

@@ -22,6 +22,7 @@ import {
 import { AuctionImage, AuctionBadge, AuctionClock, AuctionPagination } from './components';
 import { useAuctionRoom } from './useAuctionRoom';
 import { QuickBidForm } from './QuickBidForm';
+import { AuctionPurchaseNotice } from './AuctionPurchaseNotice';
 import { auctionDate, serverTime, sampleClock, lotLabel } from './model';
 
 export function AuctionRoom({
@@ -46,7 +47,7 @@ export function AuctionRoom({
     // O evento não transporta título/descrição nem o ETag. Reler alterações anteriores à primeira oferta.
     if (
       state &&
-      state.sequencia === 0 &&
+      (state.sequencia === 0 || state.estado === 'terminado') &&
       state.versao > detail.versao &&
       metadataRequested.current !== state.versao
     ) {
@@ -198,6 +199,7 @@ export function AuctionRoom({
               </p>
             </section>
           )}
+          <AuctionPurchaseNotice detail={detail} />
           {state?.estado === 'cancelado' && (
             <p className="auction-notice">Este leilão foi cancelado. Não aceita ofertas.</p>
           )}

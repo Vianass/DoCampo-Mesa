@@ -85,6 +85,13 @@ export function validateOrderPersistence(order: OrderRecord): OrderPersistenceIs
       fail(path, 'Fuso horário IANA inválido.');
     }
   }
+  if (
+    order.leilaoOrigem &&
+    (order.linhas.length !== 1 ||
+      order.linhas[0]!.quantidade !== 1 ||
+      order.linhas[0]!.unidadeSnapshot.modalidade !== 'embalagem')
+  )
+    fail('linhas', 'Uma encomenda de leilão representa um lote indivisível.');
   unique(
     order.linhas.map((line) => line.id),
     'linhas',
@@ -95,11 +102,14 @@ export function validateOrderPersistence(order: OrderRecord): OrderPersistenceIs
   );
   try {
     for (const line of order.linhas) {
-      const subtotal = calculateOrderLineSubtotal({
-        quantidade: line.quantidade,
-        precoReferenciaCent: line.precoReferenciaCent,
-        unidadeVenda: line.unidadeSnapshot,
-      });
+      const subtotal = calculateOrderLineSubtotal(
+        {
+          quantidade: line.quantidade,
+          precoReferenciaCent: line.precoReferenciaCent,
+          unidadeVenda: line.unidadeSnapshot,
+        },
+        order.leilaoOrigem ? 'leilao' : 'catalogo',
+      );
       if (subtotal !== line.subtotalCent)
         fail('linhas', 'Subtotal incompatível com o snapshot comercial.');
     }
@@ -368,6 +378,7 @@ export function validateOrderEvolution(
     '_id',
     'operacaoCompraId',
     'comprador',
+    'leilaoOrigem',
     'produtor',
     'versao',
     'linhas',

@@ -14,5 +14,7 @@ export interface CartContextValue extends CartSession, ReturnType<typeof cartSum
   snapshotPurchase: () => CartPurchaseLine[];
   acknowledgePurchase: (lines: readonly CartPurchaseLine[]) => void;
   remoteIssue?: string;
+  guestCartAvailable?: boolean;
+  importGuestCart?: () => void;
 }
 export const CartContext = createContext<CartContextValue | null>(null);

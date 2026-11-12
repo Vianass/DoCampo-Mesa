@@ -81,7 +81,13 @@ export function createAuctionModel(connection: Connection): Model<AuctionRecord>
           {
             estado: {
               type: String,
-              enum: ['reservada', 'afeta_vencedor', 'libertada', 'libertacao_pendente'],
+              enum: [
+                'reservada',
+                'afeta_vencedor',
+                'consumida',
+                'libertada',
+                'libertacao_pendente',
+              ],
               required: true,
             },
             reposta: integer(),
@@ -90,6 +96,17 @@ export function createAuctionModel(connection: Connection): Model<AuctionRecord>
           options,
         ),
         required: true,
+      },
+      compra: {
+        type: new Schema<NonNullable<AuctionRecord['compra']>>(
+          {
+            encomendaId: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
+            chave: { ...textField('chave', 128), match: /^[\x21-\x7e]{1,128}$/ },
+            hash: { ...textField('hash', 64), match: /^[a-f0-9]{64}$/ },
+          },
+          options,
+        ),
+        default: undefined,
       },
       resultado: { type: result, default: undefined },
       encerradoEm: { ...dateField('encerradoEm'), required: false },
@@ -196,13 +213,23 @@ export function createAuctionModel(connection: Connection): Model<AuctionRecord>
     }
     const reserve = this.reserva;
     const held = !terminal || (this.estado === 'terminado' && this.sequencia > 0);
-    const expectedReserve = held
-      ? this.estado === 'terminado'
-        ? 'afeta_vencedor'
-        : 'reservada'
-      : reserve.pendente > 0
-        ? 'libertacao_pendente'
-        : 'libertada';
+    if (
+      this.compra &&
+      (this.estado !== 'terminado' ||
+        this.resultado?.tipo !== 'vencedor' ||
+        reserve.reposta ||
+        reserve.pendente)
+    )
+      this.invalidate('compra', 'Compra incompatível com o resultado.');
+    const expectedReserve = this.compra
+      ? 'consumida'
+      : held
+        ? this.estado === 'terminado'
+          ? 'afeta_vencedor'
+          : 'reservada'
+        : reserve.pendente > 0
+          ? 'libertacao_pendente'
+          : 'libertada';
     if (
       reserve.estado !== expectedReserve ||
       (held && (reserve.reposta !== 0 || reserve.pendente !== 0)) ||

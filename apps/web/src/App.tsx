@@ -29,6 +29,7 @@ const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'));
 const ProducerDetailPage = lazy(() => import('./pages/ProducerDetailPage'));
 const CartPage = lazy(() => import('./pages/CartPage'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const AuctionCheckoutPage = lazy(() => import('./features/auctions/AuctionCheckoutPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegistrationPage = lazy(() => import('./pages/auth/RegistrationPage'));
 const RecoveryPage = lazy(() => import('./pages/auth/RecoveryPage'));
@@ -139,6 +140,14 @@ export function App() {
                 <AuctionsPage />
               </Suspense>
             )
+          }
+        />
+        <Route
+          path="checkout/leilao/:id"
+          element={
+            <Suspense fallback={<AuthLoading />}>
+              <AuctionCheckoutPage />
+            </Suspense>
           }
         />
         <Route

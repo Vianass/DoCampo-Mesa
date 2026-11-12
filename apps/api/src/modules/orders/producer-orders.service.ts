@@ -12,6 +12,7 @@ import { producerTransitions, type ProducerOrderQuery } from './producer-orders.
 import type { OrderRecord, OrderState } from './order.types.js';
 
 const projection = {
+  leilaoOrigem: 1,
   _id: 1,
   produtor: 1,
   operacaoCompraId: 1,

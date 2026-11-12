@@ -272,6 +272,7 @@ export default function ProducerOrdersArea({ overview = false }: { overview?: bo
                     </h2>
                     <p>{orderDate(order.criadaEm)}</p>
                     <p>{order.linhas.map((l) => l.nome).join(' · ')}</p>
+                    {order.leilaoOrigemId && <p>Compra de leilão</p>}
                     <PriceDisplay amountCents={order.totalCent} />
                     <Link
                       className="editorial-text-link"

@@ -10,6 +10,7 @@ export const fixtureUser = {
 export const fixturePassword = 'Frase fictícia para autenticar 5C!';
 export async function mockAccount(page: Page) {
   const state = {
+    user: { ...fixtureUser },
     roles: ['comprador'] as Role[],
     meStatus: 200,
     loginStatus: 200,
@@ -24,7 +25,7 @@ export async function mockAccount(page: Page) {
     (url) => url.pathname.startsWith('/api/auth/'),
     async (route) => {
       const path = new URL(route.request().url()).pathname;
-      const user = { ...fixtureUser, papeis: state.roles };
+      const user = { ...state.user, papeis: state.roles };
       if (route.request().method() === 'POST')
         state.bodies.push({ path, body: route.request().postDataJSON() });
       if (path.endsWith('/register')) {

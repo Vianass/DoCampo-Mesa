@@ -75,6 +75,15 @@ async function login(page: Page, s: Awaited<ReturnType<typeof scenario>>) {
   await page.getByLabel('Palavra-passe', { exact: true }).fill(s.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/checkout$/);
+  const importGuest = page.getByRole('button', {
+    name: 'Importar cesta de visitante',
+    exact: true,
+  });
+  const hasGuest = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem('docampo.cart.guest.v2') ?? '{"items":[]}').items.length > 0,
+  );
+  if (hasGuest) await importGuest.click();
 }
 async function choose(page: Page, count = 1, delivery = false) {
   for (let i = 1; i <= count; i++) {
@@ -115,8 +124,9 @@ test('checkout real de um produtor cria encomenda e limpa apenas a cesta confirm
   expect(orders[0]!.totalCent).toBe(38);
   const product = await database.db!.collection('products').findOne({ _id: s.products[0]!._id });
   expect(product!.stockDisponivel).toBe(9750);
-  const cart = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}'),
+  const cart = await page.evaluate(
+    (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+    s.buyerId.toHexString(),
   );
   expect(cart.items).toEqual([]);
   await page.getByRole('link', { name: 'Consultar as minhas encomendas', exact: true }).click();
@@ -167,7 +177,12 @@ test('resposta HTTP perdida é recuperada depois de reload e novo login sem dupl
   ).toBeVisible();
   expect(await database.db!.collection('orders').countDocuments({ comprador: s.buyerId })).toBe(1);
   expect(
-    (await page.evaluate(() => JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}'))).items,
+    (
+      await page.evaluate(
+        (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+        s.buyerId.toHexString(),
+      )
+    ).items,
   ).toHaveLength(1);
   await page.unrouteAll();
   await page.reload();
@@ -191,7 +206,7 @@ test('resposta HTTP perdida é recuperada depois de reload e novo login sem dupl
   ).toBe(9750);
 });
 
-test('visitante preserva a cesta e retoma o checkout depois de iniciar sessão', async ({
+test('visitante preserva a cesta e retoma o checkout após login e importação explícita', async ({
   page,
 }) => {
   const s = await scenario();
@@ -203,9 +218,15 @@ test('visitante preserva a cesta e retoma o checkout depois de iniciar sessão',
   await page.getByLabel('Email', { exact: true }).fill(s.email);
   await page.getByLabel('Palavra-passe', { exact: true }).fill(s.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await page.getByRole('button', { name: 'Importar cesta de visitante', exact: true }).click();
   await expect(page.getByRole('form', { name: 'Confirmar compra' })).toBeVisible();
   expect(
-    (await page.evaluate(() => JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}'))).items,
+    (
+      await page.evaluate(
+        (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+        s.buyerId.toHexString(),
+      )
+    ).items,
   ).toHaveLength(1);
 });
 
@@ -260,15 +281,24 @@ test('stock esgotado antes de confirmar não apaga a cesta, inclusive depois de 
   await expect
     .poll(
       async () =>
-        (await page.evaluate(() => JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}')))
-          .items.length,
+        (
+          await page.evaluate(
+            (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+            s.buyerId.toHexString(),
+          )
+        ).items.length,
     )
     .toBe(1);
   await login(page, s);
   await page.getByRole('button', { name: 'Recuperar resultado da compra', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Rever condições', exact: true })).toBeVisible();
   expect(
-    (await page.evaluate(() => JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}'))).items,
+    (
+      await page.evaluate(
+        (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+        s.buyerId.toHexString(),
+      )
+    ).items,
   ).toHaveLength(1);
 });
 
@@ -309,8 +339,9 @@ test('alterações posteriores da cesta sobrevivem à recuperação de uma compr
   await login(page, s);
   await page.getByRole('button', { name: 'Recuperar resultado da compra', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'A tua compra está confirmada.' })).toBeVisible();
-  const cart = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}'),
+  const cart = await page.evaluate(
+    (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+    s.buyerId.toHexString(),
   );
   expect(cart.items).toHaveLength(2);
   expect(
@@ -355,7 +386,12 @@ test('sessão expirada no checkout preserva a cesta e exige novo login', async (
   await page.clock.fastForward(65000);
   await expect(page.getByRole('heading', { name: 'Entra para continuar a compra.' })).toBeVisible();
   expect(
-    (await page.evaluate(() => JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}'))).items,
+    (
+      await page.evaluate(
+        (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+        s.buyerId.toHexString(),
+      )
+    ).items,
   ).toHaveLength(1);
   expect(await database.db!.collection('orders').countDocuments({ comprador: s.buyerId })).toBe(0);
 });

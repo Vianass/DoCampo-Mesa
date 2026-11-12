@@ -12,6 +12,7 @@ import { isCheckoutReadUnavailable } from './checkout.idempotency.js';
 
 // Sem chave, hash, manifesto, versões técnicas, auditoria privada ou identidade de outros compradores.
 const projection = {
+  leilaoOrigem: 1,
   _id: 1,
   operacaoCompraId: 1,
   produtor: 1,

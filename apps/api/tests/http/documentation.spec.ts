@@ -80,7 +80,9 @@ describe('Swagger UI real e inventário', () => {
       .flatMap(([path, methods]) => Object.keys(methods).map((method) => method + ':' + path))
       .sort();
     expect(operations).toEqual(routes.map((r) => r.method + ':' + r.path).sort());
-    expect(new Set(operations).size).toBe(76);
+    expect(new Set(operations).size).toBe(78);
+    expect(operations).toContain('get:/auctions/{id}/checkout');
+    expect(operations).toContain('post:/auctions/{id}/checkout');
     expect(operations).toContain('patch:/orders/{id}/estado');
     expect(operations).toContain('post:/me/products/{id}/images');
     expect(JSON.stringify(spec.paths)).not.toContain('proposta-bloqueada');

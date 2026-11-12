@@ -42,7 +42,10 @@ function unitIdentity(value: OrderSaleUnit) {
     value.conteudoPorUnidade?.unidade ?? null,
   ]);
 }
-function validateInput(input: ProductStockDecrease) {
+function validateInput(
+  input: ProductStockDecrease,
+  source: import('../orders/order.calculations.js').OrderPriceSource = 'catalogo',
+) {
   if (
     !input ||
     !(input.produtoId instanceof Types.ObjectId) ||
@@ -52,11 +55,14 @@ function validateInput(input: ProductStockDecrease) {
   }
   revisionCondition(input.revisaoEsperada);
   try {
-    calculateOrderLineSubtotal({
-      quantidade: input.quantidade,
-      precoReferenciaCent: input.precoAceiteCent,
-      unidadeVenda: input.unidadeAceite,
-    });
+    calculateOrderLineSubtotal(
+      {
+        quantidade: input.quantidade,
+        precoReferenciaCent: input.precoAceiteCent,
+        unidadeVenda: input.unidadeAceite,
+      },
+      source,
+    );
   } catch (error) {
     if (!(error instanceof OrderValidationError)) throw error;
     throw new ConcurrencyError('VALIDACAO', 'Quantidade ou oferta comercial inválida.');
@@ -66,8 +72,9 @@ function validateInput(input: ProductStockDecrease) {
 export function validateProductStockCandidate(
   product: ProductRecord | null,
   input: ProductStockDecrease,
+  source: import('../orders/order.calculations.js').OrderPriceSource = 'catalogo',
 ): void {
-  validateInput(input);
+  validateInput(input, source);
   if (
     !product ||
     !product._id.equals(input.produtoId) ||

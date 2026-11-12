@@ -65,19 +65,22 @@ export function identifyCheckout(
   const totaisPorProdutor = normalized.pedido.condicoesPorProdutor.map((selection) =>
     Object.freeze({
       produtorContaId: selection.produtorContaId,
-      totalCent: calculateOrderAmounts({
-        linhas: normalized.pedido.linhas
-          .filter((line) => line.produtorContaId === selection.produtorContaId)
-          .map((line) => ({
-            produtoId: line.produtoId,
-            quantidade: line.quantidade,
-            precoReferenciaCent: line.ofertaAceite.precoReferenciaCent,
-            unidadeVenda: line.ofertaAceite.unidadeVenda,
-            versaoUnidade: line.ofertaAceite.revisaoProdutoObservada,
-          })),
-        modalidadeRececao: selection.modalidade,
-        taxaEntregaCent: selection.taxaEntregaAceiteCent,
-      }).totalCent,
+      totalCent: calculateOrderAmounts(
+        {
+          linhas: normalized.pedido.linhas
+            .filter((line) => line.produtorContaId === selection.produtorContaId)
+            .map((line) => ({
+              produtoId: line.produtoId,
+              quantidade: line.quantidade,
+              precoReferenciaCent: line.ofertaAceite.precoReferenciaCent,
+              unidadeVenda: line.ofertaAceite.unidadeVenda,
+              versaoUnidade: line.ofertaAceite.revisaoProdutoObservada,
+            })),
+          modalidadeRececao: selection.modalidade,
+          taxaEntregaCent: selection.taxaEntregaAceiteCent,
+        },
+        normalized.contexto.leilaoOrigemId ? 'leilao' : 'catalogo',
+      ).totalCent,
     }),
   );
   return Object.freeze({

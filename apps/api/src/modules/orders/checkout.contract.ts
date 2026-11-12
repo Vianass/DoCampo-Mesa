@@ -7,6 +7,8 @@ import type {
 } from './order.types.js';
 
 export interface CheckoutContext {
+  /** Origem interna determinada pelo serviço; nunca recebida no corpo HTTP. */
+  readonly leilaoOrigemId?: string;
   readonly compradorContaId: string;
 }
 

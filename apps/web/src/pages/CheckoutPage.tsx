@@ -32,6 +32,7 @@ import {
   estimatedCheckoutTotal,
   type PendingPurchase,
 } from '../features/checkout/model';
+import { GuestCartNotice } from '../features/cart/GuestCartNotice';
 import { OrderDetails } from '../features/orders/OrderDetails';
 type Phase = 'idle' | 'submitting' | 'uncertain' | 'reconfirm';
 export default function CheckoutPage() {
@@ -50,7 +51,7 @@ function CheckoutSession() {
     auth.session.user.papeis.includes('comprador');
   const ready = allowed && auth.session.kind === 'authenticated' && auth.session.status === 'ready';
   const [draft, setDraft] = useState<Record<string, string>>({});
-  const [pending, setPending] = useState(readPending),
+  const [pending, setPending] = useState(() => readPending(userId)),
     [refresh, setRefresh] = useState(0),
     [ack, setAck] = useState(false);
   const [preparation, setPreparation] = useState<{
@@ -86,10 +87,10 @@ function CheckoutSession() {
   );
   useEffect(() => {
     if (location.pathname === '/checkout' && pending?.confirmed) {
-      clearPending(pending.referencia);
+      clearPending(pending.referencia, userId);
       queueMicrotask(() => setPending(undefined));
     }
-  }, [location.pathname, pending?.confirmed, pending?.referencia]);
+  }, [location.pathname, pending?.confirmed, pending?.referencia, userId]);
   useEffect(() => {
     if (
       !ready ||
@@ -141,7 +142,7 @@ function CheckoutSession() {
   }, [ready, userId, preparationKey, pending?.referencia, onlyReal, auth.request]);
   function updatePending(value: PendingPurchase) {
     setPending(value);
-    return savePending(value);
+    return savePending(value, userId);
   }
   async function details(receipt: Receipt, signal: AbortSignal) {
     try {
@@ -182,7 +183,7 @@ function CheckoutSession() {
       signal,
     );
     if (attempt.referencia !== reference.referencia) throw new ApiFailure('invalid');
-    const latest = readPending();
+    const latest = readPending(userId);
     if (latest?.referencia !== reference.referencia)
       throw new DOMException('Tentativa abandonada.', 'AbortError');
     const submitted = { ...reference, submitted: true };
@@ -220,7 +221,7 @@ function CheckoutSession() {
   function report(error: unknown, signal: AbortSignal, reference: string) {
     if (signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) return;
     if (error instanceof ApiFailure && error.status === 403) void auth.revalidate();
-    const stored = readPending();
+    const stored = readPending(userId);
     const unsent = stored?.referencia === reference && !stored.submitted;
     const rejected =
       error instanceof ApiFailure &&
@@ -315,7 +316,7 @@ function CheckoutSession() {
         ?.focus();
       return;
     }
-    const existing = readPending();
+    const existing = readPending(userId);
     if (existing && !existing.confirmed) {
       setPending(existing);
       return;
@@ -363,7 +364,7 @@ function CheckoutSession() {
   }
   function revise() {
     if (pending) {
-      clearPending(pending.referencia);
+      clearPending(pending.referencia, userId);
       setPending(undefined);
     }
     setAck(false);
@@ -387,6 +388,7 @@ function CheckoutSession() {
               : 'Revê os produtos e escolhe como recebê-los, diretamente de cada origem.'}
           </p>
         </header>
+        <GuestCartNotice />
         {!userId && auth.notice && (
           <p className="checkout-note" role="status">
             {auth.notice}

@@ -71,8 +71,16 @@ export function validateOrderQuantity(value: unknown): asserts value is number {
   }
 }
 
-export function validateOrderPrice(value: unknown): asserts value is number {
-  if (!safeInteger(value, minimumProductPriceCents) || value > maximumProductPriceCents) {
+export type OrderPriceSource = 'catalogo' | 'leilao';
+
+export function validateOrderPrice(
+  value: unknown,
+  source: OrderPriceSource = 'catalogo',
+): asserts value is number {
+  if (
+    !safeInteger(value, minimumProductPriceCents) ||
+    (source === 'catalogo' && value > maximumProductPriceCents)
+  ) {
     invalid(
       'PRECO_INVALIDO',
       'precoReferenciaCent',
@@ -166,9 +174,12 @@ export function validateOrderLineQuantity(
   }
 }
 
-export function calculateOrderLineSubtotal(input: OrderLineCalculationInput): number {
+export function calculateOrderLineSubtotal(
+  input: OrderLineCalculationInput,
+  source: OrderPriceSource = 'catalogo',
+): number {
   if (!record(input)) invalid('LINHAS_INVALIDAS', 'linha', 'É necessária uma linha comercial.');
-  validateOrderPrice(input.precoReferenciaCent);
+  validateOrderPrice(input.precoReferenciaCent, source);
   validateOrderLineQuantity(input.quantidade, input.unidadeVenda, input.stockDisponivel);
   const numerator = BigInt(input.quantidade) * BigInt(input.precoReferenciaCent);
   const denominator = BigInt(input.unidadeVenda.quantidadeReferencia);
@@ -236,7 +247,10 @@ function compatibleUnits(a: OrderSaleUnit, b: OrderSaleUnit): boolean {
   );
 }
 
-export function aggregateOrderLines(inputs: readonly OrderLineInput[]): readonly OrderLineInput[] {
+export function aggregateOrderLines(
+  inputs: readonly OrderLineInput[],
+  source: OrderPriceSource = 'catalogo',
+): readonly OrderLineInput[] {
   if (!Array.isArray(inputs) || inputs.length === 0) {
     invalid('LINHAS_INVALIDAS', 'linhas', 'É necessária uma lista não vazia de linhas comerciais.');
   }
@@ -250,7 +264,7 @@ export function aggregateOrderLines(inputs: readonly OrderLineInput[]): readonly
       invalid('VERSAO_INVALIDA', 'versaoUnidade', 'É necessária uma versão inteira não negativa.');
     }
     validateOrderQuantity(input.quantidade);
-    validateOrderPrice(input.precoReferenciaCent);
+    validateOrderPrice(input.precoReferenciaCent, source);
     validateOrderSaleUnit(input.unidadeVenda);
     if (input.stockDisponivel !== undefined)
       validateStock(input.stockDisponivel, input.unidadeVenda);
@@ -310,14 +324,17 @@ export function calculateOrderProductsSubtotal(subtotals: readonly number[]): nu
   return safeMoney(total, 'subtotalProdutosCent');
 }
 
-export function calculateOrderProducts(inputs: readonly OrderLineInput[]): OrderCalculatedProducts {
-  const linhas = aggregateOrderLines(inputs).map((line) => ({
+export function calculateOrderProducts(
+  inputs: readonly OrderLineInput[],
+  source: OrderPriceSource = 'catalogo',
+): OrderCalculatedProducts {
+  const linhas = aggregateOrderLines(inputs, source).map((line) => ({
     produtoId: line.produtoId,
     versaoUnidade: line.versaoUnidade,
     quantidade: line.quantidade,
     precoReferenciaCent: line.precoReferenciaCent,
     unidadeSnapshot: copyUnit(line.unidadeVenda),
-    subtotalCent: calculateOrderLineSubtotal(line),
+    subtotalCent: calculateOrderLineSubtotal(line, source),
   }));
   return {
     linhas,
@@ -353,10 +370,13 @@ export function calculateOrderTotal(subtotalProdutosCent: number, taxaEntregaCen
   return safeMoney(BigInt(subtotalProdutosCent) + BigInt(taxaEntregaCent), 'totalCent');
 }
 
-export function calculateOrderAmounts(input: OrderAmountsInput): OrderAmounts {
+export function calculateOrderAmounts(
+  input: OrderAmountsInput,
+  source: OrderPriceSource = 'catalogo',
+): OrderAmounts {
   if (!record(input))
     invalid('LINHAS_INVALIDAS', 'encomenda', 'São necessárias condições de cálculo.');
-  const products = calculateOrderProducts(input.linhas);
+  const products = calculateOrderProducts(input.linhas, source);
   const taxaEntregaCent = calculateOrderDeliveryFee(input.modalidadeRececao, input.taxaEntregaCent);
   return {
     ...products,

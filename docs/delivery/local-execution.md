@@ -8,7 +8,7 @@ Segundo os esclarecimentos do docente fornecidos para a Fase 14, deployment Clou
 
 ## Preparar uma cópia nova
 
-Usar a versão de desenvolvimento em `feat/api-foundation`: a branch `main` preserva a Fase 0 e não contém a aplicação atual. As correções da Fase 14 permanecem locais até autorização de consolidação. Para entregar, disponibilizar ao docente a versão efetivamente validada, depois dessa autorização, ou uma cópia local completa acordada com o estudante.
+A Fase 14 está integrada em `main` no commit `204acb199a7181eb765f6ccd88505c7b8a7412f6`, que permanece como base das referências locais e remotas `main` e `feat/api-foundation`. Esta cópia contém a documentação da Fase 14.1 e as correções da Fase 14.2, já validadas localmente e ainda por consolidar em commit. Usar a versão efetivamente validada para a entrega.
 
 É necessário Node.js 22.21.1 ou uma versão compatível de Node.js 24, npm 10 ou superior, Docker com Compose e Google Chrome para os testes Playwright configurados. Usar a raiz do repositório em todos os comandos deste guia.
 
@@ -18,7 +18,7 @@ Numa cópia nova, instalar as versões do lockfile:
 npm ci
 ```
 
-Não instalar novamente se as dependências já estiverem disponíveis. A auditoria da Fase 14 não instala nem atualiza dependências.
+Não instalar novamente se as dependências já estiverem disponíveis. `npm ci` destina-se a uma cópia nova e repõe as versões do lockfile; não é um comando de atualização. A verificação de instalação da Fase 14.1 usa uma cópia isolada fora do repositório, preservando as dependências locais existentes.
 
 ## Revisão completa com dados fictícios isolados
 
@@ -50,7 +50,9 @@ Abrir `http://127.0.0.1:5183`. A API está em `http://127.0.0.1:3011/api` e o Sw
 
 A API indica os caminhos absolutos dos ficheiros temporários de contas fictícias. Estes têm permissões `0600`, passwords aleatórias e nunca devem ser copiados para o repositório ou relatório. Usar as contas do mesmo cenário para as relações de encomendas e leilões correspondentes. O cenário de leilões fornece dois compradores e um produtor; o administrativo fornece administradores e candidatos; o cenário de receção fornece comprador, produtor e encomendas prontas. Para comprar, usar os produtos das contas desses cenários, com condições comerciais completas; o catálogo público inicial pode não ter local de levantamento. Não combinar indiscriminadamente outros modos antigos de revisão com este comando. As avaliações históricas do cenário de revisão são fictícias e não constituem dados de produção.
 
-A sessão de revisão dura até 15 minutos, com token apenas em memória; atualizar a página exige novo login. Terminar os dois processos com `Ctrl+C`. O encerramento normal da API remove apenas a base, fotografias e ficheiros de contas efémeros criados nessa execução. Uma interrupção forçada pode deixar dados de teste; não executar comandos de limpeza indiscriminados. Para parar o contentor de teste sem eliminar ficheiros ou volumes:
+Cada arranque gera uma base, contas e ficheiros de credenciais próprios: usar os ficheiros indicados pelo servidor atualmente em execução, copiando o email e a palavra-passe do mesmo bloco. Não reutilizar ficheiros de sessões anteriores nem usar nomes de produtores como credenciais.
+
+A sessão de revisão dura até 15 minutos, com token apenas em memória; atualizar a página exige novo login. Terminar os dois processos com `Ctrl+C`. O encerramento normal da API remove a base efémera da execução, incluindo os registos criados manualmente nessa base, fotografias e ficheiros de contas. Para dados duradouros, usar o modo de desenvolvimento persistente descrito abaixo; não reiniciar o ambiente como tentativa de corrigir credenciais. Uma interrupção forçada pode deixar dados de teste; não executar comandos de limpeza indiscriminados. Para parar o contentor de teste sem eliminar ficheiros ou volumes:
 
 ```sh
 docker compose -f apps/api/compose.yaml --profile test stop mongo-test
@@ -58,13 +60,13 @@ docker compose -f apps/api/compose.yaml --profile test stop mongo-test
 
 ## Percursos a demonstrar
 
-| Papel            | Percurso e verificação                                                                                                                                                                                                                                                                                              |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Visitante        | `/`, `/produtos`, `/produtores`, `/leiloes`: pesquisar nome/ingrediente/produtor, combinar filtros, ordenar, paginar e abrir detalhes. O mapa de um perfil só carrega após escolha e quando existe um ponto público autorizado. A pesquisa dos leilões é explicitamente limitada à página carregada.                |
-| Comprador        | `/registo`, `/entrar`, `/area/comprador`, `/carrinho`, `/checkout`: criar uma conta fictícia ou usar a do cenário, comprar, consultar encomendas e confirmar a receção de uma encomenda pronta. Publicar avaliações de produto e produtor depois da conclusão.                                                      |
-| Produtor         | `/area/produtor`: gerir produtos, fotografias, perfil, condições comerciais e limiares de stock; preparar encomendas; criar e acompanhar leilões; consultar indicadores próprios. Usar as contas produtoras aprovadas dos cenários.                                                                                 |
-| Administrador    | `/area/administrador`: consultar utilizadores, aprovar/rejeitar candidaturas, supervisionar encomendas e leilões e moderar avaliações/conteúdos com motivo e auditoria. A supervisão não concede poderes operacionais sobre encomendas ou ofertas.                                                                  |
-| Dois compradores | Abrir dois perfis de navegador ou uma janela normal e outra privada; entrar com os compradores do cenário de leilões e acompanhar o mesmo lote. Licitar, observar a liderança e o histórico, desligar/religar a rede e confirmar reconciliação. Os atalhos +5/+10/+25 € preparam uma proposta e exigem confirmação. |
+| Papel            | Percurso e verificação                                                                                                                                                                                                                                                                                                        |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Visitante        | `/`, `/produtos`, `/produtores`, `/leiloes`: pesquisar nome/ingrediente/produtor, combinar filtros, ordenar, paginar e abrir detalhes. O mapa de um perfil só carrega após escolha e quando existe um ponto público autorizado. A pesquisa dos leilões é explicitamente limitada à página carregada.                          |
+| Comprador        | `/registo`, `/entrar`, `/area/comprador`, `/carrinho`, `/checkout`: verificar a cesta local independente por conta, escondida no logout e recuperada no novo login; importar a cesta de visitante apenas por confirmação explícita. Comprar produtos, consultar encomendas, confirmar a receção e avaliar compras concluídas. |
+| Produtor         | `/area/produtor`: gerir produtos, fotografias, perfil, condições comerciais e limiares de stock; preparar encomendas; criar e acompanhar leilões; consultar indicadores próprios. Usar as contas produtoras aprovadas dos cenários.                                                                                           |
+| Administrador    | `/area/administrador`: consultar utilizadores, aprovar/rejeitar candidaturas, supervisionar encomendas e leilões e moderar avaliações/conteúdos com motivo e auditoria. A supervisão não concede poderes operacionais sobre encomendas ou ofertas.                                                                            |
+| Dois compradores | Abrir dois perfis de navegador ou uma janela normal e outra privada e acompanhar o mesmo lote com as contas do cenário. Os atalhos +5/+10/+25 € exigem confirmação. Após o fim, só o vencedor finaliza a compra em `/checkout/leilao/:id`, sem alterar a cesta normal; a encomenda associada segue para gestão do produtor.   |
 
 Para uma demonstração automática curta de dois clientes Socket.IO reais, independente do navegador:
 
@@ -135,3 +137,14 @@ Executar as três suites Playwright sequencialmente. As duas suites reais criam 
 - A aplicação não comprova a entrega dos elementos externos: relatório académico até 20 páginas, vídeo até 5 minutos, partilha com o docente e defesa individual. O relatório técnico da auditoria não substitui automaticamente esses elementos.
 
 O projeto utiliza bibliotecas e assistência de IA, declaradas no [README](../../README.md). O estudante é responsável por rever, compreender e explicar a implementação e deve incluir essa declaração no relatório académico.
+
+## Resolução de problemas e dependências locais
+
+- **MongoDB indisponível ou erro de transação:** confirmar que Docker está ativo e que o serviço `mongo-test` iniciou com o replica set previsto. Não apontar os testes para outra base nem eliminar volumes para resolver o erro.
+- **Portas ocupadas:** parar apenas os processos de revisão próprios antes das suites reais. Não executar simultaneamente os dois conjuntos de integração nas portas 3011 e 5183.
+- **HTTP 401 após atualizar a página:** a sessão é apenas em memória; iniciar sessão novamente. Contas desativadas, tokens expirados e alterações de papéis continuam sujeitos à autorização backend.
+- **Fotografia ou build em falta:** os recursos originais estão em `apps/web/public/`; `dist/` é regenerado por `npm run build` e pelo build da API. `npm start` da API exige esse build. `vite preview` não fornece o proxy de desenvolvimento para a API.
+- **Chrome indisponível:** instalar Google Chrome localmente ou selecionar um canal já instalado com `PLAYWRIGHT_CHANNEL`. A instalação npm não instala automaticamente o navegador configurado.
+- **Avisos npm:** a auditoria de produção não identificou vulnerabilidades conhecidas na verificação da Fase 14.1. A auditoria completa tem dez avisos moderados associados à cadeia de ferramentas de desenvolvimento (minimatch/ESLint). A instalação local contém três pacotes excedentes preexistentes: `@emnapi/runtime`, `@img/sharp-wasm32` e `tslib`. Foram preservados; não remover ou atualizar automaticamente dependências para suprimir avisos.
+
+O [índice documental](../README.md) separa as instruções atuais das especificações e dos registos históricos. Nesta revisão, os logs e resultados configurados ficam fora do repositório; não são necessários para iniciar a aplicação. Por omissão, Playwright pode gerar `test-results/` dentro do projeto, ignorado pelo Git; usar `--output` com uma pasta temporária externa para isolar os resultados. Alguns testes legados ainda gravam capturas em caminhos fixos de `/private/tmp`, que são renovadas ao repetir a suite. Preservar evidências necessárias antes de uma nova execução e não eliminar metadados locais de finalidade incerta.

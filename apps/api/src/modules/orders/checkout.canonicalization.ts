@@ -14,6 +14,7 @@ export function canonicalizeCheckout(
   const canonical = {
     versao: checkoutCanonicalVersion,
     compradorContaId: input.contexto.compradorContaId,
+    ...(input.contexto.leilaoOrigemId ? { leilaoOrigemId: input.contexto.leilaoOrigemId } : {}),
     linhas: input.pedido.linhas.map((line) => ({
       produtoId: line.produtoId,
       produtorContaId: line.produtorContaId,

@@ -186,8 +186,11 @@ test('dois React reais: ofertas, liderança, relógio, desconexão, reconexão e
       timeout: 55000,
     });
     await expect(A.getByText('O leilão chegou ao fim.', { exact: true })).toBeVisible();
+    await expect(B.getByRole('region', { name: 'Compra do lote' })).toContainText('14,00');
+    await expect(B.getByRole('link', { name: 'Finalizar compra', exact: true })).toBeVisible();
+    await expect(A.getByRole('link', { name: 'Finalizar compra', exact: true })).toHaveCount(0);
     for (const p of [A, B]) {
-      await expect(p.locator('.auction-final')).toContainText('14,00');
+      await expect(p.locator('.auction-final[role="status"]')).toContainText('14,00');
       await expect(p.getByRole('button', { name: 'Confirmar oferta', exact: true })).toBeDisabled();
       const storage = await p.evaluate(() => ({
         local: { ...localStorage },

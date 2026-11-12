@@ -259,6 +259,7 @@ test('produtor novo: candidatura e aprovação reais, loja, foto, publicação, 
       .getByRole('button', { name: 'Adicionar ' + item.name + ' ao carrinho', exact: true })
       .click();
     await login(buyer, customer, '/checkout');
+    await buyer.getByRole('button', { name: 'Importar cesta de visitante', exact: true }).click();
     await buyer
       .getByLabel('Pagamento · ' + seller.nomePublico, { exact: true })
       .selectOption('dinheiro');

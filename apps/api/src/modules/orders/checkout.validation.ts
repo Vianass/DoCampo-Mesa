@@ -284,7 +284,17 @@ export function validateCheckoutInput(
   overrides: Partial<CheckoutTechnicalLimits> = {},
 ): ValidatedCheckoutInput {
   const limits = resolveCheckoutLimits(overrides);
-  const identity = object(context, ['compradorContaId'], ['compradorContaId'], 'contexto');
+  const identity = object(
+    context,
+    ['compradorContaId', 'leilaoOrigemId'],
+    ['compradorContaId'],
+    'contexto',
+  );
+  const leilaoOrigemId =
+    identity.leilaoOrigemId === undefined
+      ? undefined
+      : identifier(identity.leilaoOrigemId, 'contexto.leilaoOrigemId');
+  const source = leilaoOrigemId ? 'leilao' : 'catalogo';
   const compradorContaId = identifier(identity.compradorContaId, 'contexto.compradorContaId');
   if (typeof key !== 'string' || !/^[\x21-\x7e]{1,128}$/.test(key))
     invalid(
@@ -332,7 +342,7 @@ export function validateCheckoutInput(
       return input.quantidade;
     });
     const precoReferenciaCent = commercial(field + '.ofertaAceite', () => {
-      validateOrderPrice(offer.precoReferenciaCent);
+      validateOrderPrice(offer.precoReferenciaCent, source);
       return offer.precoReferenciaCent;
     });
     return {
@@ -349,6 +359,13 @@ export function validateCheckoutInput(
       },
     };
   });
+  if (
+    leilaoOrigemId &&
+    (lines.length !== 1 ||
+      lines[0]!.quantidade !== 1 ||
+      lines[0]!.ofertaAceite.unidadeVenda.modalidade !== 'embalagem')
+  )
+    invalid('PEDIDO_INVALIDO', 'pedido.linhas', 'A compra de leilão exige um lote indivisível.');
   const selections = rawConditions.map((value, i) =>
     conditions(value, limits, `pedido.condicoesPorProdutor[${i}]`),
   );
@@ -365,7 +382,7 @@ export function validateCheckoutInput(
       'É necessária exatamente uma seleção por produtor declarado.',
     );
   const raw = {
-    contexto: { compradorContaId },
+    contexto: { compradorContaId, ...(leilaoOrigemId ? { leilaoOrigemId } : {}) },
     chaveIdempotencia: key,
     pedido: { linhas: lines, condicoesPorProdutor: selections },
   };
@@ -378,7 +395,9 @@ export function validateCheckoutInput(
     unidadeVenda: line.ofertaAceite.unidadeVenda,
     versaoUnidade: line.ofertaAceite.revisaoProdutoObservada,
   }));
-  const aggregated = commercial('pedido.linhas', () => aggregateOrderLines(calculationLines));
+  const aggregated = commercial('pedido.linhas', () =>
+    aggregateOrderLines(calculationLines, source),
+  );
   const normalizedLines = aggregated.map((line) => ({
     produtoId: line.produtoId,
     produtorContaId: producerByProduct.get(line.produtoId)!,
@@ -394,13 +413,16 @@ export function validateCheckoutInput(
     calculateOrderProductsSubtotal(
       selections.map(
         (selection) =>
-          calculateOrderAmounts({
-            linhas: aggregated.filter(
-              (line) => producerByProduct.get(line.produtoId) === selection.produtorContaId,
-            ),
-            modalidadeRececao: selection.modalidade,
-            taxaEntregaCent: selection.taxaEntregaAceiteCent,
-          }).totalCent,
+          calculateOrderAmounts(
+            {
+              linhas: aggregated.filter(
+                (line) => producerByProduct.get(line.produtoId) === selection.produtorContaId,
+              ),
+              modalidadeRececao: selection.modalidade,
+              taxaEntregaCent: selection.taxaEntregaAceiteCent,
+            },
+            source,
+          ).totalCent,
       ),
     ),
   );
@@ -408,7 +430,7 @@ export function validateCheckoutInput(
     a.produtorContaId < b.produtorContaId ? -1 : a.produtorContaId > b.produtorContaId ? 1 : 0,
   );
   return freeze({
-    contexto: { compradorContaId },
+    contexto: { compradorContaId, ...(leilaoOrigemId ? { leilaoOrigemId } : {}) },
     chaveIdempotencia: key,
     pedido: { linhas: normalizedLines, condicoesPorProdutor: selections },
   });

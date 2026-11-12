@@ -26,7 +26,10 @@ test('Swagger real: registo, JWT em Authorize e Try it out autenticado, sem pers
   });
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(api + '/api-docs?url=https://untrusted.example.invalid/openapi.json');
-  await expect(page.locator('.swagger-ui .opblock')).toHaveCount(76);
+  await expect(page.locator('.swagger-ui .opblock')).toHaveCount(78);
+  await expect(
+    page.locator('.opblock-summary-path').filter({ hasText: /^\/auctions\/\{id\}\/checkout$/ }),
+  ).toHaveCount(2);
   const loginOperation = page.locator('.opblock').filter({
     has: page.locator('.opblock-summary-path').filter({ hasText: /^\/auth\/login$/ }),
   });
@@ -64,7 +67,7 @@ test('Swagger real: registo, JWT em Authorize e Try it out autenticado, sem pers
   expect(page.url()).not.toContain(accessToken);
   await page.screenshot({ path: evidence + '/swagger-authenticated-desktop.png', fullPage: false });
   await page.reload();
-  await expect(page.locator('.swagger-ui .opblock')).toHaveCount(76);
+  await expect(page.locator('.swagger-ui .opblock')).toHaveCount(78);
   await page.locator('.auth-wrapper .authorize').click();
   await expect(page.locator('.auth-container input')).toHaveValue('');
   expect(external).toEqual([]);
@@ -77,7 +80,7 @@ for (const width of widths)
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(api + '/api-docs');
-    await expect(page.locator('.swagger-ui .opblock')).toHaveCount(76);
+    await expect(page.locator('.swagger-ui .opblock')).toHaveCount(78);
     await page.screenshot({ path: evidence + '/swagger-overview-' + width + '.png' });
     const contrast = await page.locator('.opblock-summary-method').evaluateAll((els) =>
       els.map((e) => {

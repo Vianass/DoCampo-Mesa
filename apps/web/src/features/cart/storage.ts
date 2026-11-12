@@ -4,7 +4,13 @@ import type { Product } from '../../types/market';
 import type { CartSession, CartState } from './types';
 import { emptyCart, reconcileItems } from './model';
 
-export const CART_STORAGE_KEY = demonstrationSite ? 'docampo.cart.demo.v1' : 'docampo.cart.v1';
+// O armazenamento antigo não tinha proprietário: conserva-se, mas nunca é atribuído a uma conta.
+export const CART_STORAGE_KEY = demonstrationSite
+  ? 'docampo.cart.demo.v1'
+  : 'docampo.cart.guest.v2';
+export function cartStorageKey(owner?: string) {
+  return owner && !demonstrationSite ? 'docampo.cart.account.v2.' + owner : CART_STORAGE_KEY;
+}
 export const CART_STORAGE_VERSION = 1;
 export function restoreCart(
   raw: string | null,
@@ -58,9 +64,13 @@ export function restoreCart(
     };
   }
 }
-export function readCartStorage(catalog: readonly Product[], now: string): CartSession {
+export function readCartStorage(
+  catalog: readonly Product[],
+  now: string,
+  key = CART_STORAGE_KEY,
+): CartSession {
   try {
-    return restoreCart(window.localStorage.getItem(CART_STORAGE_KEY), catalog, now);
+    return restoreCart(window.localStorage.getItem(key), catalog, now);
   } catch {
     return {
       cart: emptyCart(now),
@@ -71,10 +81,10 @@ export function readCartStorage(catalog: readonly Product[], now: string): CartS
     };
   }
 }
-export function writeCartStorage(cart: CartState): boolean {
+export function writeCartStorage(cart: CartState, key = CART_STORAGE_KEY): boolean {
   try {
     window.localStorage.setItem(
-      CART_STORAGE_KEY,
+      key,
       JSON.stringify({
         version: CART_STORAGE_VERSION,
         items: cart.items,

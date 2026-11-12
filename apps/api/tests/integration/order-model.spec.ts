@@ -52,13 +52,20 @@ afterAll(async () => {
 });
 
 describe('persistência orders em MongoDB real, sem checkout', () => {
-  it('cria apenas a coleção orders e os cinco índices explícitos além de _id', async () => {
+  it('mantém a coleção orders e os índices explícitos, incluindo origem única de leilão', async () => {
     expect(database!.connection.modelNames()).toEqual(['Order']);
     expect(
       (await database!.connection.db!.listCollections().toArray()).map((item) => item.name),
     ).toEqual(['orders']);
     const indexes = await Order.listIndexes();
-    expect(indexes).toHaveLength(11);
+    expect(indexes).toHaveLength(12);
+    expect(indexes).toContainEqual(
+      expect.objectContaining({
+        key: { leilaoOrigem: 1 },
+        unique: true,
+        partialFilterExpression: { leilaoOrigem: { $type: 'objectId' } },
+      }),
+    );
     for (const key of [
       { createdAt: -1, _id: -1 },
       { estado: 1, createdAt: -1, _id: -1 },

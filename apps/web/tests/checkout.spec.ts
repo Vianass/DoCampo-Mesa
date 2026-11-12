@@ -18,6 +18,15 @@ async function login(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   // A navegação seguinte só pode começar depois de o login e o redirecionamento terminarem.
   await expect(page).not.toHaveURL(/\/entrar(?:\?|$)/);
+  const importGuest = page.getByRole('button', {
+    name: 'Importar cesta de visitante',
+    exact: true,
+  });
+  const hasGuest = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem('docampo.cart.guest.v2') ?? '{"items":[]}').items.length > 0,
+  );
+  if (hasGuest && new URL(page.url()).pathname === '/checkout') await importGuest.click();
 }
 async function fields(page: import('@playwright/test').Page) {
   await page.getByLabel('Pagamento · Origem de teste', { exact: true }).selectOption('dinheiro');
@@ -47,7 +56,12 @@ test('checkout 201 envia contrato real, JWT em header e uma chave opaca sem tota
   expect(Object.keys(call.body as object).sort()).toEqual(['condicoesPorProdutor', 'linhas']);
   expect(JSON.stringify(call.body)).not.toContain('compradorContaId');
   expect(
-    (await page.evaluate(() => JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}'))).items,
+    (
+      await page.evaluate(
+        (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+        fixtureUser.id,
+      )
+    ).items,
   ).toEqual([]);
 });
 test('HTTP 200 apresenta confirmação recuperada e dados do servidor', async ({ page }) => {
@@ -69,7 +83,12 @@ test('HTTP 503 mantém tentativa e cesta e repete exatamente chave e payload', a
     page.getByText('Ainda não foi possível confirmar o resultado.', { exact: false }),
   ).toBeVisible();
   expect(
-    (await page.evaluate(() => JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}'))).items,
+    (
+      await page.evaluate(
+        (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+        fixtureUser.id,
+      )
+    ).items,
   ).toHaveLength(1);
   expect(orders(api)).toHaveLength(1);
   api.postStatus = 200;
@@ -141,7 +160,12 @@ test('indisponibilidade da preparação tem erro e nova tentativa sem apagar a c
   await login(page);
   await expect(page.getByRole('alert')).toContainText('Não foi possível preparar a compra');
   expect(
-    (await page.evaluate(() => JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}'))).items,
+    (
+      await page.evaluate(
+        (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+        fixtureUser.id,
+      )
+    ).items,
   ).toHaveLength(1);
   api.prepareStatus = 200;
   await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
@@ -171,13 +195,16 @@ test('papel sem comprador não recebe formulário de compra', async ({ page }) =
   expect(api.calls).toEqual([]);
 });
 test('armazenamento indisponível bloqueia envio antes de criar uma encomenda', async ({ page }) => {
-  await page.addInitScript((key) => {
-    const original = Storage.prototype.setItem;
-    Storage.prototype.setItem = function (k, v) {
-      if (k === key) throw new DOMException('Quota fictícia', 'QuotaExceededError');
-      return original.call(this, k, v);
-    };
-  }, pendingPurchaseKey);
+  await page.addInitScript(
+    (key) => {
+      const original = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (k, v) {
+        if (k === key) throw new DOMException('Quota fictícia', 'QuotaExceededError');
+        return original.call(this, k, v);
+      };
+    },
+    pendingPurchaseKey + '.' + fixtureUser.id,
+  );
   const { api } = await setup(page);
   await fields(page);
   await page.getByRole('button', { name: 'Confirmar compra', exact: true }).click();
@@ -195,7 +222,12 @@ test('recibo inválido não limpa o carrinho nem apresenta sucesso', async ({ pa
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'A tua compra está confirmada.' })).toHaveCount(0);
   expect(
-    (await page.evaluate(() => JSON.parse(localStorage.getItem('docampo.cart.v1') ?? '{}'))).items,
+    (
+      await page.evaluate(
+        (id) => JSON.parse(localStorage.getItem('docampo.cart.account.v2.' + id) ?? '{}'),
+        fixtureUser.id,
+      )
+    ).items,
   ).toHaveLength(1);
 });
 test('falha de detalhe não desmente uma compra confirmada', async ({ page }) => {

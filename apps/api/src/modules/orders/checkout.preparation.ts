@@ -76,15 +76,20 @@ export function prepareCheckoutOrders(
   producers: ReadonlyMap<string, ProducerEligibilityRecord>,
   execution: CheckoutExecution,
 ) {
+  const source = input.contexto.leilaoOrigemId ? 'leilao' : 'catalogo';
   for (const line of input.pedido.linhas) {
-    validateProductStockCandidate(products.get(line.produtoId) ?? null, {
-      produtoId: new Types.ObjectId(line.produtoId),
-      produtorId: new Types.ObjectId(line.produtorContaId),
-      revisaoEsperada: line.ofertaAceite.revisaoProdutoObservada,
-      quantidade: line.quantidade,
-      precoAceiteCent: line.ofertaAceite.precoReferenciaCent,
-      unidadeAceite: line.ofertaAceite.unidadeVenda,
-    });
+    validateProductStockCandidate(
+      products.get(line.produtoId) ?? null,
+      {
+        produtoId: new Types.ObjectId(line.produtoId),
+        produtorId: new Types.ObjectId(line.produtorContaId),
+        revisaoEsperada: line.ofertaAceite.revisaoProdutoObservada,
+        quantidade: line.quantidade,
+        precoAceiteCent: line.ofertaAceite.precoReferenciaCent,
+        unidadeAceite: line.ofertaAceite.unidadeVenda,
+      },
+      source,
+    );
   }
   const buyer = new Types.ObjectId(input.contexto.compradorContaId);
   const orders: OrderRecord[] = [];
@@ -104,21 +109,25 @@ export function prepareCheckoutOrders(
     const group = input.pedido.linhas.filter(
       (line) => line.produtorContaId === selection.produtorContaId,
     );
-    const amounts = calculateOrderAmounts({
-      linhas: group.map((line) => {
-        const product = products.get(line.produtoId)!;
-        return {
-          produtoId: line.produtoId,
-          quantidade: line.quantidade,
-          precoReferenciaCent: product.precoCent!,
-          unidadeVenda: line.ofertaAceite.unidadeVenda,
-          versaoUnidade: line.ofertaAceite.revisaoProdutoObservada,
-          stockDisponivel: product.stockDisponivel!,
-        };
-      }),
-      modalidadeRececao: selection.modalidade,
-      taxaEntregaCent: selection.modalidade === 'entrega' ? producer.comercial.taxaEntregaCent! : 0,
-    });
+    const amounts = calculateOrderAmounts(
+      {
+        linhas: group.map((line) => {
+          const product = products.get(line.produtoId)!;
+          return {
+            produtoId: line.produtoId,
+            quantidade: line.quantidade,
+            precoReferenciaCent: product.precoCent!,
+            unidadeVenda: line.ofertaAceite.unidadeVenda,
+            versaoUnidade: line.ofertaAceite.revisaoProdutoObservada,
+            stockDisponivel: product.stockDisponivel!,
+          };
+        }),
+        modalidadeRececao: selection.modalidade,
+        taxaEntregaCent:
+          selection.modalidade === 'entrega' ? producer.comercial.taxaEntregaCent! : 0,
+      },
+      source,
+    );
     const ids = execution.encomendas.get(selection.produtorContaId)!;
     const date = () => new Date(execution.criadaEm.getTime());
     const event = <State extends string>(id: string, para: State): OrderAuditEvent<State> => ({

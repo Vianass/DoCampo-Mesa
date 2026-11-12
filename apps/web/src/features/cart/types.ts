@@ -49,6 +49,7 @@ export type CartOperation =
   | { type: 'remove'; productId: string }
   | { type: 'clear' };
 export type CartAction =
+  | { type: 'restore'; session: CartSession }
   | { type: 'purchase-confirmed'; lines: readonly CartPurchaseLine[]; now: string }
   | { type: 'operate'; operation: CartOperation; catalog: readonly Product[]; now: string }
   | { type: 'reconcile'; catalog: readonly Product[]; now: string }

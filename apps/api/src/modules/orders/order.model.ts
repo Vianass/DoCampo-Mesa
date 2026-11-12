@@ -417,6 +417,7 @@ export function createOrderModel(connection: Connection): Model<OrderRecord> {
 
   const schema = new Schema<OrderRecord>(
     {
+      leilaoOrigem: { type: Schema.Types.ObjectId, ref: 'Auction', default: undefined },
       operacaoCompraId: id(),
       comprador: reference('User'),
       produtor: reference('User'),
@@ -481,6 +482,10 @@ export function createOrderModel(connection: Connection): Model<OrderRecord> {
     throw new Error('Eliminação de encomendas/auditoria indisponível neste bloco.');
   });
   schema.index({ createdAt: -1, _id: -1 });
+  schema.index(
+    { leilaoOrigem: 1 },
+    { unique: true, partialFilterExpression: { leilaoOrigem: { $type: 'objectId' } } },
+  );
   schema.index({ estado: 1, createdAt: -1, _id: -1 });
   schema.index({ 'pagamento.estado': 1, createdAt: -1, _id: -1 });
   schema.index({ produtor: 1, createdAt: -1, _id: -1 });

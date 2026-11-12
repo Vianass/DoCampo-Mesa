@@ -1,76 +1,37 @@
-> **Fase 5A — catálogo local implementado:** consultas públicas de produtos/produtores e gestão própria de produtos com JWT, If-Match e arquivo lógico. Ver [contratos React](frontend-integration.md) e [OpenAPI](openapi.yaml). Checkout permanece interno; não se iniciou 5B nem se alterou o frontend.
+# Documentação da API
 
-> **Atualização da Fase 4 — 26/10/2026:** autenticação JWT real implementada localmente, com os quatro endpoints pedidos, Argon2id/bcrypt legado e controlo de acesso atual. Ver [segurança](security.md), [OpenAPI](openapi.yaml) e [arranque da API](../../apps/api/README.md). Operações comerciais continuam sem endpoints; frontend e Fase 0 preservados. Os registos seguintes descrevem as suas datas históricas.
+A API está integrada em `main`, com autenticação, catálogo, checkout, encomendas, leilões, avaliações e administração reais. As descrições de fases anteriores registam o estado da respetiva entrega e não representam automaticamente o estado atual.
 
-# Fase 3.0 — contrato da API e decisões de entrada
+## Consultar e executar
 
-> Estado vigente após nova aprovação: O01–O16 e OR01–OR12 aprovadas; orders pronto documentalmente para persistência isolada, aguardando autorização de implementação. Ver [consolidação vigente](phase-3.2-orders-readiness.md). Recomendações/pedidos de aprovação das revisões anteriores são históricos e não reabrem estas decisões.
+- [Configuração da API](../../apps/api/README.md) e [guia local completo](../delivery/local-execution.md).
+- [OpenAPI](openapi.yaml): contrato com propostas históricas identificadas; Swagger publica as operações efetivamente montadas em `/api-docs/`.
+- [Decisões](decisions.md), [segurança](security.md), [mapeamento de dados](data-mapping.md) e [rastreabilidade](traceability.md).
+- [Integração com o frontend](frontend-integration.md) e [planeamento técnico inicial](implementation-plan.md).
 
-Estado: **Fase 3.1 publicada; blocos 3.2 users/producers/products implementados localmente**. Branch atual `feat/api-foundation`, base local `15c85e9`; main `c10d031`. C01/C02/C04/C06 e o âmbito funcional Q01/Q02/Q03/Q04/Q06/Q14 estão aprovados; O01–O16 atualizam orders no âmbito expresso. T32-01–T32-06 aprovadas no âmbito explícito; restantes Q, C03/C05 e detalhes técnicos residuais permanecem pendentes. A01–A03 aprovadas; P01–P08 e esclarecimentos de preço/ingredientes aprovados para products, além do primeiro bloco de identidade. Sem restantes modelos, novas dependências ou operações Git de escrita.
+## Fundação e persistência — Fases 3–4
 
-Ver [entrega products](phase-3.2-products.md), [entrega users/producers](phase-3.2-identity-implementation.md), [prontidão A/B/C e primeiro bloco](phase-3.2-readiness.md), [proposta 3.2](phase-3.2-proposal.md), [modelos candidatos](phase-3.2-models.md), [entrega 3.1](foundation-implementation.md) e [comandos da API](../../apps/api/README.md). Os documentos históricos preservam os resultados/datas das fases anteriores; as novas aprovações são registadas sem alterar os nove originais da Fase 0. A integração cumulativa em main permanece adiada.
+- [Proposta de fundação](phase-3.1-proposal.md) e [implementação](foundation-implementation.md).
+- [Proposta de modelos](phase-3.2-proposal.md), [preparação](phase-3.2-readiness.md), [especificação dos modelos](phase-3.2-models.md) e [users/producers](phase-3.2-identity-implementation.md).
+- [Products](phase-3.2-products.md), [decisões de orders](phase-3.2-orders-readiness.md) e [persistência de orders](phase-3.2-orders-persistence.md).
+- [Condições comerciais](phase-3.2-producers-commercial.md) e [concorrência](phase-3.2-concurrency.md).
+- [Arquitetura do checkout](phase-3.2-checkout-readiness.md), [contrato](phase-3.2-checkout-contract.md), [idempotência](phase-3.2-checkout-idempotency.md) e [transação](phase-3.2-checkout-transaction.md).
 
-## Revisão documental de orders — estado atual
+## Funcionalidades integradas — Fases 5–11
 
-Base: feat/api-foundation em 15c85e9, após os dois commits locais de products; main permanece c10d031. **O01–O16 aprovadas funcionalmente; orders apenas analisado/documentado, sem implementação autorizada.** A [análise de prontidão de orders](phase-3.2-orders-readiness.md) distingue bloqueios do modelo, serviços futuros e contrato. OR01–OR12 foram posteriormente aprovadas no conteúdo explícito; ver a consolidação vigente no início do relatório. O01 fecha a escolha funcional de Q02; Q05/Q06 são atualizadas no âmbito expresso. Restantes Q/C continuam no seu âmbito residual.
+- Catálogo e autenticação React: [contratos de integração](frontend-integration.md) e [segurança](security.md).
+- Leilões: [backend](phase-6a-auctions.md), [Socket.IO](phase-6b-socketio.md) e [React](phase-6c-react-auctions.md).
+- Candidaturas: [backend](phase-7a-producer-applications.md), [React do candidato](phase-7b-react-producer-applications.md) e [gestão administrativa](phase-7c-admin-producer-applications.md).
+- Administração: [dashboard e utilizadores](phase-8a-admin-dashboard-users.md), [encomendas](phase-8b-admin-order-supervision.md) e [leilões](phase-8c-admin-auction-supervision.md).
+- [Avaliações e moderação](phase-9-reviews-moderation.md).
+- [Conclusão de encomendas e notificações privadas](phase-10-orders-realtime.md).
+- [Gestão real do produtor](phase-11a-producer-management.md), [descoberta e mapas](phase-11b-discovery-and-maps.md), [licitações rápidas](phase-11c-quick-bidding.md) e [denúncias/moderação](phase-11d-content-moderation.md).
 
-Os schemas documentais de orders foram alinhados com os seis estados e as aprovações O/OR; comandos específicos e projeções complementares ficam na fase HTTP/segurança. Não inferir um modelo Mongoose ou uma API comercial disponível por existir contrato proposto. Registos anteriores referem-se às respetivas tarefas históricas.
+## Preparação de entrega e histórico
 
-## Documentos e leitura
+- [Swagger, segurança e preparação de produção](phase-12-production-readiness.md).
+- [Preparação Cloud](../deployment/phase-13a-cloud-deployment.md): infraestrutura preparada, sem deployment ou armazenamento Cloud ativo.
+- [Carrinhos por identidade e compra de lotes vencedores — Fase 14.2](phase-14.2-cart-auction-purchase.md): política de visitante, persistência local, confirmação pelo vencedor e encomenda gerida pelo produtor.
+- [Documentação original da Fase 0 e restantes guias](../README.md).
 
-| Documento                                                                    | Conteúdo                                                                                                                                                         |
-| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [phase-3.2-orders-readiness.md](phase-3.2-orders-readiness.md)               | O01–O16, estrutura preliminar de orders, questões OR01–OR12, dependências, plano e testes; sem implementação.                                                    |
-| [phase-3.2-products.md](phase-3.2-products.md)                               | P01–P08, esclarecimentos, modelo products, validações, índices, testes e limites; sem endpoints.                                                                 |
-| [phase-3.2-proposal.md](phase-3.2-proposal.md)                               | Aprovações funcionais/técnicas, comparação quantitativa histórica, categorias propostas, relações, impacto e plano; não autoriza implementação.                  |
-| [phase-3.2-models.md](phase-3.2-models.md)                                   | Sete modelos candidatos com campos, índices, integridade, privacidade e exemplos documentais, sem dados inseridos.                                               |
-| [phase-3.2-identity-implementation.md](phase-3.2-identity-implementation.md) | Dois modelos locais, campos/índices/privacidade, 124 testes backend e limites; sem endpoints novos.                                                              |
-| [phase-3.2-readiness.md](phase-3.2-readiness.md)                             | Pendências A/B/C, propostas A01–A03 e primeiro bloco users/producers, primeiro bloco posteriormente autorizado e implementado; outros modelos continuam futuros. |
-| [openapi.yaml](openapi.yaml)                                                 | Contrato inicial OpenAPI 3.0.3: autenticação/utilizadores, produtores/candidaturas, produtos, encomendas, avaliações, leilões/licitações e administração.        |
-| [decisions.md](decisions.md)                                                 | Estado das decisões, análise Q01–Q16, alternativas e recomendações por aprovar.                                                                                  |
-| [data-mapping.md](data-mapping.md)                                           | Recursos, coleções, schemas futuros, referências e DTOs; não implementa modelos Mongoose.                                                                        |
-| [security.md](security.md)                                                   | Matriz de permissões, projeções e condições antes de ativar escritas.                                                                                            |
-| [frontend-integration.md](frontend-integration.md)                           | Migração gradual, adaptação dos mocks e preservação do frontend aprovado.                                                                                        |
-| [implementation-plan.md](implementation-plan.md)                             | Subfases 3.1–3.7, dependências, ficheiros previstos, testes, aceitação e riscos.                                                                                 |
-| [foundation-implementation.md](foundation-implementation.md)                 | Implementação local autorizada 3.1, versões efetivas, ambiente, testes e limitações.                                                                             |
-| [phase-3.1-proposal.md](phase-3.1-proposal.md)                               | Proposta histórica de 2026-10-15; os ajustes autorizados em 2026-10-16 e as versões efetivas constam da entrega 3.1.                                             |
-| [traceability.md](traceability.md)                                           | Correspondência académica, inventário de operações e resultado das verificações.                                                                                 |
-
-## Autoridade e estados
-
-- **Obrigatório académico (O):** requisitos explícitos do PDF, referenciados por página e pelos RF/RNF existentes.
-- **Aprovado/fixado (A):** escolhas fornecidas pelo utilizador em F0 e decisões explícitas posteriores. Node.js/Express/TypeScript/Mongoose, monorepo modular, MongoDB Atlas, OpenAPI/Swagger, JWT/bcrypt e ferramentas de teste já estão escolhidos; a fundação Express/TypeScript/Mongoose está implementada localmente; autenticação, Swagger e serviços comerciais continuam futuros.
-- **Proposta documentada (P):** solução D ou recomendação Q/C que precisa de aprovação quando afetar implementação. Não equivale a requisito académico.
-- **Pendente (Q/C):** operação, schema ou política não podem ser estabilizados sem resolver as dependências indicadas. Aprovação de um protótipo não aprova automaticamente regras comerciais para contas reais.
-
-Além de preparar documentação local e adiar integração em `main`, o utilizador aprovou em 2026-10-15 C01/C02/C04/C06 no âmbito do [registo](decisions.md). As aprovações funcionais posteriores Q01/Q03/Q04/Q06/Q14 e posteriormente O01–O16 estão registadas no estado atual; Q02 está funcionalmente resolvida por O01 e as restantes Q conservam detalhes residuais; pressupostos demonstrativos de fases anteriores são evidência de interface, não respostas definitivas.
-
-## Convenções do contrato
-
-`servers.url: /api` combinado com `/products` representa `/api/products`. Não anuncia servidor disponível. `security: []` significa operação pública, também utilizável por pessoas autenticadas; as demais operações usam `bearerAuth`. As extensões `x-authorized-roles`, `x-decision-dependencies`, `x-contract-status` e `x-implementation-stage` documentam papéis, bloqueios e fase prevista. As extensões são metadados: nenhum middleware ou permissão é gerado nesta subfase.
-
-Apenas GET /health é implementado localmente; as 44 operações comerciais/futuras continuam propostas bloqueadas, sem endpoints em funcionamento. `proposta-bloqueada` mantém todas as operações comerciais futuras inacessíveis: faltam detalhes técnicos residuais T32, regras Q e segurança real C04. x-decision-dependencies passa a indicar rastreabilidade a Q, não que todos os IDs referidos estejam integralmente pendentes; consultar x-approved-functional-decisions e o registo de decisões. As convenções C01 estão aprovadas, mas os nomes adicionais de rotas/DTOs continuam sujeitos a revisão; só os métodos/caminhos/códigos explicitamente exigidos são fixados pelo enunciado. O pedido atual solicita cobertura inicial de toda a API; isso não antecipa a implementação de autenticação (semana 4), sockets (semana 5) ou Cloud (semana 6).
-
-O contrato usa campos públicos em português conforme C01 aprovada, concretizando essa parte de D14, mantendo modelos de apresentação existentes em inglês através de adaptadores futuros. EUR/cêntimos inteiros estão aprovados em Q06, com entrega/taxa por produtor e pagamento direto definidos por O05–O10; formatos/limites residuais estão nas OR e preços de outros recursos mantêm âmbito próprio. P02 fixa produto entre 1 e 1 000 000 cêntimos e os esclarecimentos fixam a referência por kg/L/unidade/embalagem. T32-02 aprova inteiros em g/ml/unidades/número de embalagens; T32-03 aprova half-up por linha e soma dos subtotais arredondados. Quantity passa a inteiro; SaleUnit usa campos candidatos alinhados com os modelos, ainda sem aprovação global de limites/required. T32-04 aprova meses opcionais informativos; T32-05 aprova rascunho/publicado/arquivado, sem compra quando stock zero. T32-06 aprova as sete coleções; users/producers/products estão implementadas/testadas localmente, sem os outros quatro modelos. Escala/cardinalidade de avaliações, taxonomias, limiares, durações de sessão e limites de texto não são fixados copiando os mocks.
-
-`POST /orders` propõe agora exclusivamente CheckoutGroup, recibo original imutável da compra global, inclusive com um produtor; OR05 exige chave idempotente global e transação. Campos/envelope são concretização técnica documental, sem operação implementada ou resposta variável. PUT de produto segue a substituição completa dos campos editáveis aprovada em C01; os campos de servidor são preservados e nunca atribuídos pelo cliente. Paginação, metadados e limites ainda dependem de C03.
-
-Não há escrita REST de bids neste rascunho. `GET /auctions/{id}/bids` e `GET /me/bids` cobrem consultas; o comando `licitar` pertence ao protocolo Socket.IO futuro, conforme [consistência dos leilões](../architecture/auction-consistency.md). Não se acrescenta processamento online de pagamentos; os registos de pagamento direto O09/O10 são apenas aprovados funcionalmente. Continuam excluídos recuperação real de password, refresh tokens, gestão de permissões, eliminação de contas ou poderes administrativos genéricos.
-
-## Requisitos académicos preservados
-
-PDF p. 17: GET products 200; POST products 201 com Location; PUT products/:id 200; DELETE 204 sem corpo; POST orders; PATCH orders/:id/estado; erros 400/401/403/404. PDF p. 18: users/products/orders/auctions/bids, linhas embebidas, comprador/produtor referenciados, required/enum/min e consulta com operador MongoDB. PDF p. 19: OpenAPI 3, components, bearerAuth e Swagger UI futuro em `/api-docs`. PDF p. 20: bcrypt, JWT com expiração, papel, segredos de ambiente e HTTPS em produção.
-
-A estrutura OpenAPI válida não demonstra código HTTP, autenticação ou consistência implementados. M1 exige esboço; M2 exige API documentada, MongoDB, autenticação e SPA integrada. Este documento fecha a lacuna de contrato inicial identificada na análise, sem declarar M2 concluído.
-
-## Fontes preservadas
-
-Os nove documentos originais continuam sem alterações: [requisitos funcionais](../requirements/functional-requirements.md), [não funcionais](../requirements/non-functional-requirements.md), [casos de utilização](../requirements/use-cases.md), [visão global](../architecture/system-overview.md), [diagramas](../architecture/architecture-diagram.md), [consistência dos leilões](../architecture/auction-consistency.md), [decisões F0](../architecture/decisions.md), [modelo de dados](../database/data-model.md) e [plano oficial](../planning/implementation-plan.md).
-
-Consultaram-se também o [README atual](../../README.md), o [sistema visual](../design/design-system.md), as fontes/tipos/reducers privados e as configurações dos workspaces. O README e notas históricas de entrega ainda descrevem a Fase 2.4.4 como local e as instruções de instalação selecionam a branch do comprador: são desatualizações conhecidas, não alteradas porque esta autorização se restringe à documentação complementar 3.0.
-
-O PDF original tem 27 páginas e SHA-256 `ff42084c30a5a663ce4165ae301c5255dd313f710e51af446fd5dbffe3925243`, igual ao identificado em F0. Foi consultado no caminho local fornecido pelo utilizador, sem copiar o PDF para o repositório. Referência técnica: [OpenAPI 3.0.3](https://spec.openapis.org/oas/v3.0.3.html). Ferramentas/limites da validação estão em [traceability.md](traceability.md).
-
-A fundação 3.1 foi implementada e publicada após autorizações explícitas, nos commits 73ddae2, ddfd588 e 68f41ec. O primeiro bloco A01–A03 de users/producers foi consolidado em dois commits locais autorizados. A autorização anterior acrescentou apenas products, constantes, índices, validações, testes e documentação; a atual é exclusivamente de análise/documentação de orders e não autoriza os restantes modelos, instalações ou operações Git de escrita. As restantes Q/C e os detalhes residuais T32 continuam pendentes; A01–A03 estão aprovadas e aplicadas ao primeiro bloco. A preservação da Fase 0 permanece obrigatória.
-
-P01–P08 e os dois esclarecimentos de products prevalecem sobre propostas antigas quanto à lista final, preço/stock, referência comercial, ingredientes e categoria em rascunho. O registo de identidade e os dois commits locais são preservados; nenhum novo staging/commit/push é autorizado nesta etapa. Resultados atuais em [products](phase-3.2-products.md).
+Os nove documentos da Fase 0 permanecem intactos. Os esclarecimentos do docente sobre Cloud/Laravel facultativos estão contextualizados no guia local; as formulações e versões anteriores dos README permanecem no histórico Git. A [declaração de assistência de IA](../../README.md#bibliotecas-e-assistência-de-ia) aplica-se também aos contratos e à documentação técnica.

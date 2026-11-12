@@ -1,69 +1,350 @@
 # Do Campo à Mesa
 
-**Fase 14 — auditoria final e preparação da entrega local.** Catálogo, autenticação JWT, encomendas, gestão do produtor, administração, avaliações e leilões integram a API e o MongoDB reais. O [guia de execução e revisão académica](docs/delivery/local-execution.md) reúne instalação, ambiente isolado com contas fictícias, percursos por papel, Swagger e testes. Segundo os esclarecimentos do docente, Cloud e Laravel são facultativos; não foi realizado deployment. Os nove documentos da Fase 0 são preservados como análise histórica. Os registos de fases abaixo não substituem este guia atual.
+Projeto individual da unidade curricular **Desenvolvimento Web e para a Cloud**, do **Mestrado em Engenharia Informática do IPVC — ESTG**, 1.º semestre de 2026/2027.
 
-**Fase 13A — preparação local da infraestrutura Cloud.** Templates Vercel/Render, configuração Atlas/proxy, inventário e manutenção segura de fotografias. O fornecedor de armazenamento permanece por escolher; não há contas configuradas, recursos criados ou deployment realizado. Ver [comparação, configuração, autorizações e limitações](docs/deployment/phase-13a-cloud-deployment.md). Sem staging, commit ou push nesta fase. Os registos abaixo descrevem entregas anteriores.
+## Índice
 
-**Fase 12 — Swagger UI, conformidade REST e preparação de produção, implementação local.** Documentação interativa real, compatibilidade segura de estados e configuração independente de localhost. Ver [entrega, segurança e limitações](docs/api/phase-12-production-readiness.md). Sem staging, commit, push ou deployment nesta fase. Os registos seguintes descrevem o estado histórico de cada entrega.
+- [1. Introdução](#1-introdução)
+- [2. Objetivos](#2-objetivos)
+- [3. Funcionalidades implementadas](#3-funcionalidades-implementadas)
+- [4. Tecnologias utilizadas](#4-tecnologias-utilizadas)
+- [5. Arquitetura do sistema](#5-arquitetura-do-sistema)
+- [6. Implementação das funcionalidades](#6-implementação-das-funcionalidades)
+- [7. Segurança e integridade](#7-segurança-e-integridade)
+- [8. Metodologia de desenvolvimento](#8-metodologia-de-desenvolvimento)
+- [9. Desafios e soluções](#9-desafios-e-soluções)
+- [10. Instalação e execução local](#10-instalação-e-execução-local)
+- [11. Testes e validação](#11-testes-e-validação)
+- [12. Limitações e melhorias futuras](#12-limitações-e-melhorias-futuras)
+- [13. Conclusão](#13-conclusão)
+- [14. Bibliotecas, ferramentas e IA](#14-bibliotecas-ferramentas-e-ia)
 
-**Fase 11D — denúncias e moderação de conteúdos, implementação local para revisão.** Contas ativas sinalizam produtos, perfis e avaliações; a administração analisa evidências e decide com motivo, ETag e auditoria persistida. A ocultação respeita o catálogo e novas compras, preservando gestão privada, encomendas e regras de leilões existentes. Ver [âmbito aprovado, contratos e limitações](docs/api/phase-11d-content-moderation.md). Sem commit ou push nesta fase.
+## 1. Introdução
 
-**Fase 11C — licitações rápidas, implementação local para revisão.** Atalhos +5/+10/+25 € preparam uma oferta sobre o último valor confirmado, com confirmação explícita, revisão de valores desatualizados e recuperação pelos mecanismos reais existentes. Regras transacionais e permissões permanecem no backend. Ver [semântica aprovada, interface, testes e limitações](docs/api/phase-11c-quick-bidding.md).
+O Do Campo à Mesa aborda a ligação entre produtores locais e consumidores através de um mercado digital. O problema de partida consiste em reunir, numa aplicação, a apresentação dos produtos, as condições de compra, a gestão das encomendas e a venda de lotes por leilão. A motivação do projeto é explorar estes processos num contexto académico, sem pressupor uma avaliação estatística do mercado ou uma utilização comercial efetiva.
 
-**Fase 11B — pesquisa, localização e descoberta, implementação local para revisão.** Pesquisa MongoDB por ingredientes com os filtros existentes, ponto público opcional autorizado pelo produtor e mapa interativo mediante escolha do visitante. A homepage destaca leilões reais, com relógio sincronizado e reconciliação REST. Sem geocodificação automática ou divulgação da morada privada. Ver [arquitetura, privacidade, testes e limitações](docs/api/phase-11b-discovery-and-maps.md).
+A solução desenvolvida combina uma aplicação web responsiva de página única (SPA) com uma API REST e persistência em MongoDB. O catálogo permite descobrir produtos e produtores; as áreas privadas suportam as operações de compradores, produtores e administradores. Os leilões acrescentam um problema de consistência: vários compradores podem apresentar ofertas em simultâneo, mas o valor aceite e o vencedor têm de resultar de uma decisão única do servidor.
 
-**Fase 11A — gestão real do produtor, implementação local para revisão.** Produtos, fotografias, perfil e condições da loja persistem na API/MongoDB. Stock livre, reservas e limiares opcionais ficam separados, com concorrência por ETag e integração no catálogo e carrinho. O adaptador de imagens é exclusivo de desenvolvimento; a integração Cloud permanece para a Fase 13. Ver [requisitos, contratos, testes e limitações](docs/api/phase-11a-producer-management.md).
+A implementação foi validada **localmente**, com React, API, MongoDB e Socket.IO reais. Este relatório explica o trabalho realizado, as decisões adotadas e os respetivos limites. As demonstrações com dados fictícios estão separadas das funcionalidades reais. Não foi realizado deployment nem ativado armazenamento Cloud.
 
-**Fase 10 — confirmação de receção e atualizações privadas em direto, implementação local para revisão.** O comprador confirma explicitamente uma encomenda pronta, com transação, ETag e auditoria, preservando pagamento e stock. Comprador e produtor reconciliam alterações pela API e pelo Socket.IO existente; a compra concluída torna-se elegível para avaliações. Ver [arquitetura, revisão e limitações](docs/api/phase-10-orders-realtime.md). Os registos das fases abaixo descrevem o respetivo estado histórico.
+O enunciado original serviu de base à análise. Segundo os esclarecimentos posteriores do docente registados no [guia de execução local](docs/delivery/local-execution.md), Cloud e Laravel são facultativos, o guia é orientativo e os mockups não são vinculativos. A administração foi implementada na própria SPA React. Os [nove documentos originais de requisitos e arquitetura](docs/README.md#requisitos-e-arquitetura-originais--fase-0) permanecem intactos como registo da análise inicial.
 
-**Fase 9 — avaliações verificadas e moderação, implementação local para revisão.** Produtos e produtores avaliados separadamente a partir de compras históricas concluídas, comentários imutáveis, médias públicas reais, ocultação/restauro com ETag e auditoria. O fluxo normal ainda depende da futura confirmação de receção para ganhar elegibilidade. Ver [contratos, decisões e limitações](docs/api/phase-9-reviews-moderation.md).
+## 2. Objetivos
 
-**Fase 8C — supervisão administrativa de leilões reais, implementação local para revisão.** Pesquisa/filtros e paginação global, detalhe/histórico, indicadores e acompanhamento Socket.IO de leitura, com REST/MongoDB como fonte de verdade. Ver [arquitetura, contratos e limites](docs/api/phase-8c-admin-auction-supervision.md).
+O objetivo geral foi desenvolver uma plataforma que integrasse descoberta de produtos, compra e acompanhamento de encomendas com leilões em tempo real, respeitando a separação de responsabilidades e permissões entre os intervenientes.
 
-**Fase 8B — supervisão administrativa de encomendas reais, implementação local para revisão.** Consulta global, filtros e paginação no MongoDB, snapshots e históricos separados, sem comandos operacionais. Ver [arquitetura, contratos e limites](docs/api/phase-8b-admin-order-supervision.md).
+Os objetivos específicos foram:
 
-**Fase 8A — dashboard administrativo e gestão real de utilizadores, implementação local para revisão.** Indicadores MongoDB, consulta/pesquisa de contas e desativação/reativação com motivo, auditoria e concorrência. Sem eliminação ou alteração de papéis. Ver [arquitetura, contratos, segurança e testes](docs/api/phase-8a-admin-dashboard-users.md).
+- Construir uma SPA responsiva, com componentes reutilizáveis e navegação adequada a telemóvel, tablet e desktop.
+- Desenvolver uma API REST documentada, com validação de pedidos, respostas estruturadas e persistência MongoDB.
+- Implementar autenticação e autorização reais, incluindo aprovação de produtores e verificação da propriedade dos recursos.
+- Integrar catálogo, fotografias, stock, carrinho e checkout com as condições comerciais de cada produtor.
+- Permitir a gestão de encomendas pelo produtor e a confirmação de receção pelo comprador.
+- Implementar leilões com licitações concorrentes, histórico persistido e atualização dos clientes por Socket.IO.
+- Permitir a compra do lote pelo vencedor, sem duplicar encomendas ou descontar novamente stock reservado.
+- Disponibilizar supervisão administrativa, avaliações verificadas e moderação com auditoria.
+- Validar modelos, serviços, API e interface através de testes automatizados e revisão manual.
 
-**Fase 7C — análise administrativa de candidaturas, implementação local para revisão.** Listagem, detalhe, aprovação e rejeição reais, confirmação acessível e concorrência por ETag, com API como autoridade. Inclui recuperação coerente de páginas indisponíveis e correção de contraste nas transições dos botões administrativos. Ver [arquitetura, testes, revisão e limitações](docs/api/phase-7c-admin-producer-applications.md).
+## 3. Funcionalidades implementadas
 
-**Fase 7B — candidatura de produtores no React, implementação local para revisão.** Formulário autenticado, consulta de estado, reapresentação e histórico reais em `/area/candidatura-produtor`. A aprovação atualiza as capacidades através de `/auth/me`, mantendo o JWT em memória e a autoridade do backend. Sem administração no React. Ver [arquitetura, testes, revisão e limitações](docs/api/phase-7b-react-producer-applications.md).
+### Visitante
 
-**Fase 7A — candidaturas e aprovação de produtores, implementação backend local para revisão.** Submissão e consulta próprias, listagem/detalhe administrativos, decisões transacionais e reapresentação com histórico privado. Aprovação acumula o papel de produtor sem publicar produtos ou configurar vendas. Frontend e demonstrações existentes preservados; integração React futura. Ver [contratos, segurança, testes e limitações](docs/api/phase-7a-producer-applications.md).
+O visitante consulta o catálogo, pesquisa por nome, ingrediente ou produtor, combina filtros, ordena resultados e percorre páginas. Pode consultar produtos e perfis públicos de produtores, com avaliações e localização quando autorizada. A página inicial apresenta destaques de leilões reais e a listagem pública apresenta resumos dos lotes. O detalhe e o histórico dos leilões exigem autenticação.
 
-**Fase 6C — interface React dos leilões em tempo real, implementação local para revisão.** Catálogo público REST, salas autenticadas com JWT em memória, ofertas confirmadas, recuperação de tentativas, relógio sincronizado e gestão dos próprios leilões pelo produtor. Demonstração isolada com dois compradores, API/Socket.IO/MongoDB reais; sem encomendas ou pagamentos automáticos. Ver [arquitetura, revisão visual, testes e limitações](docs/api/phase-6c-react-auctions.md).
+É possível preparar uma cesta de visitante. Esta não concede acesso ao checkout e não é automaticamente atribuída a uma conta quando ocorre o login.
 
-**Fase 6B — leilões em tempo real, implementação local.** Socket.IO partilha o servidor HTTP e reutiliza o serviço transacional da Fase 6A. Salas autenticadas recebem versões confirmadas, liderança e encerramento; reconexão relê MongoDB. Presença conta ligações, sem identidades privadas. A interface React fica para 6C. Ver [protocolo, garantias, limitações e demonstração real](docs/api/phase-6b-socketio.md).
+### Comprador
 
-**Fase 6A — backend REST de leilões e licitações, implementação local.** Produtores aprovados podem reservar um lote, agendar, consultar, editar antes do início e cancelar antes da primeira oferta. Compradores autenticados licitam com controlo transacional de prazo, incremento, liderança e histórico. Há resumo público e detalhe/histórico autenticados. O encerramento conserva o vencedor e o lote reservado; não cria encomenda nem pagamento. Sem nova interface React ou Socket.IO. Ver [contratos, decisões aprovadas, testes e limitações](docs/api/phase-6a-auctions.md).
+O comprador regista-se, inicia sessão e acede às próprias encomendas e avaliações. Dispõe de carrinho independente por conta, compra produtos através de checkout transacional, escolhe as opções de receção e pagamento disponíveis e acompanha os estados das encomendas. Quando a encomenda está pronta, pode confirmar a receção e, depois de concluída, avaliar os produtos e o produtor.
 
-**Fase 5F — gestão real de encomendas pelo produtor, implementação local.** A área autenticada permite consultar, filtrar e avançar encomendas próprias até pronta, com concorrência protegida e histórico persistido. O comprador pode atualizar a consulta para ver os novos estados. Os indicadores contam dados reais e separam encomendas concluídas de pagamentos recebidos. Ver [contratos e limites](docs/api/frontend-integration.md).
+Nos leilões, pode apresentar ofertas, acompanhar a liderança e consultar o histórico. Se vencer, pode confirmar a compra do lote num checkout específico e consultar a encomenda resultante. Não pode licitar num leilão de que seja o produtor, mesmo quando a conta acumula os dois papéis.
 
-**Fase 5E — checkout real no React, implementação local.** O percurso Cesta → Checkout → Confirmação utiliza a API e MongoDB, com escolhas de receção/pagamento por produtor e encomendas próprias na área do comprador. Reutiliza o checkout transacional de 4B/5D, mantém o JWT apenas em memória e recupera tentativas com a mesma chave/pedido. Não há pagamentos online. Ver [contrato, recuperação e limitações](docs/api/frontend-integration.md).
+### Produtor
 
-**Fase 5C — autenticação JWT no React, implementação local.** Registo comprador, login, identidade confirmada por `/auth/me`, áreas pessoais por capacidades e logout usam a API existente. O catálogo público da Fase 5B permanece integrado. A sessão fica apenas em memória: atualizar a página ou abrir outro separador exige novo login. Não há refresh tokens nem revogação imediata no logout.
+O acesso comercial depende de uma candidatura aprovada. O produtor gere os seus produtos, preços, quantidades, fotografias, perfil público e condições comerciais. Pode consultar stock livre, lotes reservados, alertas configurados e indicadores calculados a partir dos dados persistidos.
 
-Os dashboards fictícios continuam disponíveis exclusivamente em `/demonstracao/entrar`, num espaço visual separado e sem conceder permissões reais. As áreas autenticadas apresentam a identidade da conta e indicam as funcionalidades privadas ainda não integradas; não lhes associam encomendas, avaliações ou indicadores fictícios. A cesta da demonstração tem armazenamento separado da cesta pública.
+Na gestão de encomendas, consulta apenas as vendas que lhe pertencem e atualiza a preparação através das transições permitidas. Cria e acompanha leilões, edita-os antes do início quando permitido e cancela-os antes da primeira oferta e do fim. Não confirma a receção em nome do comprador nem escolhe o vencedor manualmente.
 
-## Fase 8B — supervisão de encomendas reais
+### Administrador
 
-A administração permite consultar encomendas globais, combinar filtros, paginar no servidor e consultar snapshots e históricos operacionais/de pagamento. Os indicadores representam encomendas do conjunto filtrado, sem alegar receita recebida. Esta fase não concede poderes operacionais ao administrador. Ver [arquitetura, endpoints, testes e limitações](docs/api/phase-8b-admin-order-supervision.md).
+O administrador consulta indicadores globais, analisa candidaturas e aprova ou rejeita produtores. Pode pesquisar utilizadores, consultar o histórico e desativar ou reativar contas com justificação. Não existe uma operação genérica de atribuição de papéis ou eliminação de contas na interface.
 
-Revisão em ambiente isolado: `npx playwright test admin-orders.real --config playwright.integration.config.ts`. Para guardar capturas fora do repositório, definir `DOCAMPO_ADMIN_ORDER_SCREENSHOTS` com um caminho temporário absoluto. Os cenários usam contas fictícias, checkout real e MongoDB de teste; não exigem credenciais de produção.
+A supervisão de encomendas e leilões é de leitura. A moderação permite analisar denúncias e ocultar ou restaurar conteúdos dentro das regras previstas, com motivo e auditoria. A apresentação do estado dos serviços Cloud continua **demonstrativa**: não mede disponibilidade nem apresenta serviços externos como operacionais.
 
-## Arranque integrado local
+As rotas em `/demonstracao/` conservam exemplos visuais com dados fictícios. Escolher um papel nesses exemplos não autentica uma conta nem concede permissões na API real.
 
-Usar as dependências já instaladas e Docker em execução. A configuração privada da API é descrita em [apps/api/README.md](apps/api/README.md); se ainda não existir, preparar `apps/api/.env` a partir do exemplo e gerar um JWT_SECRET aleatório, sem o versionar. Não substituir uma configuração privada existente.
+## 4. Tecnologias utilizadas
 
-Da raiz, preparar os dados fictícios na **base dedicada** `docampo_dev_catalog`:
+| Área                     | Tecnologias                                                  | Papel na solução                                                                         |
+| ------------------------ | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Frontend                 | React 19, TypeScript e React Router                          | Componentes, estado tipado e navegação da SPA.                                           |
+| Interface                | SCSS, Bootstrap 5, DM Sans e DM Serif Display                | Estilos responsivos, componentes visuais e identidade editorial.                         |
+| Mapas                    | Leaflet e OpenStreetMap                                      | Apresentação de um ponto público autorizado, após escolha do visitante.                  |
+| Backend                  | Node.js, Express 5 e TypeScript                              | API HTTP modular e execução das regras de negócio.                                       |
+| Validação e documentação | Zod, OpenAPI 3.0.3 e Swagger UI                              | Validação de entradas e descrição interativa das operações.                              |
+| Base de dados            | MongoDB e Mongoose                                           | Documentos, validações, índices, consultas e transações.                                 |
+| Tempo real               | Socket.IO                                                    | Salas de leilão, presença e notificações privadas de encomendas.                         |
+| Segurança                | JWT com `jose`, Argon2id e `bcryptjs`                        | Tokens assinados, novas palavras-passe com hash e compatibilidade com hashes anteriores. |
+| Fotografias              | Sharp                                                        | Descodificação, validação e normalização das imagens enviadas.                           |
+| Testes                   | Vitest, Supertest e Playwright                               | Testes unitários, HTTP, integração MongoDB e percursos no navegador.                     |
+| Desenvolvimento          | npm workspaces, Vite, Docker Compose, ESLint, Prettier e Git | Organização do repositório, execução local, compilação e verificação do trabalho.        |
+
+As versões reproduzíveis das dependências estão registadas no [lockfile](package-lock.json). A escolha de TypeScript nos dois lados permite verificar contratos internos durante o desenvolvimento; a validação em execução continua necessária para os dados recebidos pela rede.
+
+## 5. Arquitetura do sistema
+
+A solução está organizada num monorepo com aplicações independentes para frontend e backend. A interface não acede diretamente ao MongoDB. Os pedidos HTTP e as mensagens Socket.IO passam pelo servidor, que aplica autenticação, validações e regras de negócio.
+
+```mermaid
+flowchart LR
+    U[Utilizador no navegador] --> SPA[SPA React]
+    SPA <-->|HTTP / JSON| API[API REST Express]
+    SPA <-->|Socket.IO| RT[Comunicação em tempo real]
+    API --> S[Serviços de domínio]
+    RT --> S
+    S <-->|Consultas e transações| DB[(MongoDB)]
+    API --> IMG[Serviço de imagens]
+    IMG --> DISCO[Armazenamento local de desenvolvimento]
+```
+
+API e Socket.IO partilham o servidor HTTP e os serviços de domínio. O diagrama representa a execução local implementada; não representa uma instalação Cloud.
+
+### 5.1 Frontend
+
+A SPA usa React Router para separar páginas públicas e áreas privadas. As funcionalidades estão agrupadas por domínio, com componentes, contratos, modelos de estado e acesso remoto. Componentes como cartões, campos de formulário, diálogos de confirmação e estados de carregamento são reutilizados nas várias áreas.
+
+A sessão e o carrinho usam contextos React. O cliente HTTP acrescenta o token quando necessário e trata erros estruturados. As leituras podem ser canceladas; respostas de pedidos antigos não devem substituir dados de uma sessão mais recente. Os estilos seguem uma abordagem Mobile First, com variáveis, mixins e parciais SCSS. A identidade visual e os componentes estão descritos no [design system](docs/design/design-system.md).
+
+### 5.2 Backend
+
+A API Express separa configuração, ligação à base de dados, infraestrutura HTTP e módulos de domínio. As rotas validam parâmetros, query e corpo; os serviços executam as regras e coordenam persistência e transações. As respostas usam projeções próprias, ou DTOs, para devolver apenas os campos necessários a cada operação.
+
+Esta separação evita colocar regras comerciais nos componentes React ou confiar em campos enviados pelo cliente, como proprietário, permissões, totais ou vencedor. Os erros têm códigos estáveis e mensagens sem detalhes internos. O ciclo de arranque prepara ligações e índices; o encerramento liberta os recursos do servidor.
+
+A especificação [OpenAPI](docs/api/openapi.yaml) inclui contratos e propostas históricas identificadas. A Swagger UI em `/api-docs/` seleciona as operações efetivamente montadas na aplicação, em vez de apresentar propostas como funcionalidades disponíveis.
+
+### 5.3 Base de dados
+
+| Entidade          | Responsabilidade e relações principais                                                        |
+| ----------------- | --------------------------------------------------------------------------------------------- |
+| `users`           | Identidade, hash da palavra-passe, papéis e estado da conta.                                  |
+| `producers`       | Perfil, candidatura, aprovação e condições comerciais; referência à conta proprietária.       |
+| `products`        | Produto, unidade de venda, preço, stock e fotografias; referência à conta produtora.          |
+| `orders`          | Compra de um produtor por um comprador, linhas, condições acordadas e históricos.             |
+| `auctions`        | Lote, prazo, liderança, reserva, resultado e eventual encomenda associada.                    |
+| `bids`            | Ofertas aceites, ligadas ao leilão e ao comprador, com sequência e dados de repetição segura. |
+| `reviews`         | Avaliações de compras concluídas, ligadas à encomenda e ao produto ou produtor.               |
+| `content_reports` | Denúncias, evidências e decisões de análise.                                                  |
+
+Existem ainda registos auxiliares de imagens, auditoria e coordenação de operações. As contas e os perfis de produtor são separados porque uma mesma identidade pode acumular capacidades, sem confundir aprovação comercial com autenticação.
+
+As linhas e condições da encomenda são **embebidas** no documento: são lidas em conjunto e devem conservar o nome, o preço e as condições acordadas, mesmo que o catálogo mude. Os utilizadores, produtos e perfis são **referenciados**, pois são partilhados por várias operações. As licitações ficam numa coleção própria, em vez de fazer crescer o documento do leilão a cada oferta. Esta escolha permite consultar o histórico por páginas e aplicar índices de sequência e unicidade.
+
+Mongoose valida os documentos; os serviços verificam relações e elegibilidade. As referências, por si só, não comprovam autorização. Transações MongoDB coordenam escritas em várias coleções, pelo que o ambiente local utiliza replica sets.
+
+### 5.4 Comunicação em tempo real
+
+Socket.IO permite subscrever salas de leilão e receber atualizações privadas de encomendas. A ligação usa a identidade autenticada e o servidor verifica o acesso às subscrições. As ofertas passam pelos mesmos serviços e regras de consistência, independentemente do transporte utilizado.
+
+O fluxo é: receber o pedido, validar e persistir, confirmar a transação e só depois comunicar o estado aos clientes. As versões e sequências permitem rejeitar atualizações antigas. Após uma reconexão ou uma indicação de alteração, o frontend consulta REST para reconciliar o estado. MongoDB permanece a fonte de verdade; uma mensagem recebida não substitui a confirmação persistida.
+
+```text
+apps/web/        SPA, recursos públicos e testes Playwright
+apps/api/        API, modelos, serviços, scripts e testes backend
+packages/shared/ Espaço reservado para código partilhado
+scripts/         Preparação explícita do catálogo de desenvolvimento
+docs/            Requisitos, arquitetura, contratos, decisões e guias
+```
+
+## 6. Implementação das funcionalidades
+
+### 6.1 Autenticação e perfis
+
+O registo cria uma conta compradora. O cliente não pode escolher o papel de administrador ou produtor no pedido. A API responde com HTTP 202 e uma mensagem genérica, incluindo quando o email já existe, sem apresentar essa resposta como verificação de email.
+
+No login, o servidor verifica o hash e o estado da conta e emite um JWT HS256 com expiração. O frontend conserva o token apenas em memória e consulta a identidade na API. Em cada pedido autenticado, o backend volta a verificar a conta e os papéis atuais: um token emitido antes da desativação não mantém acesso a uma conta inativa. Atualizar a página exige novo login; logout descarta a sessão no cliente, sem revogar antecipadamente o token no servidor.
+
+A candidatura de produtor é um processo separado. Uma conta ativa submete os dados, acompanha o estado e pode reapresentar uma candidatura rejeitada. A decisão administrativa usa a versão atual do recurso. A aprovação e a atribuição da capacidade de produtor são guardadas na mesma transação, com histórico, sem publicar produtos automaticamente.
+
+### 6.2 Catálogo e produtos
+
+Pesquisa, filtros, ordenação e paginação são executados no backend sobre MongoDB. A pesquisa inclui nome, ingredientes e informação pública do produtor; filtros permitem combinar categoria, localidade, época e modo de produção. O texto de pesquisa é validado e escapado antes da construção das expressões regulares. Agregações obtêm resultados e contagens sem carregar todo o catálogo no navegador.
+
+Os produtos distinguem rascunho, publicação e arquivo. Um rascunho pode estar incompleto; a publicação exige os dados comerciais obrigatórios e um produtor elegível. O arquivo lógico preserva referências históricas. As categorias usam identificadores estáveis e os valores monetários são representados em cêntimos inteiros. Preços por kg/L coexistem com quantidades em g/ml; unidades e embalagens têm regras próprias de mínimo e incremento.
+
+O produtor gere até duas fotografias por produto. O servidor descodifica JPEG, PNG ou WebP, verifica limites e converte para WebP, removendo metadados originais. Os ficheiros enviados ficam fora do repositório e só são servidos quando a associação e a visibilidade o permitem. O adaptador de disco é exclusivo de desenvolvimento/teste.
+
+O stock editável corresponde à quantidade livre. Reservas de leilões são apresentadas separadamente. Um limiar opcional por produto permite identificar stock reduzido; não é inventado um valor por defeito. A edição usa ETag para impedir que um formulário antigo reponha quantidades entretanto consumidas. A [documentação da gestão do produtor](docs/api/phase-11a-producer-management.md) detalha estas regras.
+
+No perfil público, o mapa só carrega após escolha do visitante e quando existe um ponto cuja publicação foi autorizada pelo produtor. A localização pode ser removida e não é inferida a partir da morada privada de levantamento.
+
+### 6.3 Carrinho e checkout
+
+O carrinho combina estado React com persistência em `localStorage`, numa chave identificada pelo ID estável da conta. Ao mudar de identidade, o estado apresentado também muda. Pedidos assíncronos conservam a identidade de origem, para impedir que uma resposta antiga altere a cesta de outro comprador.
+
+Após logout, deixam de ser apresentados os artigos dessa conta; novo login recupera-os no mesmo navegador. A cesta de visitante é independente e só é importada mediante confirmação explícita. A chave antiga sem proprietário é conservada sem atribuição automática, porque não permite saber a quem pertenciam os artigos. A persistência não sincroniza dispositivos nem constitui uma barreira contra quem tem acesso ao próprio perfil do navegador.
+
+No checkout, o servidor confirma os produtos, as quantidades, o stock e as condições comerciais atuais. O comprador escolhe levantamento ou entrega, período e método de pagamento entre as opções configuradas por cada produtor. Dinheiro, MB Way e transferência bancária são opções registadas; não existe integração bancária que execute ou confirme esses pagamentos.
+
+Uma compra com vários produtores origina uma encomenda por produtor, ligada à mesma operação de compra. A transação cria as encomendas e desconta stock de forma coordenada: uma falha não deve deixar apenas parte da compra concluída. O cliente não determina o preço final nem pode impor condições inexistentes.
+
+O cabeçalho `Idempotency-Key` identifica a tentativa. A mesma chave com o mesmo pedido permite recuperar o recibo; a reutilização com conteúdo diferente é recusada. Quando uma resposta se perde, a interface oferece recuperação com a mesma tentativa, evitando interpretar a ausência de resposta como prova de que nada foi gravado.
+
+### 6.4 Gestão de encomendas
+
+Cada encomenda referencia um comprador e um produtor e conserva snapshots dos artigos e condições da venda. O comprador consulta as suas compras; o produtor consulta apenas as vendas que lhe pertencem, sem receber as encomendas de outros produtores da mesma operação.
+
+O percurso operacional exposto é `pendente → confirmada → em_preparacao → pronta → concluida`. O produtor executa as três primeiras transições. A passagem de pronta para concluída depende da confirmação de receção pelo comprador, através de `PATCH /api/orders/:id/receipt`. A compatibilidade com o estado `entregue` do enunciado reutiliza esta operação, sem permitir ao produtor confirmar a receção por outra pessoa.
+
+As alterações verificam propriedade, estado e versão. A confirmação guarda a conclusão e a auditoria na mesma transação, sem alterar stock ou estado do pagamento. Os históricos de preparação, receção e pagamento são distintos; encomenda concluída não significa pagamento recebido.
+
+Socket.IO avisa os clientes autorizados de alterações e a interface volta a consultar a API. A confirmação da receção torna a compra elegível para avaliação. O [documento de encomendas e notificações](docs/api/phase-10-orders-realtime.md) descreve a concorrência e a recuperação de pedidos repetidos.
+
+### 6.5 Leilões em tempo real
+
+O produtor cria um leilão a partir de um produto próprio elegível, indicando quantidade do lote, preço base, incremento e datas. A criação reserva a quantidade, retirando-a do stock livre. Se o leilão for cancelado quando permitido ou terminar sem ofertas, o mecanismo de libertação trata a reserva; com vencedor, o lote fica afeto a esse comprador.
+
+A aceitação de uma oferta não depende do temporizador do navegador. O servidor verifica a conta, a ausência de auto-licitação, o prazo e o mínimo exigido. A liderança começa no preço base, sem uma oferta fictícia; a primeira licitação tem de atingir base mais incremento. Os atalhos +5/+10/+25 € somam ao último valor confirmado e preparam uma proposta que exige confirmação.
+
+A decisão usa uma atualização condicional atómica em MongoDB, com a versão, a sequência e o relógio `$$NOW`. A mudança da liderança e a inserção da oferta pertencem à mesma transação. Duas ofertas iguais que concorram sobre o mesmo valor não podem ser ambas aceites: depois da primeira escrita confirmada, a outra tem de ser reavaliada e já não satisfaz o mesmo mínimo. Os detalhes constam da [especificação dos leilões](docs/api/phase-6a-auctions.md).
+
+Depois do commit, Socket.IO comunica o estado. O cliente apresenta valor atual, tempo estimado, presença, histórico e feedback da oferta. A contagem decrescente usa uma estimativa do relógio do servidor; o prazo é fixo, sem extensões automáticas. Uma oferta elegível antes do fim pode terminar o commit depois desse instante. O encerramento concorre com as ofertas através do mesmo estado persistido e fixa o resultado. Após desconexão, a consulta REST recupera o estado e o histórico confirmados.
+
+### 6.6 Compra de lotes vencedores
+
+Vencer um leilão não cria automaticamente uma encomenda nem processa um pagamento. Só o vencedor autenticado e ativo pode preparar e confirmar a compra em `/checkout/leilao/:id`. A API obtém o vencedor, o produto, a quantidade e o preço dos registos persistidos, sem aceitar esses valores como escolha livre do cliente.
+
+O lote é representado na encomenda como uma embalagem comercial indivisível, com a quantidade física original no snapshot. Assim, o valor vencedor é o preço total do lote, sem inventar um preço por kg ou litro. O comprador seleciona as condições atuais de receção e pagamento do produtor, reutilizando os componentes do checkout normal.
+
+`GET` e `POST /api/auctions/:id/checkout` preparam e confirmam esta operação. A transação cria a encomenda, associa-a ao leilão e consome a reserva afeta ao vencedor. **Não volta a descontar o stock** reservado na criação. Um índice único para a origem do leilão e a escrita condicional impedem duas encomendas para o mesmo lote; a idempotência permite recuperar a compra confirmada.
+
+A cesta normal permanece independente. A encomenda do lote surge nas áreas do comprador e do produtor e segue a preparação e receção habituais. Se as condições comerciais deixarem de ser elegíveis, a compra fica pendente: não se inventa uma modalidade de entrega nem se transfere o lote para outro licitador. Ver [carrinhos e compra de lotes vencedores](docs/api/phase-14.2-cart-auction-purchase.md).
+
+### 6.7 Administração e moderação
+
+Os indicadores administrativos resultam de consultas aos dados persistidos. Erros de consulta não são convertidos em contagens fictícias. As decisões de candidaturas e de estado das contas exigem autorização atual, versão do recurso e auditoria. A desativação da própria conta administrativa e do último administrador ativo é recusada.
+
+A supervisão permite consultar encomendas e leilões, com filtros, paginação e históricos. Essa leitura global não concede poderes para modificar a preparação de uma encomenda, licitar, cancelar arbitrariamente um leilão ou escolher outro vencedor. Os dados dos licitantes são pseudonimizados nas projeções adequadas.
+
+Contas autenticadas e ativas podem denunciar produtos, perfis públicos e avaliações, com motivo e sem ocultação automática. A administração analisa o conteúdo e a evidência, decide com justificação e conserva auditoria. Ocultar um produto impede novas compras e novas criações de leilão desse produto; ocultar um perfil retira a loja da descoberta pública e de novas compras. Encomendas existentes são preservadas.
+
+Nos leilões já criados, a moderação pode retirar a descoberta pública e neutralizar a apresentação do conteúdo, mas não muda preço, prazo, ofertas, reserva ou vencedor. Restaurar conteúdo repõe apenas a visibilidade permitida pelos estados comerciais atuais. Estas diferenças estão documentadas na [moderação de conteúdos](docs/api/phase-11d-content-moderation.md).
+
+### 6.8 Avaliações de compras concluídas
+
+A elegibilidade é verificada no backend a partir de uma encomenda própria concluída. Existe uma avaliação por encomenda e produto e uma avaliação direta do produtor por encomenda, com classificação de 1–5 e comentário obrigatório. Os índices de unicidade impedem duplicados mesmo com pedidos concorrentes.
+
+O comentário e a classificação não são editados pela moderação. É possível ocultar ou restaurar a publicação com motivo, ETag e auditoria. As consultas públicas e as médias excluem avaliações ocultadas; as médias dos produtos e as avaliações diretas do produtor são apresentadas separadamente. O histórico próprio permite ao comprador consultar o conteúdo que submeteu.
+
+## 7. Segurança e integridade
+
+As novas palavras-passe são guardadas com **Argon2id**; hashes bcrypt anteriores continuam verificáveis. Esta é uma decisão documentada, diferente do exemplo bcrypt do enunciado, e não uma alegação de cumprimento literal desse exemplo. Os hashes e as palavras-passe não integram as respostas públicas.
+
+JWT usa assinatura HS256, segredo de ambiente, emissor, destinatário e expiração. O token não é guardado em `localStorage`, `sessionStorage` ou URLs. A autorização combina papel atual, estado ativo, aprovação comercial e propriedade, conforme a operação. Esconder um botão não substitui estes controlos no backend.
+
+Zod valida entradas HTTP, incluindo campos permitidos, identificadores e limites. Mongoose valida a persistência e os serviços aplicam regras entre entidades. O sistema usa limites de pedidos em operações sensíveis, origens CORS explícitas e configuração de proxy. Existem verificações de HTTPS para produção; a execução local descrita usa HTTP de loopback e não comprova uma instalação HTTPS publicada.
+
+Preços e totais são verificados no servidor. Escritas condicionais protegem stock e transições; transações coordenam operações compostas. ETags enviados em `If-Match` impedem alterações sobre versões antigas, enquanto as chaves de idempotência protegem a repetição de compras e ofertas. Estas duas medidas resolvem problemas diferentes: versão desatualizada e repetição da mesma operação.
+
+As respostas privadas usam projeções e os erros não expõem hashes, segredos ou detalhes internos. A separação das cestas por conta evita a mistura acidental entre sessões, mas o armazenamento do navegador não substitui a autorização da API. Não se afirma segurança absoluta, certificação de acessibilidade ou conformidade com normas não verificadas. Os limites atuais são explicitados na [secção 12](#12-limitações-e-melhorias-futuras).
+
+## 8. Metodologia de desenvolvimento
+
+O trabalho começou pela análise dos requisitos, casos de uso, modelo de dados e arquitetura. Seguiu-se uma implementação progressiva: primeiro a interface navegável com dados demonstrativos, depois os modelos e serviços backend e, por fim, a integração dos percursos reais. A documentação original foi preservada para permitir distinguir a intenção inicial das decisões posteriores.
+
+Autenticação, catálogo, checkout e encomendas estabeleceram a base para os leilões. As funcionalidades de tempo real reutilizaram os serviços de domínio, em vez de criarem regras alternativas nos sockets. A administração e a moderação foram integradas sobre os mesmos modelos e mecanismos de autorização.
+
+Cada bloco foi acompanhado por testes adequados ao seu âmbito e por verificações de TypeScript, estilo e compilação. As integrações reais usaram bases isoladas e contas fictícias. A revisão visual em várias larguras e os testes manuais permitiram identificar problemas que as verificações iniciais não tinham detetado, incluindo o isolamento do carrinho e a compra de lotes vencedores.
+
+O Git registou a evolução e a documentação técnica reuniu decisões e limitações, permitindo relacionar os requisitos com a implementação e as verificações realizadas.
+
+## 9. Desafios e soluções
+
+| Desafio verificado                                                    | Solução adotada                                                                                      | Resultado e limite                                                                                            |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| O carrinho anterior partilhava estado e armazenamento entre sessões.  | Separação por ID da conta, substituição do estado React e rejeição de respostas de outra identidade. | Logout deixa de mostrar a cesta privada e novo login recupera-a; continua local ao navegador.                 |
+| Uma cesta de visitante não tem proprietário autenticado.              | Importação explícita e conservação da chave antiga sem atribuição automática.                        | Evita associar silenciosamente artigos de outra pessoa; exige confirmação do utilizador.                      |
+| Ofertas simultâneas podem disputar a mesma liderança.                 | Predicado atómico, versão e sequência, relógio MongoDB e transação com a oferta persistida.          | Apenas uma das ofertas concorrentes iguais mantém elegibilidade; clientes reconciliam o resultado confirmado. |
+| Compras normais e reservas de leilão disputam stock.                  | Escritas condicionais e separação entre stock livre e quantidade reservada.                          | Evita vender a mesma disponibilidade e impede que uma edição antiga reponha stock consumido.                  |
+| Uma resposta perdida pode levar a repetir uma compra já gravada.      | Chave de idempotência, representação canónica do pedido e recuperação do recibo.                     | A repetição segura recupera o resultado; um resultado incerto não é apresentado como falha definitiva.        |
+| O preço vencedor é total do lote e o stock já está reservado.         | Checkout próprio com lote indivisível, preço persistido, origem única e consumo da reserva.          | Cria uma encomenda gerível pelo produtor, sem conversões artificiais de preço nem segundo débito.             |
+| Uma conta ou aprovação pode mudar durante uma operação.               | Revalidação e guardas de revisão dentro das transações relevantes.                                   | A operação não depende apenas dos papéis de um token antigo.                                                  |
+| Condições comerciais incompletas impedem escolher uma receção válida. | Configuração explícita por produtor e validação na preparação e confirmação.                         | A aplicação informa o bloqueio, sem inventar horários, moradas ou modalidades.                                |
+
+Os testes manuais também evidenciaram a importância de usar as credenciais da base efetivamente servida. O ambiente de revisão gera dados próprios por execução; o guia passou a distinguir esses dados dos registos persistentes e a explicar a consulta dos ficheiros privados de contas.
+
+## 10. Instalação e execução local
+
+Executar os comandos a partir da raiz do repositório. O [guia técnico de execução local](docs/delivery/local-execution.md) complementa esta secção com percursos por papel e resolução de problemas.
+
+### 10.1 Pré-requisitos e instalação
+
+São necessários Node.js **22.21.1** ou uma versão compatível de Node.js 24, npm 10 ou superior e Docker com Compose. Os testes Playwright estão configurados para Google Chrome instalado.
+
+Numa cópia nova, instalar as versões do lockfile:
+
+```sh
+npm ci
+```
+
+Os exemplos [da API](apps/api/.env.example) e [do frontend](apps/web/.env.example) não contêm credenciais reais. As variáveis `VITE_*` são públicas e nunca devem receber segredos JWT ou credenciais MongoDB. Não é necessário instalar novamente as dependências para rever uma cópia já preparada.
+
+### 10.2 Ambiente de revisão isolado
+
+Este modo utiliza serviços reais e uma base MongoDB aleatória de teste, com contas fictícias e fotografias temporárias. Não precisa de contas Cloud e não deve ser apontado para dados de produção ou uma base partilhada.
+
+Iniciar o replica set de teste:
+
+```sh
+npm run mongo:test:up --workspace @docampo/api
+```
+
+No primeiro terminal, iniciar a API com os cenários de revisão:
+
+```sh
+DOCAMPO_AUCTION_REVIEW=1 \
+DOCAMPO_ADMIN_APPLICATION_REVIEW=1 \
+DOCAMPO_REVIEWS_REVIEW=1 \
+DOCAMPO_RECEIPT_REVIEW=1 \
+node --import tsx apps/web/tests/support/real-api-server.mjs
+```
+
+No segundo terminal, iniciar o frontend:
+
+```sh
+VITE_API_URL=http://127.0.0.1:3011/api npm run dev --workspace @docampo/web -- --port 5183
+```
+
+| Serviço    | Endereço                          |
+| ---------- | --------------------------------- |
+| Aplicação  | <http://127.0.0.1:5183>           |
+| API REST   | <http://127.0.0.1:3011/api>       |
+| Swagger UI | <http://127.0.0.1:3011/api-docs/> |
+
+A API indica os caminhos dos ficheiros temporários de contas, protegidos com permissões `0600`. Usar email e palavra-passe do mesmo bloco, dos ficheiros indicados pelo servidor **atualmente em execução**. O cenário de leilões fornece dois compradores e um produtor; os restantes cenários acrescentam perfis e dados para revisão administrativa, avaliações e receção. Usar contas, produtos e encomendas do mesmo cenário. Não copiar credenciais para o repositório ou para o relatório.
+
+A sessão expira, por omissão, ao fim de 15 minutos e fica apenas em memória. Atualizar a página exige novo login. Para testar duas pessoas em simultâneo, usar perfis de navegador diferentes ou uma janela normal e outra privada.
+
+`Ctrl+C` encerra os processos. O encerramento normal da API elimina a base efémera e os ficheiros dessa execução, **incluindo os registos criados manualmente nessa base**. Não reiniciar este ambiente para tentar corrigir credenciais; para conservar dados entre execuções, usar o modo persistente seguinte.
+
+### 10.3 Ambiente de desenvolvimento persistente
+
+Criar `apps/api/.env` a partir do exemplo apenas se ainda não existir. Definir um `JWT_SECRET` aleatório com pelo menos 32 bytes em base64url, sem o versionar. É possível gerar o valor no terminal local com:
+
+```sh
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
+```
+
+Conferir `MONGODB_URI`, `MONGODB_DB_NAME`, `CORS_ORIGINS` e a pasta externa de fotografias. O exemplo aponta para o replica set local na porta 27018. O frontend utiliza `VITE_API_URL=/api` por omissão; o proxy Vite encaminha `/api` e `/socket.io` para a API na porta 3001.
+
+Preparar o MongoDB e o catálogo dedicado:
 
 ```sh
 npm run mongo:dev:up --workspace @docampo/api
 NODE_ENV=development node --import tsx scripts/seed-catalog.mjs
 ```
 
-O seed é manual e idempotente: insere apenas registos em falta, não atualiza nem apaga existentes. Recusa produção, Atlas, outro servidor/replica set, credenciais no URI e qualquer base diferente da dedicada. Contas de produtor fictícias recebem passwords aleatórias descartadas; não é criada conta administrativa. Ver [dados e limitações](docs/api/frontend-integration.md).
-
-Em dois terminais:
+Iniciar backend e frontend em terminais separados:
 
 ```sh
 MONGODB_DB_NAME=docampo_dev_catalog CORS_ORIGINS=http://127.0.0.1:5173 npm run dev --workspace @docampo/api
@@ -73,443 +354,105 @@ MONGODB_DB_NAME=docampo_dev_catalog CORS_ORIGINS=http://127.0.0.1:5173 npm run d
 npm run dev
 ```
 
-Abrir `http://127.0.0.1:5173/produtos`. O Vite encaminha `/api` para `http://127.0.0.1:3001`. A variável pública `VITE_API_URL`, documentada em [apps/web/.env.example](apps/web/.env.example), permite outra origem/base. Nunca contém JWT, passwords ou segredos. No build de produção, usar `/api` com reverse proxy ou uma URL HTTPS da API e configurar a origem exata no CORS. Reiniciar Vite/recriar o build depois de alterar a variável. `vite preview` não fornece o proxy de desenvolvimento.
+Abrir <http://127.0.0.1:5173> e Swagger em <http://127.0.0.1:3001/api-docs/>. O seed prepara o catálogo de desenvolvimento sem substituir ou apagar registos existentes; não fornece palavras-passe reutilizáveis nem cria um administrador. Para rever os três papéis, preferir o ambiente isolado. O modo persistente não preenche automaticamente condições comerciais que faltem a dados antigos.
 
-## Rever o checkout numa base isolada
+### 10.4 Demonstração dos leilões
 
-O seed antigo da base de desenvolvimento pode não ter local de levantamento. O seed não atualiza dados existentes e a aplicação não inventa esse local. Para revisão completa, usar uma base temporária independente, sem alterar `docampo_dev_catalog`.
+Em `/leiloes`, entrar com dois compradores e acompanhar o mesmo lote. Confirmar ofertas, mudança de liderança e histórico; após o encerramento, o vencedor usa **Finalizar compra**. O produtor consulta a encomenda associada e prepara-a pelo fluxo normal.
 
-Com Docker ativo, iniciar MongoDB de teste e, em dois terminais, executar:
+Existe também uma demonstração automática com dois clientes Socket.IO e MongoDB reais:
 
 ```sh
-npm run mongo:test:up --workspace @docampo/api
-DOCAMPO_CHECKOUT_REVIEW=1 node --import tsx apps/web/tests/support/real-api-server.mjs
+DOCAMPO_AUCTION_DEMO=1 npm run demo:auctions --workspace @docampo/api
 ```
 
-```sh
-VITE_API_URL=http://127.0.0.1:3011/api npm run dev --workspace @docampo/web -- --port 5183
-```
+Requer MongoDB de teste ativo e termina os recursos efémeros que cria. Não substitui a revisão visual da aplicação.
 
-Abrir `http://127.0.0.1:5183`. O modo de revisão insere o catálogo fictício numa base aleatória `docampo_test_web_*` e configura locais de levantamento explicitamente fictícios nessa base. Conserva a disponibilidade declarada de sábado, 09:00–12:00, e pagamento em dinheiro. Não cria credenciais administrativas ou contas de comprador fixas; a sessão de revisão dura 15 minutos. O servidor de testes normal mantém o TTL de 60 segundos para os ensaios de expiração.
+## 11. Testes e validação
 
-1. Criar uma conta **fictícia** em `/registo`, confirmar o aviso genérico e iniciar sessão em `/entrar`.
-2. Adicionar produtos, eventualmente de produtores diferentes, à cesta e seguir **Continuar para checkout**. Um visitante pode entrar sem perder a cesta.
-3. Rever quantidades, preços, total previsto e condições. Selecionar data, janela e pagamento para cada produtor; aceitar as condições e confirmar.
-4. Verificar a referência global, encomendas, valores persistidos, receção e pagamento por pagar. Seguir **Consultar as minhas encomendas** para listagem, ordenação, paginação e detalhe/histórico.
-5. Se houver resultado incerto, usar **Recuperar resultado da compra**. Após reload, iniciar sessão na mesma conta e recuperar: a chave e o pedido originais vêm do servidor. Não iniciar outra tentativa enquanto o resultado for desconhecido.
+### Estratégia
 
-A referência local não contém JWT, password, morada ou contacto. O pedido privado temporário tem prazo técnico de 24 horas; a sua expiração não elimina encomendas nem prova falha da compra. As alterações posteriores da cesta são preservadas. As demonstrações em `/demonstracao` não permitem comprar.
+Os testes unitários verificam cálculos monetários, quantidades, validações, contratos e modelos de estado. Os testes HTTP verificam rotas, códigos, autorização e respostas. As integrações MongoDB exercitam persistência, índices, transações, rollback, idempotência e operações concorrentes com uma base real de teste.
 
-**Ctrl+C no servidor da revisão elimina apenas a sua base temporária**, incluindo as contas e compras fictícias dessa execução. A base de desenvolvimento permanece intacta. Entrega, taxas, métodos alternativos, falhas e concorrência são cobertos pelos testes com configurações fictícias próprias; não são inventados na configuração de levantamento do catálogo de revisão.
+No frontend, a suite habitual Playwright verifica a interface e inclui cenários com respostas controladas. As suites reais ligam React, API, MongoDB e Socket.IO, incluindo login, compra, gestão e moderação. Os testes dedicados de leilões cobrem ofertas simultâneas, recuperação, reconexão e resultado persistido. Respostas simuladas não são apresentadas como prova de integração real.
 
-## Rever a gestão de encomendas do produtor
+### Resultados automatizados de referência
 
-Num ambiente isolado, com Docker e dependências já disponíveis:
+| Conjunto                              | Testes aprovados |
+| ------------------------------------- | ---------------: |
+| Backend: unitários, HTTP e integração |            1 996 |
+| Frontend habitual                     |              669 |
+| Integrações reais                     |              200 |
+| Leilões dedicados                     |               13 |
+| **Total**                             |        **2 878** |
 
-```sh
-npm run mongo:test:up --workspace @docampo/api
-DOCAMPO_PRODUCER_REVIEW=1 node --import tsx apps/web/tests/support/real-api-server.mjs
-```
+Estes resultados correspondem à validação anterior da aplicação, após as correções do carrinho e da compra de lotes. **Não foram reexecutados na preparação deste README**, que altera apenas documentação. Também foram aprovados anteriormente TypeScript, ESLint, Prettier e builds de frontend/backend.
 
-Noutro terminal:
+### Validação manual e responsiva
 
-```sh
-VITE_API_URL=http://127.0.0.1:3011/api npm run dev --workspace @docampo/web -- --port 5183
-```
+A revisão anterior abrangeu 320, 430, 768, 1024, 1280 e 1440 px. Foram verificados percursos em telemóvel, tablet e desktop, com atenção a overflow, legibilidade, formulários, navegação e apresentação dos estados. A revisão de teclado, foco e contraste não constitui uma certificação integral de acessibilidade nem substitui testes com leitores de ecrã e dispositivos físicos.
 
-O servidor cria a sua própria base aleatória `docampo_test_web_*`, dois produtores fictícios, um comprador e uma compra transacional com duas encomendas. Não altera contas ou dados de desenvolvimento. As credenciais aleatórias ficam num **ficheiro temporário privado**, com permissões `0600`, cujo caminho é indicado no terminal; não são impressas nos logs nem guardadas no repositório. O registo público continua exclusivamente comprador, sem seleção de papéis privilegiados. A sessão de revisão dura 15 minutos.
+O utilizador confirmou manualmente cestas independentes, ocultação após logout, recuperação após novo login, compra pelo vencedor, gestão da encomenda pelo produtor e funcionamento dos logins de teste. Esta confirmação é distinta das contagens automatizadas.
 
-1. Abrir `http://127.0.0.1:5183/entrar`, usar uma das contas produtoras desse ficheiro e consultar `/area/produtor`. Os indicadores iniciais mostram as encomendas efetivamente persistidas; o valor concluído é zero enquanto não houver conclusão.
-2. Abrir **As minhas encomendas**, testar estado, ordenação e detalhe. Avançar **Confirmar encomenda → Iniciar preparação → Marcar como pronta**. Cada ação mostra a confirmação e acrescenta um evento ao histórico.
-3. Abrir outro separador com a segunda conta produtora: a encomenda da primeira conta não fica disponível. Um segundo separador da mesma conta com um detalhe antigo recebe conflito, exigindo **Atualizar consulta**.
-4. Entrar com o comprador noutro separador, consultar as duas encomendas e usar **Atualizar consulta** para ver os estados atualizados. Não há atualização em tempo real.
-5. Verificar 320, 430, 768, 1024, 1280 e 1440 px e navegar pelos filtros e ações com teclado. Recarregar exige novo login, preservando a política JWT em memória.
+### Reprodução das validações
 
-**Ctrl+C no servidor remove apenas a sua base e o ficheiro temporário de credenciais.** Não há botão de conclusão direta, cancelamento ou alteração de pagamento. A autorização e propriedade são verificadas na API; este modo é apenas uma preparação de dados de teste, fora do runtime de produção.
-
-## Rever a autenticação
-
-1. Preparar API e React conforme o arranque acima e abrir `/registo`. O registo público recebe apenas nome, email e password (15–128 caracteres; sem composição artificial) e cria exclusivamente uma conta compradora. A confirmação 202 é genérica, inclusive para emails duplicados, e não inicia sessão.
-2. Em `/entrar`, usar as credenciais da conta fictícia criada localmente. O React confirma `/auth/me` antes de apresentar a identidade em `/area`. Os papéis vêm da API; não existe seletor de produtor ou administrador no registo real.
-3. Percorrer a área pessoal, voltar ao catálogo e à cesta. A secção de encomendas do comprador usa dados reais; a restante atividade privada ainda não integrada está explicitamente indisponível. A prévia visual dos três dashboards abre num separador separado em `/demonstracao/entrar`, sem partilhar a sessão real.
-4. Atualizar uma página privada exige novo login, mantendo a cesta. Terminar sessão descarta o token no cliente e chama `/auth/logout`; não revoga imediatamente tokens emitidos. Expiração/401 limpam a sessão; 403 e falhas temporárias bloqueiam a apresentação privada e permitem nova confirmação.
-
-JWT e passwords não são guardados em localStorage, sessionStorage, cookies ou variáveis Vite. Memória reduz a persistência de um token roubado, mas não elimina o risco de XSS no separador ativo. Não existe sincronização ou renovação de sessões entre separadores. Ver [segurança](docs/api/security.md) e [integração](docs/api/frontend-integration.md).
-
-## Testar a integração
+Com MongoDB de teste ativo, libertar as portas 3011/5183, parando os servidores manuais próprios quando já não for necessário conservar a respetiva base efémera. Executar as suites Playwright **sequencialmente**, porque as suites reais usam as mesmas portas:
 
 ```sh
-npm run test:e2e -- --workers=4
-npm run mongo:test:up --workspace @docampo/api
-npx playwright test --config playwright.integration.config.ts
-npm test --workspace @docampo/api
 npm run typecheck
 npm run typecheck --workspace @docampo/api
 npm run lint
+npm run format:check
+npm run format:check --workspace @docampo/api
 npm run build
 npm run build --workspace @docampo/api
+npm test --workspace @docampo/api
+npx playwright test --workers=2
+npx playwright test --config playwright.integration.config.ts
+npx playwright test --config playwright.auctions.config.ts
+git diff --check
 ```
 
-A suite habitual mantém os percursos anteriores com fixtures HTTP (os dashboards fictícios são testados no espaço `/demonstracao`); a suite separada inicia a API real na porta 3011 e React na 5183, popula duas vezes uma base aleatória `docampo_test_web_*` no replica set de teste 27019, verifica idempotência e elimina apenas essa base no final. Não lê `.env`, não usa a base de desenvolvimento e falha se MongoDB não estiver disponível. Executar as suites sequencialmente para conservar os respetivos artefactos em `test-results/`.
-
-A revisão visual pode começar em `/produtos`, seguindo um cartão para o detalhe, a ligação de origem para o perfil e a cesta. Pesquisa, filtros, seis ordenações e paginação são executados no servidor. A cesta respeita g/ml/unidades/embalagens e mínimo/incremento; guarda apenas escolhas locais, sem reservar stock ou criar encomendas. Falhas da API não substituem dados por mocks nem apagam as escolhas guardadas.
-
-Os perfis públicos apresentam apenas informação efetivamente devolvida: não se associam avaliações fictícias, coordenadas, histórias ou certificações aos IDs reais. As ligações provenientes de registos privados demonstrativos abrem as listagens públicas; não existe correspondência automática entre slugs demo e IDs MongoDB. As secções seguintes documentam o protótipo anterior e não substituem este estado atual.
-
----
-
-## Registo histórico do frontend demonstrativo
-
-Mercado digital de produtores agrícolas locais, com encomendas e leilões em tempo real.
-
-**Estado atual: Fase 2.4.4 — Área Privada do Administrador.** O frontend inclui o mercado público, carrinho, autenticação demonstrativa e áreas de comprador, produtor e administrador com atividade fictícia. Edições privadas, decisões de candidatura e moderação funcionam apenas em memória. O monorepo usa npm workspaces. Os nove documentos da Fase 0 estão preservados integralmente.
-
-Os dados existem apenas no frontend. Não estão implementados autenticação real, endpoints, MongoDB, compras, licitações reais ou recursos Cloud. A Fase 2.4.3 foi aprovada e publicada em `feat/producer-dashboard`, no commit `ebf6109`. A implementação da Fase 2.4.4 permanece local em `feat/admin-dashboard`, criada a partir desse commit, sem staging, commits, push, merge ou PR. A publicação e as fases seguintes dependem de nova autorização explícita.
-
-## Contexto académico
-
-Projeto individual da unidade curricular **Desenvolvimento Web e para a Cloud**, do **Mestrado em Engenharia Informática**, IPVC — Escola Superior de Tecnologia e Gestão, 1.º semestre de 2026/2027.
-
-O enunciado prevê sete semanas de desenvolvimento, três marcos de entrega e uma defesa individual. A documentação distingue requisitos obrigatórios do enunciado, componentes de valorização opcionais, melhorias propostas e decisões arquiteturais. As referências usam as páginas do ficheiro `Do_Campo_a_Mesa_Enunciado.pdf`; o PDF original não está incluído neste repositório.
-
-## Descrição e objetivos
-
-A plataforma prevista liga pequenos produtores agrícolas a consumidores e à restauração local. Os produtores poderão apresentar produtos e gerir encomendas; os compradores poderão explorar o catálogo, encomendar, avaliar e licitar em lotes sazonais ou excedentes.
-
-Os principais objetivos planeados são:
-
-- Disponibilizar catálogo pesquisável, filtros e perfis públicos de produtores com mapa.
-- Implementar registo, autenticação e autorização para comprador, produtor e administrador, além do acesso público de visitante.
-- Gerir aprovação de produtores, carrinho, encomendas, avaliações e moderação.
-- Validar licitações concorrentes no servidor e manter um histórico consistente dos leilões.
-- Apresentar notificações de encomendas e painéis de produtor e administrador.
-- Construir uma interface responsiva segundo a abordagem Mobile First.
-- Documentar a API e publicar frontend, backend, dados e imagens em serviços Cloud.
-
-Estes objetivos descrevem o âmbito completo a desenvolver. Nesta fase existem apenas os componentes, os layouts e os percursos demonstrativos descritos abaixo. As regras de negócio em aberto estão registadas no [documento de decisões](docs/architecture/decisions.md).
-
-## Tecnologias e estado
-
-| Área                      | Tecnologias selecionadas                                                  | Estado                                                 |
-| ------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Frontend                  | React 19, TypeScript 5.9, Vite 8, React Router 7, Bootstrap 5 e SASS/SCSS | Implementado com dados fictícios                       |
-| Tipografia                | DM Serif Display e DM Sans, via Fontsource                                | Fontes alojadas pelo build, licença OFL                |
-| Qualidade                 | ESLint, Prettier e TypeScript strict                                      | Configurados                                           |
-| Testes                    | Playwright                                                                | Percursos e responsividade do protótipo; Chrome        |
-| Backend                   | Node.js, Express, TypeScript e Mongoose                                   | Workspace vazio; bibliotecas de backend não instaladas |
-| Base de dados             | MongoDB Atlas                                                             | Planeada; sem ligação                                  |
-| Autenticação e tempo real | JWT, bcrypt e Socket.IO                                                   | Planeados; não implementados                           |
-| Documentação da API       | OpenAPI 3 e Swagger UI                                                    | Implementados localmente                               |
-| Cloud                     | App Service, Static Web Apps e Blob Storage                               | Planeados; não configurados                            |
-| Testes futuros            | Vitest e Supertest                                                        | Planeados; não instalados nesta fase                   |
-
-As versões exatas estão fixadas em `package-lock.json`; consultar `npm ls --depth=0`. O React Router 7 mantém compatibilidade com o Node.js instalado, sem exigir atualização do sistema. O desenvolvimento foi configurado para Node.js 22.13+ na série 22, ou 24+, e npm 10 ou superior.
-
-## Arquitetura prevista
-
-O projeto seguirá um **monorepo com monólito modular e API REST**. A SPA React será publicada em Azure Static Web Apps; um único backend Node.js em Azure App Service reunirá Express, Socket.IO e o agendador interno de leilões. MongoDB Atlas armazenará os dados, e Azure Blob Storage armazenará as imagens.
-
-A autorização será aplicada no servidor por papel e propriedade dos recursos. O modelo propõe snapshots das linhas de encomenda e transações para manter coerência de stock e de estado/histórico dos leilões. A recuperação de ligações usará o estado persistido, versões e sequências. Estas soluções são propostas documentadas, sujeitas às decisões de negócio ainda em aberto.
-
-Consultar a [visão global](docs/architecture/system-overview.md), os [diagramas Mermaid](docs/architecture/architecture-diagram.md) e a [consistência dos leilões](docs/architecture/auction-consistency.md).
-
-## Estrutura atual do repositório
-
-```text
-.
-├── .gitignore
-├── README.md
-├── package.json
-├── package-lock.json
-├── tsconfig.base.json
-├── eslint.config.js
-├── .prettierrc.json
-├── .prettierignore
-├── playwright.config.ts
-├── apps/
-│   ├── web/
-│   │   ├── public/          # Favicon, fotografias WebP e créditos
-│   │   ├── src/
-│   │   │   ├── components/ # Componentes tipados e marca
-│   │   │   ├── layouts/    # Layout público, layout privado e navegação
-│   │   │   ├── pages/      # Mercado, auth/ e private/ demonstrativos
-│   │   │   ├── data/       # Produtos, produtores e leilão fictícios
-│   │   │   ├── features/   # Catálogo, mercado, cart/, auth/, private-area/, buyer/, producer/ e admin/
-│   │   │   ├── types/      # Modelo tipado de produto e dados de apresentação
-│   │   │   └── styles/     # Tokens, mixins e parciais SCSS
-│   │   ├── tests/          # Testes de browser Playwright
-│   │   ├── index.html
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   └── vite.config.ts
-│   └── api/                # Apenas package.json, README e src reservado
-├── packages/
-│   └── shared/             # Estrutura inicial; sem exports ou dependências
-└── docs/
-    ├── requirements/
-    │   ├── functional-requirements.md
-    │   ├── non-functional-requirements.md
-    │   └── use-cases.md
-    ├── architecture/
-    │   ├── system-overview.md
-    │   ├── architecture-diagram.md
-    │   ├── auction-consistency.md
-    │   └── decisions.md
-    ├── database/
-    │   └── data-model.md
-    ├── design/
-    │   └── design-system.md
-    └── planning/
-        └── implementation-plan.md
-```
-
-`apps/api` não contém servidor ou endpoints. `packages/shared` reserva espaço para contratos realmente necessários; não define contratos finais a partir dos mocks. O nome deste workspace segue o pedido da Fase 1, sem alterar a proposta histórica da Fase 0.
-
-## Documentação da Fase 0
-
-| Documento                                                                     | Conteúdo                                                                                              |
-| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| [Requisitos funcionais](docs/requirements/functional-requirements.md)         | Requisitos por módulo, intervenientes, prioridades, critérios de aceitação e referências ao enunciado |
-| [Requisitos não funcionais](docs/requirements/non-functional-requirements.md) | Segurança, responsividade, qualidade, consistência, Cloud e obrigações académicas                     |
-| [Casos de utilização](docs/requirements/use-cases.md)                         | Atores, pré-condições, fluxos, alternativas, pós-condições e autorização                              |
-| [Visão global do sistema](docs/architecture/system-overview.md)               | Componentes, responsabilidades, dados, comunicação e serviços Cloud                                   |
-| [Diagramas de arquitetura](docs/architecture/architecture-diagram.md)         | Contexto, contentores e componentes em Mermaid                                                        |
-| [Consistência dos leilões](docs/architecture/auction-consistency.md)          | Concorrência, atomicidade, histórico, expiração, salas e reconexão                                    |
-| [Decisões e questões em aberto](docs/architecture/decisions.md)               | Fundamentação das escolhas, alternativas, recomendações e riscos                                      |
-| [Modelo de dados](docs/database/data-model.md)                                | Coleções, validação, referências, documentos embebidos, índices e relações                            |
-| [Plano de implementação](docs/planning/implementation-plan.md)                | Sete semanas, dependências, entregáveis, testes e marcos Git                                          |
-
-O [sistema visual](docs/design/design-system.md) documenta paleta, tipografia, componentes, comportamento responsivo e decisões de acessibilidade até à Fase 2.4.4, incluindo a rastreabilidade dos percursos demonstrativos aos requisitos da Fase 0. Os [créditos das fotografias](apps/web/public/images/credits.md) registam autores, fontes e licença. As fotografias são ilustrativas e não comprovam a origem dos produtores fictícios.
-
-## Implementação disponível
-
-- Homepage editorial com seleção sazonal, destaque ilustrativo de leilão, produtores, explicação do mercado, prévia do catálogo e chamada para produtores.
-- Componentes `Button`, `Container`, `SectionHeading`, `ProductCard`, `ProducerCard`, `AuctionCard`, `CategoryPill`, `StatusBadge`, `PriceDisplay`, `EmptyState`, `LoadingSkeleton` e `FormField`.
-- Header, navegação desktop e móvel, layout público e footer; foco visível, ligação de salto e suporte a movimento reduzido.
-- Catálogo de 36 produtos e sete produtores fictícios, com pesquisa imediata por nome, descrição e produtor, sem distinção de acentos/maiúsculas.
-- Filtros combináveis por categoria, produtor, localidade, época, biológico e preço máximo; indicadores ativos e remoção individual/global.
-- Ordenação por relevância, preço, nome e data; paginação de 12/24/36 produtos e recuperação da seleção ao voltar/avançar ou recarregar o browser.
-- Filtros desktop e painel modal móvel acessível; cartões com localização, preço/unidade, stock e etiqueta biológica; estado vazio e skeleton durante o carregamento real do módulo da página.
-- Detalhes editoriais com breadcrumbs, galeria acessível, disponibilidade, época, descrição, ligação ao produtor e recomendações determinísticas.
-- Perfis públicos com história, métodos de produção, categorias, produtos, avaliações fictícias e média derivada; diretório com sete produtores.
-- Localização ilustrativa sem coordenadas inventadas, alternativa textual e ligação externa à localidade no OpenStreetMap; ausência de contactos públicos explícita.
-- Componentes `Breadcrumbs`, `ProductGallery`, `MarketImage`, `ProducerMap` e `ReviewCard`; loading real dos módulos e recuperação específica de IDs inválidos.
-- Carrinho em React Context com adição desde cartões e detalhe, quantidades inteiras, remoção, agrupamento por produtor, subtotais/total em cêntimos e badge no header.
-- Persistência local versionada, recuperação de dados inválidos/antigos, reconciliação de preço/stock e funcionamento em memória quando o armazenamento falha.
-- Formulários demonstrativos de entrada, registo comprador/produtor e recuperação, com validação reutilizável, visibilidade da palavra-passe, feedback e indicação de indisponibilidade real.
-- Sessão de demonstração apenas em memória, escolha explícita de papel, navegação tipada e layout privado editorial com experiências próprias por papel, sem operações reais de negócio.
-- Dashboard do comprador com indicadores derivados de seis encomendas, duas avaliações iniciais e quatro participações fictícias; encomenda recente, resumo do carrinho e descoberta editorial.
-- Encomendas filtráveis pelos quatro estados e ordenáveis por data, detalhe com preços históricos, grupos por produtor, totais em cêntimos e histórico ilustrativo.
-- Avaliações a produtores e formulário local apenas para entregas elegíveis; participações com situações derivadas e detalhe de lote só de leitura, sem tempo real.
-- Fonte local assíncrona, carregamento real dos módulos, recuperação de erros/IDs inválidos e cenários de apresentação exploráveis em «Sobre estes dados».
-- Área do produtor com indicadores derivados, candidatura pendente fictícia, catálogo próprio pesquisável/filtrável, criação/edição local de produtos, preços, quantidades e limiares de stock.
-- Edição privada do nome público, localidade e descrição, com pré-visualização separada do perfil público; encomendas recebidas e leilões apenas de consulta, com detalhes e históricos.
-- Tokens SCSS e Bootstrap personalizado, com breakpoints de 768, 1024 e 1280 px.
-
-| Rota                             | Conteúdo                                                                                                 |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `/`                              | Homepage                                                                                                 |
-| `/produtos`                      | Catálogo interativo com pesquisa, filtros, ordenação e paginação                                         |
-| `/produtos/:id`                  | Detalhe editorial com galeria e produtos relacionados                                                    |
-| `/produtores`                    | Diretório editorial dos sete produtores fictícios                                                        |
-| `/produtores/:id`                | História, produção, produtos, localização e avaliações                                                   |
-| `/carrinho`                      | Cesta com quantidades, várias origens e totais demonstrativos                                            |
-| `/leiloes`                       | Proposta visual dos leilões                                                                              |
-| `/leiloes/cabaz-outono`          | Detalhe do lote fictício; licitação indisponível                                                         |
-| `/como-funciona`                 | Conceito do mercado e âmbito demonstrativo                                                               |
-| `/entrar`                        | Formulário de acesso indisponível e escolha separada de papel demonstrativo                              |
-| `/registo`                       | Prévia do registo comprador; `?perfil=produtor` apresenta candidatura                                    |
-| `/recuperar-palavra-passe`       | Interface informativa, sem email ou reposição real                                                       |
-| `/area`                          | Encaminhamento para o papel demonstrativo atual                                                          |
-| `/area/comprador`                | Dashboard demonstrativo, atividade recente e resumo da cesta                                             |
-| `/area/comprador/encomendas`     | Listagem, filtros de estado e ordenação por data                                                         |
-| `/area/comprador/encomendas/:id` | Detalhe, snapshots e histórico de encomenda fictícia                                                     |
-| `/area/comprador/avaliacoes`     | Avaliações a produtores e criação exclusivamente local                                                   |
-| `/area/comprador/licitacoes`     | Participações demonstrativas, sem envio de ofertas                                                       |
-| `/area/comprador/licitacoes/:id` | Detalhe privado do lote ilustrativo, apenas leitura                                                      |
-| `/area/produtor`                 | Dashboard demonstrativo com produção, encomendas e alertas de stock                                      |
-| `/area/produtor/candidatura`     | Dados necessários, etapas e exemplo de candidatura pendente                                              |
-| `/area/produtor/produtos`        | Catálogo privado, pesquisa e filtros                                                                     |
-| `/area/produtor/produtos/novo`   | Criação de produto apenas em memória                                                                     |
-| `/area/produtor/produtos/:id`    | Consulta privada do produto; `/:id/editar` permite edição local                                          |
-| `/area/produtor/perfil`          | Edição privada; `/pre-visualizacao` apresenta o perfil local                                             |
-| `/area/produtor/encomendas`      | Encomendas próprias filtráveis; `/:id` mostra detalhe e histórico                                        |
-| `/area/produtor/leiloes`         | Leilões próprios estáticos; `/:id` mostra o lote e o resultado                                           |
-| `/area/produtor/indicadores`     | Stock disponível, alertas e agregados de encomendas                                                      |
-| `/area/administrador`            | Indicadores, candidaturas, produtores, utilizadores, encomendas, leilões, moderação e serviços simulados |
-| `/sistema-visual`                | Galeria dos componentes e da paleta                                                                      |
-
-Rotas e IDs inexistentes apresentam uma página de recuperação. Preços, disponibilidade e tempos de leilão são fictícios. O carrinho é local e demonstrativo. As encomendas da área do comprador são exemplos, sem operações comerciais ou ligação a API. As regras comerciais definitivas continuam pendentes de validação.
-
-Os filtros do catálogo usam `pesquisa`, `categoria`, `produtor`, `localidade`, `epoca`, `bio`, `precoMax`, `ordem`, `pagina` e `porPagina` no URL. `precoMax` é expresso em euros; o modelo usa inteiros `priceCents`, conforme a decisão monetária proposta na Fase 0. A pesquisa e o slider atualizam o URL com substituição da entrada atual para não criar uma entrada de histórico por tecla/movimento; seleções e paginação criam entradas navegáveis.
-
-As opções são derivadas dos mocks e não fixam taxonomias finais da API. As fotografias de catálogo têm [créditos próprios](apps/web/public/images/catalog/credits.md) e as duas fotografias distintas de galeria têm [créditos de detalhe](apps/web/public/images/details/credits.md); alguns alimentos usam um placeholder identificado, sem fotografia de outro alimento atribuída indevidamente.
-
-## Fases de desenvolvimento
+As suites reais criam bases isoladas e não devem usar o ambiente persistente ou de produção. O comando Prettier da API usa explicitamente o ignore da raiz para excluir `dist/` sem omitir código ou testes. Os builds e resultados gerados são ignorados pelo Git; o guia local explica como guardar evidências fora do repositório.
 
-**Fase 0, concluída:** documentação e configuração inicial de Git.
+## 12. Limitações e melhorias futuras
 
-**Fase 1, concluída:** npm workspaces, configuração do frontend, sistema visual e homepage/páginas demonstrativas.
+### Limitações atuais
 
-**Fase 2.1, concluída:** catálogo interativo com dados fictícios, validado e publicado na feature branch através de cinco commits autorizados. Não foi efetuado merge para `main`.
+- **Cloud:** existem preparação e templates de infraestrutura, mas não há deployment, MongoDB Atlas configurado ou armazenamento Cloud ativo. O painel de serviços não é monitorização real. Não foi criado um backoffice Laravel.
+- **Pagamentos e faturação:** os métodos são registados nas condições da encomenda, sem integração bancária, cobrança automática ou faturação.
+- **Sessão:** JWT apenas em memória, sem refresh tokens ou revogação imediata no logout. A recuperação de palavra-passe por email continua demonstrativa.
+- **Carrinho:** persistência no navegador, sem sincronização entre dispositivos; para escritas simultâneas da mesma conta prevalece a última escrita local. O stock definitivo é validado no servidor.
+- **Fotografias:** armazenamento local de desenvolvimento, recusado em produção. A pasta temporária pode ser removida pelo sistema operativo; referências e ficheiros órfãos exigem manutenção controlada, sem limpeza automática indiscriminada.
+- **Tempo real:** eventos não são uma fila durável. Podem existir interrupções e versões intermédias não recebidas; REST reconcilia o estado. Presença, limites e adaptador são locais ao processo; não foi validada uma instalação distribuída.
+- **Descoberta:** a pesquisa de leilões limita-se à página carregada e identifica essa restrição. Não há geocodificação automática nem catálogo nacional completo de concelhos.
+- **Compra de lote:** não existe prazo de confirmação, penalização ou atribuição ao segundo licitador. Uma compra bloqueada por condições comerciais permanece pendente.
+- **Avaliação de produção:** os testes locais não demonstram disponibilidade, capacidade sob carga real ou segurança absoluta. Os avisos moderados conhecidos das ferramentas de desenvolvimento e pacotes locais excedentes estão registados no [guia local](docs/delivery/local-execution.md).
 
-**Fase 2.2, concluída:** detalhes de produtos e perfis de produtores, validados e publicados em cinco commits autorizados na feature branch.
+### Possíveis melhorias
 
-**Fase 2.3, concluída:** carrinho demonstrativo com várias origens, Context e persistência local, sem checkout; validado e publicado em cinco commits autorizados na feature branch.
+Uma evolução poderá integrar armazenamento durável e publicação Cloud, monitorização real, pagamentos e faturação, recuperação de conta e sincronização de cestas. O funcionamento com várias instâncias exigirá decisões sobre presença, limites distribuídos e entrega de eventos. Pesquisa global de leilões, testes de carga e uma avaliação mais ampla de acessibilidade também constituem trabalho futuro. Estas possibilidades não são apresentadas como funcionalidades concluídas.
 
-**Fase 2.4.1, concluída:** formulários, sessão demonstrativa, navegação e estrutura privada por papel; publicada em quatro commits autorizados em `feat/project-setup-design-system`.
+## 13. Conclusão
 
-**Fase 2.4.2, concluída:** área do comprador com dados fictícios e integração da cesta, publicada em quatro commits autorizados em `feat/buyer-dashboard`, sem merge para `main`.
+O projeto concretizou uma aplicação local que liga catálogo, autenticação, gestão de produtos, compras, encomendas, avaliações, administração e leilões. React e TypeScript suportam a interface; Express organiza a API; MongoDB preserva o estado comercial; Socket.IO aproxima os clientes das alterações confirmadas.
 
-**Fase 2.4.3, concluída:** área do produtor, aprovada e publicada em quatro commits autorizados em `feat/producer-dashboard`, até `ebf6109`, sem merge para `main`.
+Os desafios centrais foram garantir consistência entre operações concorrentes e manter a separação entre utilizadores. O trabalho levou à combinação de transações, escritas condicionais, idempotência, ETags, autorização atual e reconciliação REST. A correção do carrinho e a compra do lote vencedor mostram a importância de validar o percurso completo, além dos módulos isolados.
 
-**Fase 2.4.4, atual:** área do administrador, implementada localmente em `feat/admin-dashboard`. A criação da branch foi autorizada; sem staging, commits, push, merge ou PR. Não se iniciou a fase seguinte. O protótipo não constitui conclusão dos marcos M1–M3 do projeto completo.
+Os 2 878 testes automatizados aprovados, juntamente com as revisões manuais e responsivas, sustentam os comportamentos exercitados no ambiente local. Não demonstram uma instalação de produção. O resultado permite discutir, na defesa, decisões sobre dados embebidos e referenciados, regras no servidor, concorrência e limites do tempo real, mantendo explícito o trabalho ainda necessário para publicação e operação comercial.
 
-O desenvolvimento restante, sujeito a aprovação da fase seguinte, mantém o calendário do enunciado:
+Este README constitui o relatório académico do projeto, apresentando **o que foi feito e como foi feito**, as decisões técnicas e os resultados da validação.
 
-| Semana | Trabalho previsto                                                      | Marco            |
-| ------ | ---------------------------------------------------------------------- | ---------------- |
-| 1      | Protótipos e frontend responsivo                                       | Início da Fase 1 |
-| 2      | SPA com componentes, estado, routing e dados simulados; esboço OpenAPI | M1               |
-| 3      | API REST e modelo MongoDB                                              | —                |
-| 4      | OpenAPI/Swagger, autenticação, segurança e integração com a SPA        | M2               |
-| 5      | Leilões e notificações em tempo real                                   | —                |
-| 6      | Publicação na Cloud e armazenamento de imagens                         | —                |
-| 7      | Testes finais, relatório e vídeo                                       | M3               |
+Em termos técnicos, o trabalho articulou a integração entre frontend e backend com a modelação e persistência dos dados. O tratamento da concorrência mostrou a importância de validar a integridade das operações no servidor, em conjunto com a segurança e a autorização. Os testes automatizados e a validação manual complementaram-se, permitindo verificar regras isoladas e percursos completos da aplicação.
 
-O backoffice Laravel e a análise de elasticidade/custos são componentes opcionais de valorização. Só serão considerados depois de todos os requisitos obrigatórios estarem completos e funcionais. Não há datas de submissão ou defesa definidas neste README.
+<a id="bibliotecas-e-assistência-de-ia"></a>
 
-## Instalação e execução
+## 14. Bibliotecas, ferramentas e IA
 
-Pré-requisitos: Node.js 22.13+ na série 22, ou 24+, e npm ≥10. A instalação é feita na raiz do monorepo. O protótipo não precisa de ficheiros `.env`, conta Azure ou MongoDB. O ambiente verificado usa Node.js 22.21.1 e npm 10.9.4.
+Foi utilizado **Codex, da OpenAI**, no apoio à análise de requisitos, documentação, configuração, implementação e validação do frontend e backend. A **skill Sites** apoiou anteriormente o desenvolvimento local e a preparação de recursos; **não houve publicação em Sites**. Não se apresenta este trabalho como desenvolvimento sem assistência de IA.
 
-```bash
-git clone https://github.com/Vianass/DoCampo-Mesa.git
-cd DoCampo-Mesa
-git switch feat/buyer-dashboard
-npm ci
-npm run dev
-```
+O estudante mantém a responsabilidade pelas decisões, revisão, compreensão e explicação do projeto individual. A utilização destas ferramentas deve ser declarada na apresentação e nos restantes elementos académicos quando aplicável. O apoio não substitui a capacidade de justificar o código e as escolhas técnicas na defesa.
 
-Abrir `http://127.0.0.1:5173/`. O servidor usa apenas loopback; não é publicado na Cloud. Parar com `Ctrl+C`.
+As bibliotecas e frameworks utilizadas estão identificadas na [secção 4](#4-tecnologias-utilizadas) e nos ficheiros `package.json` do projeto. Os recursos visuais de terceiros mantêm os respetivos créditos: [imagens gerais](apps/web/public/images/credits.md), [catálogo](apps/web/public/images/catalog/credits.md) e [detalhes de produtos](apps/web/public/images/details/credits.md). A [licença Leaflet](apps/web/public/licenses/leaflet.txt), as licenças das dependências e as atribuições dos mapas devem ser respeitadas.
 
-Os comandos de instalação acima recuperam a versão publicada. A Fase 2.4.4 está apenas no diretório local em `feat/admin-dashboard`. Para a rever, executar `npm run dev`, abrir `/entrar` e escolher «Explorar como administrador», sem credenciais. As instruções de revisão de cada secção estão abaixo. Comprador e produtor continuam disponíveis nas respetivas opções de demonstração. Recarregar termina a sessão; a cesta conserva a persistência existente.
-
-```bash
-npm run typecheck    # Validação TypeScript strict
-npm run lint         # ESLint
-npm run format:check # Formatação, excluindo documentos históricos da Fase 0
-npm run build        # Produção em apps/web/dist
-npm run preview      # Prévia do build em http://127.0.0.1:4173/
-npm run test:e2e     # Browser e layouts demonstrativos
-```
-
-Os testes Playwright usam Google Chrome instalado e podem arrancar o Vite automaticamente. Em ambientes sem Chrome, pode instalar-se o Chromium de Playwright e selecionar esse canal:
-
-```bash
-npx playwright install chromium
-PLAYWRIGHT_CHANNEL=chromium npm run test:e2e
-```
-
-`npm run format` formata apenas a implementação, o README e a documentação de design; não modifica os nove documentos originais. Credenciais, tokens e `.env` privados não devem ser versionados. Um futuro `.env.example` deverá conter apenas valores ilustrativos sem segredos.
-
-## Carrinho demonstrativo
-
-`CartProvider`, `CartContext` e `useCart` partilham a cesta entre navegação, cartões, detalhes e `/carrinho`. O reducer e as funções de cálculo ficam fora da apresentação. As ações públicas são `addItem`, `removeItem`, `updateQuantity` e `clearCart`; a informação derivada inclui quantidade total, grupos por produtor, subtotal e total em cêntimos.
-
-O schema `docampo.cart.v1` guarda versão, IDs, quantidade, `unitPriceSnapshotCents`, unidade e `updatedAt`, sem catálogo completo, nomes, imagens ou dados pessoais. Ao restaurar, cada linha é revista contra os mocks atuais; preços/unidades/origens são atualizados, stock excessivo é reduzido e produtos removidos/esgotados são descartados, sempre com aviso. O storage normalizado é guardado novamente. Se o browser recusar o armazenamento, as operações continuam em memória.
-
-Quantidades representam unidades comerciais inteiras. No campo de edição, Enter ou saída do campo confirma valores válidos; valores inválidos permanecem com erro, sem alterar a cesta. Introduzir explicitamente zero retira a linha; diminuir está desativado em 1. Uma adição que ultrapasse o stock é recusada. O carrinho não reserva nem decrementa stock. Total = soma dos subtotais, sem portes, taxas ou descontos fictícios.
-
-Esta demonstração aceita vários produtores por pedido da Fase 2.3; a futura divisão de encomendas continua dependente de Q02. Quantidades fracionárias (Q03), checkout, confirmação de preços (Q06) e stock autoritativo (D08) serão resolvidos na integração com a API. A persistência não sincroniza separadores ou dispositivos. Consultar [pressupostos e arquitetura do carrinho](docs/design/design-system.md#fase-23--pressupostos-do-carrinho-antes-da-implementação).
-
-## Entrada e área privada demonstrativas
-
-Os papéis seguem `users.papel` da Fase 0: **comprador, produtor e administrador**; visitante é ausência de sessão. O registo só apresenta comprador/produtor. Nome e email seguem `users`; a candidatura acrescenta nome público e localidade de `producers`, com informação sobre decisão administrativa. Não existe registo administrativo, aprovação automática, candidatura efetivamente submetida ou mecanismo legal de aceitação inventado.
-
-`AuthProvider`, `AuthContext` e `useAuth` isolam a sessão `{ kind: 'visitor' } | { kind: 'demonstration', role }`. Só os botões de demonstração iniciam esta sessão; os formulários nunca autenticam nem criam contas. Não há JWT, hash, API, identidade pessoal no Context ou persistência de sessão/credenciais. Sair ou recarregar repõe o visitante. O `CartProvider` continua montado e independente.
-
-A validação partilhada verifica presença, formato de email e confirmação; no registo usa provisoriamente oito caracteres sem regras de composição. O login exige apenas uma palavra-passe não vazia. O estado «A verificar» corresponde à verificação local, sem rede ou atraso artificial. Após submissão válida, campos de palavra-passe ficam vazios e surge a indisponibilidade da operação. Usa apenas dados fictícios. A recuperação é uma interface solicitada nesta fase, não uma obrigação adicional do enunciado; nunca envia email.
-
-`DemoRoute` orienta a navegação: sem sessão, `/entrar?destino=...`; com papel incompatível, mensagem e recuperação sem trocar o papel; percursos desconhecidos, estado de página não encontrada. Só destinos internos conhecidos do papel podem ser retomados. `PrivateLayout` oferece identidade, papel visível, navegação desktop/móvel, saída e ligação ao mercado. Comprador, produtor e administrador têm experiências demonstrativas próprias, isoladas entre si.
-
-Esta guarda do frontend **não é uma fronteira de segurança**. Na integração futura, a API REST validará credenciais, hashes e expiração e imporá papel/propriedade/aprovação atuais no servidor. Q01 (papéis), Q04 (produtores pendentes) e Q13 (sessão) continuam por validar para contas reais; esta demonstração não fecha essas decisões. A [análise e rastreabilidade da Fase 2.4.1](docs/design/design-system.md#fase-241--análise-e-pressupostos-antes-da-implementação) distingue interfaces presentes e operações futuras.
-
-## Área do comprador demonstrativa
-
-O dashboard deriva os indicadores de seis encomendas, duas avaliações e quatro participações fictícias: três encomendas em curso e duas participações em leilões ativos. Mostra a encomenda mais recente, participações relevantes, descoberta de produtos e o resumo da cesta real deste browser através de `useCart`, sem duplicar o seu estado.
-
-As encomendas permitem filtrar os estados `pendente`, `confirmada`, `pronta`, `entregue` e ordenar por data; `estado` e `ordem` ficam no URL. O detalhe agrupa linhas por produtor, apresenta quantidades, preços históricos em cêntimos, subtotais, total e histórico ilustrativo. Cada exemplo tem um produtor, mantendo Q02 em aberto. Não permite criar, pagar, cancelar ou mudar o estado. Os preços atuais do catálogo não recalculam compras históricas.
-
-As avaliações a produtores apresentam classificação, comentário, data e ligação ao perfil. A regra provisória de Q10 permite uma avaliação por encomenda entregue/autor/produtor: classificação inteira de 1–5 e comentário opcional até 1000 caracteres. Inicialmente só a entrega do Forno da Aldeia ainda não foi avaliada. O formulário acrescenta apenas uma avaliação em memória; mantém-se ao navegar para o mercado, mas desaparece ao sair, mudar de papel, recarregar ou mudar de cenário. Não publica nos perfis nem altera as suas médias, e não existe compra verificada.
-
-As licitações representam um snapshot de **15 de outubro de 2026, 09:00 UTC**: mais elevada, ultrapassada, leilão terminado ganho e terminado sem vitória. O detalhe privado de cada lote apresenta base, incremento, valor atual e resultado coerentes com o snapshot. Não aceita ofertas nem atualiza estados pelo relógio; não existem sockets, adjudicações reais ou criação automática de encomendas. O leilão público existente permanece independente.
-
-Os [modelos](apps/web/src/features/buyer/types.ts), [dados fictícios](apps/web/src/data/buyer.ts) e [seletores puros](apps/web/src/features/buyer/selectors.ts) estão separados da apresentação. `BuyerProvider` consome uma fonte local assíncrona substituível e gere avaliações transitórias. Em «Sobre estes dados» pode selecionar-se atividade ilustrativa, ausência de atividade ou indisponibilidade demonstrativa, sem atrasos artificiais. Todas as páginas têm carregamento, vazio e erro recuperável; detalhes com IDs inválidos têm recuperação específica. Consultar a [arquitetura e integração futura](docs/design/design-system.md#arquitetura-implementada-da-fase-242).
-
-## Área do produtor demonstrativa
-
-A Horta da Ribeira é o produtor de exemplo. Treze produtos privados, quatro encomendas e quatro leilões alimentam os indicadores, sem contadores paralelos. O stock inicial soma 295 unidades comerciais de produtos diferentes, não kg; existe um produto com stock reduzido e um indisponível. O limiar inicial de três unidades por produto é provisório (Q15) e editável. A abóbora tem duas unidades apenas nesta cópia privada, para explorar o alerta.
-
-Produtos permitem pesquisa sem acentos/maiúsculas, filtros de categoria/disponibilidade, detalhe e criação/edição em memória. Nome, descrição, categoria, unidade, preço em EUR, stock e limiar são os campos aceites; preço tem até duas casas decimais e quantidades são inteiros seguros não negativos. Preço zero é provisoriamente permitido (Q06). Disponibilidade deriva do stock: zero indisponível, positivo até ao limiar reduzido, restantes disponíveis. Novos produtos usam placeholder identificado. Sem publicação, remoção, upload ou edição de certificação nesta subfase.
-
-O perfil permite editar nome público, localidade e descrição e pré-visualizar os dados locais, reutilizando o mapa ilustrativo e os componentes existentes. A candidatura mostra requisitos, dados necessários, etapas e um exemplo pendente, sem submissão, decisão ou aprovação. Nenhuma edição concede direitos comerciais ou altera o perfil público original. Q04, Q11, Q12 e Q14 continuam por validar.
-
-Encomendas recebidas têm filtros, linhas, preços históricos, totais e histórico dos quatro estados; não podem ser alteradas. O agregado entregue inicial é 6,45 €, referente a todo o conjunto ilustrativo, sem afirmar pagamentos, lucro ou vendas num período. Os leilões apresentam agendado, ativo e terminado, incluindo término sem ofertas e sem vencedor, num snapshot fixo de 15 de outubro de 2026, 09:00 UTC. Não existem licitações, timers, reservas ou conversão automática em encomendas; Q05/Q07/Q08/Q09 continuam pendentes.
-
-[Tipos](apps/web/src/features/producer/types.ts), [dados](apps/web/src/data/producer.ts), [seletores e comandos puros](apps/web/src/features/producer/selectors.ts) e [fonte assíncrona](apps/web/src/features/producer/source.ts) estão separados de componentes/páginas. `ProducerProvider`/`ProducerContext`/`useProducer` mantêm as edições na navegação pública, sem copiar nem alterar o estado do carrinho ou do comprador. Sair, mudar de papel, recarregar ou mudar de cenário repõe os dados. Loading, vazio, erro e IDs inválidos têm recuperação; não há temporizadores artificiais nem chamadas HTTP. Consultar a [arquitetura do produtor](docs/design/design-system.md#arquitetura-implementada-da-fase-243).
-
-## Área administrativa demonstrativa
-
-[Dados administrativos](apps/web/src/data/admin.ts), [tipos](apps/web/src/features/admin/types.ts), [seletores e decisões](apps/web/src/features/admin/selectors.ts), [fonte substituível](apps/web/src/features/admin/source.ts) e [AdminProvider](apps/web/src/features/admin/AdminProvider.tsx) separam os modelos da apresentação. O contexto envolve todas as rotas e preserva decisões durante a navegação pública. Só o papel administrativo pode emitir comandos; o reducer valida novamente o recurso pendente no estado mais recente. Não existe armazenamento de decisões, HTTP ou alteração de dados públicos.
-
-O conjunto inicial tem **10 utilizadores, sete produtores, duas candidaturas pendentes, oito encomendas únicas, três avaliações denunciadas e dois leilões ativos**. A fila de moderação começa com duas pendências; quatro sinalizações correspondem a três avaliações distintas. As oito encomendas e sete leilões resultam da união desduplicada dos snapshots de comprador/produtor. Os valores monetários mantêm preços históricos em cêntimos; a encomenda DCM-261010 continua a totalizar 6,45 €. Produtos associados a três lotes são referências ilustrativas, sem reserva de stock.
-
-| Secção sob `/area/administrador`    | Revisão visual sugerida                                                                                                                                |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| índice                              | Confirmar os seis indicadores, as duas filas e o aviso sobre monitorização real.                                                                       |
-| `candidaturas` e `candidaturas/:id` | Consultar a Horta da Ribeira; submeter sem escolha para ver validação; aprovar/rejeitar com motivo opcional e verificar o registo local e o indicador. |
-| `produtores` e `produtores/:id`     | Pesquisar Horta, combinar estados, limpar filtros e consultar perfil, utilizador associado e mapa ilustrativo.                                         |
-| `utilizadores` e `utilizadores/:id` | Filtrar por papel, pesquisar e consultar associações; não existem ações de segurança ou edição de papéis.                                              |
-| `encomendas` e `encomendas/:id`     | Filtrar entregues, pesquisar Horta e consultar DCM-261010: quantidades, preços, subtotais, total e histórico.                                          |
-| `moderacao` e `moderacao/:id`       | Abrir `denuncia-1`, consultar duas sinalizações e simular ocultar; filtrar decisões e verificar que a avaliação pública permanece igual.               |
-| `leiloes` e `leiloes/:id`           | Comparar agendado, ativo e terminado; abrir `lote-sem-ofertas` e `lote-mel` para ausência de vencedor e resultado fictício.                            |
-| `servicos`                          | Consultar API, Socket.io, MongoDB Atlas, Blob Storage e Swagger UI; distinguir os cinco estados reais não monitorizados dos exemplos simulados.        |
-
-Nos 14 percursos, «Sobre esta demonstração» permite escolher atividade normal, vazio ou erro e recuperar. Experimentar um identificador inexistente em qualquer detalhe e verificar a saída para a lista. Em telemóvel, usar o menu e Escape; confirmar foco e ausência de deslocação horizontal a 320/430/768/1024/1280/1440 px.
-
-Decisões conservam autor fictício, data e motivo opcional até 500 caracteres (limite provisório). Só recursos pendentes aceitam uma decisão, sem reabertura. Visitar o mercado preserva-as; sair, mudar de papel, recarregar ou mudar de cenário repõe os exemplos. Não se muda a classificação/texto da avaliação, o papel de utilizador, o catálogo público ou a candidatura da área do produtor. Não há aprovação administrativa real, notificações, alteração de encomendas, licitações, sockets ou monitorização Cloud.
-
-Q04, Q10/Q12 e Q16 continuam pendentes: direitos antes da aprovação/recandidatura, moderação de outros conteúdos e profundidade da monitorização. Persistência, autorização no servidor, auditoria, conflitos e integração Cloud pertencem a fases futuras. A interface não constitui um contrato definitivo da API.
-
-## Validação e limitações
-
-Verificação da Fase 2.4.4 em 15 de outubro de 2026: **274 testes aprovados**, sem retries — os 224 anteriores e 50 administrativos (12 de modelo, 38 de browser). TypeScript, ESLint, Prettier e build de produção passaram. Os 14 percursos administrativos foram verificados a 320/430/768/1024/1280/1440 px, sem overflow horizontal, com uma h1, imagens válidas e controlos principais com pelo menos 44 px. Foram obtidas 50 capturas reais de Chrome; a inspeção visual incluiu desktop, tablet, telemóvel, formulários, exemplos Cloud e erro recuperável, sem erros JavaScript. Os nove documentos originais conservam os hashes iniciais e as ligações Markdown locais verificadas resolvem corretamente.
-
-Os testes da Fase 2.4.1 verificam formulários, papéis, destinos, sessão em memória, saída, menu privado e preservação do carrinho, incluindo submissões que nunca autenticam nem enviam dados. Um cenário histórico de indisponibilidade do registo foi adaptado aos novos campos, mantendo as restantes verificações.
-
-Execução final da Fase 2.4.2 em 15 de outubro de 2026: **176 testes aprovados**, sem retries (35 novos: 9 de modelo e 26 de browser; 141 cenários anteriores preservados). As expectativas do comprador em `auth.spec.ts` foram adaptadas às páginas agora implementadas, sem remover testes. TypeScript, ESLint, Prettier e build passaram. Os nove documentos da Fase 0 mantêm os hashes iniciais.
-
-Os testes novos cobrem indicadores derivados, isolamento por comprador, snapshots monetários, filtros/histórico, detalhes inválidos, elegibilidade/duplicação de avaliações, estados/resultados dos leilões, navegação entre papéis, loading real, recuperação de erros e preservação da cesta. As seis páginas do comprador são verificadas às seis larguras abaixo, incluindo ações do estado de erro. Foram inspecionadas capturas Chrome de desktop, tablet e telemóvel; as ações de recuperação móveis foram separadas após essa inspeção.
-
-TypeScript, ESLint, Prettier, build de produção e testes de browser são executáveis pelos comandos acima. Os testes do carrinho incluem operações, agrupamento, cálculos, persistência, stock reduzido, JSON inválido, IDs antigos, falhas de localStorage e interação móvel. A suite usa Playwright tanto para testes de funções puras do catálogo como para percursos em Chrome. Abrange pesquisa, todos os filtros, ordenações, paginação, URL/back/forward, loading, painel móvel, detalhes, galeria por teclado/fallback, perfis, reviews, navegação, imagens e regressões da homepage. Larguras verificadas: 320/430/768/1024/1280/1440 px. A inspeção visual utiliza capturas efetivas do Chrome; não se declara certificação de acessibilidade ou cobertura de Safari/Firefox.
-
-O carrinho persiste apenas neste browser via localStorage. Não há persistência em servidor, contas, pagamentos, checkout, mapa com coordenadas verificadas, API ou tempo real. O mapa do perfil é uma representação ilustrativa com ligação pública à localidade; não inclui serviços pagos, chaves ou iframes externos. As médias públicas são calculadas apenas sobre avaliações fictícias, sem compras verificadas; o novo formulário privado é um exercício local e não publica avaliações. Os workspaces API/shared permanecem estruturas iniciais. As questões de negócio da Fase 0 continuam pendentes de validação antes dos módulos correspondentes.
-
-## Assistência de inteligência artificial
-
-Foi utilizado o assistente **Codex, da OpenAI**, como apoio à análise do enunciado, à documentação da Fase 0, à configuração Git e à implementação/verificação do frontend até à Fase 2.4.4. A skill Sites apoiou o fluxo de desenvolvimento local e a preparação de assets; não foi criada uma publicação em Sites. As propostas e o código produzidos com apoio de IA devem ser revistos e validados pelo estudante, que mantém a responsabilidade pelas decisões, pelo trabalho individual e pela explicação das soluções na defesa.
-
-A declaração de uso de IA e bibliotecas deverá também constar do relatório final, conforme o enunciado. O apoio recebido não substitui a compreensão e validação do projeto pelo autor.
-
-## Repositório
-
-[Vianass/DoCampo-Mesa](https://github.com/Vianass/DoCampo-Mesa)
-
-## Fase 12 — documentação interativa e preparação de produção
-
-A API disponibiliza Swagger UI real em `/api-docs`, com Authorize e pedidos HTTP para as operações efetivamente implementadas. O build inclui o contrato e os recursos locais. GET `/api/ready` consulta a ligação MongoDB; GET `/api/health` conserva o diagnóstico do processo. O PATCH académico `/api/orders/:id/estado` reutiliza os serviços atuais e traduz `entregue` para a conclusão já existente, sem migrar estados persistidos.
-
-A configuração admite `PORT` do PaaS, origem HTTPS independente para React e uma porta de armazenamento Cloud injetável. Não há deployment ou adaptador Cloud concreto nesta fase. As fotografias locais continuam proibidas em produção. Argon2id e bcrypt legado mantêm-se por decisão explícita do utilizador; a divergência face ao requisito académico bcrypt está documentada para aceitação formal.
-
-Consultar [a entrega da Fase 12](docs/api/phase-12-production-readiness.md), incluindo testes, configurações de exemplo, compatibilidades e limitações para a Fase 13. A grid, os cards e a navegação Bootstrap preservam a identidade visual existente.
+O [índice documental](docs/README.md) reúne os requisitos originais e a documentação complementar. O histórico Git preserva versões anteriores; os documentos técnicos registam decisões e limitações sem substituir o relatório atual.

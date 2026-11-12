@@ -188,6 +188,7 @@ function applyOperation(
 }
 
 export function cartReducer(session: CartSession, action: CartAction): CartSession {
+  if (action.type === 'restore') return action.session;
   if (action.type === 'purchase-confirmed') {
     const selected = new Map(action.lines.map((line) => [line.productId, line]));
     const items = session.cart.items.filter((item) => {

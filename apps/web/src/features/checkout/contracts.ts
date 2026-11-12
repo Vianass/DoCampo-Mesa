@@ -79,6 +79,7 @@ export interface Receipt {
   origem: 'nova' | 'replay';
 }
 export interface OwnOrder {
+  leilaoOrigemId?: string;
   id: string;
   operacaoCompraId: string;
   produtorContaId: string;
@@ -312,6 +313,7 @@ export function parseOrder(v: unknown): OwnOrder {
   const r = record(v),
     p = record(r.pagamento);
   const result: OwnOrder = {
+    ...(r.leilaoOrigemId !== undefined ? { leilaoOrigemId: id(r.leilaoOrigemId) } : {}),
     id: id(r.id),
     operacaoCompraId: text(r.operacaoCompraId),
     produtorContaId: id(r.produtorContaId),

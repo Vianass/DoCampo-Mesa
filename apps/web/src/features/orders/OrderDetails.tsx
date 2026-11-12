@@ -15,12 +15,18 @@ export function OrderDetails({
     <article className="buyer-order-detail live-order" aria-labelledby={'order-' + order.id}>
       <header>
         <div>
-          <p className="eyebrow">Encomenda</p>
+          <p className="eyebrow">{order.leilaoOrigemId ? 'Encomenda de leilão' : 'Encomenda'}</p>
           <h2 id={'order-' + order.id}>{order.id}</h2>
           <time dateTime={order.criadaEm}>{orderDate(order.criadaEm)}</time>
         </div>
         <span className="buyer-order-status">{stateLabels[order.estado]}</span>
       </header>
+      {order.leilaoOrigemId && (
+        <p>
+          <Link to={'/leiloes/' + order.leilaoOrigemId}>Consultar leilão de origem</Link> · Preço
+          fechado do lote.
+        </p>
+      )}
       {showProducer && (
         <p className="live-order-producer">
           {order.produtor ? (
@@ -35,21 +41,30 @@ export function OrderDetails({
           <li key={line.id}>
             <div>
               <Link to={'/produtos/' + line.produtoId}>{line.nome}</Link>
-              <p>
-                {line.quantidade}{' '}
-                {line.unidadeVenda.unidadeBase === 'un'
-                  ? line.unidadeVenda.modalidade === 'embalagem'
-                    ? 'embalagens'
-                    : 'unidades'
-                  : line.unidadeVenda.unidadeBase}
-              </p>
+              {order.leilaoOrigemId ? (
+                <p>
+                  Lote indivisível · {line.unidadeVenda.conteudoPorUnidade?.quantidade}{' '}
+                  {line.unidadeVenda.conteudoPorUnidade?.unidade}
+                </p>
+              ) : (
+                <p>
+                  {line.quantidade}{' '}
+                  {line.unidadeVenda.unidadeBase === 'un'
+                    ? line.unidadeVenda.modalidade === 'embalagem'
+                      ? 'embalagens'
+                      : 'unidades'
+                    : line.unidadeVenda.unidadeBase}
+                </p>
+              )}
               <small>
                 <PriceDisplay amountCents={line.precoReferenciaCent} /> /{' '}
-                {line.unidadeVenda.modalidade === 'peso'
-                  ? 'kg'
-                  : line.unidadeVenda.modalidade === 'volume'
-                    ? 'L'
-                    : line.unidadeVenda.modalidade}
+                {order.leilaoOrigemId
+                  ? 'lote'
+                  : line.unidadeVenda.modalidade === 'peso'
+                    ? 'kg'
+                    : line.unidadeVenda.modalidade === 'volume'
+                      ? 'L'
+                      : line.unidadeVenda.modalidade}
               </small>
             </div>
             <PriceDisplay amountCents={line.subtotalCent} />

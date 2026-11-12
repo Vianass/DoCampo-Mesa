@@ -57,6 +57,16 @@ export function auctionDetailDto(
   const leader = a.licitacaoAtual.comprador;
   return {
     ...auctionDto(a, now, restricted),
+    ...((a.produtor.toHexString() === user || a.resultado?.comprador?.toHexString() === user) &&
+    a.estado === 'terminado' &&
+    a.resultado?.tipo === 'vencedor'
+      ? {
+          compra: {
+            estado: a.compra ? 'confirmada' : 'pendente',
+            ...(a.compra ? { encomendaId: a.compra.encomendaId.toHexString() } : {}),
+          },
+        }
+      : {}),
     lider: leader
       ? { referencia: repo.participant(a, leader), proprio: leader.toHexString() === user }
       : null,

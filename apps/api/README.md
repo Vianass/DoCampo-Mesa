@@ -1,220 +1,48 @@
-# API — estado atual e execução local
+# API — Do Campo à Mesa
 
-A API integra autenticação, catálogo, gestão do produtor, encomendas, candidaturas, administração, avaliações, moderação e leilões com Socket.IO. O [guia atual de execução e revisão](../../docs/delivery/local-execution.md) descreve o ambiente local completo, contas fictícias isoladas e validações. Swagger está em `/api-docs/`; `/api/health` verifica o processo e `/api/ready` verifica a ligação MongoDB. Cloud permanece facultativa e inativa. As secções seguintes são registos históricos e as suas limitações referem-se à fase indicada.
+API REST real em Node.js, Express e TypeScript, com persistência MongoDB/Mongoose, autenticação JWT, autorização pelo estado atual da conta, checkout transacional, encomendas, leilões e moderação. Socket.IO notifica alterações após persistência; REST reconcilia o estado.
 
-## Registo da Fase 6B — Socket.IO
+## Preparação e execução
 
-O mesmo servidor Express/HTTP recebe o namespace autenticado `/auctions`, no path `/socket.io`. Dependências: `socket.io@4.8.4` e cliente apenas de desenvolvimento `socket.io-client@4.8.4`. Reutiliza JWT/CORS/proxy e o serviço de licitações, com publicação após commit e recuperação de estado. Não há nova porta, interface React, encomenda ou pagamento de leilão.
+Executar os comandos na raiz do monorepo. Requer Node.js 22.21.1 ou uma versão compatível de Node.js 24, npm 10+ e Docker com Compose. Instalar as versões do lockfile com `npm ci` numa cópia nova.
 
-Variáveis opcionais: `SOCKET_ENABLED=true`, `SOCKET_SYNC_INTERVAL_MS=500`, `SOCKET_AUTH_INTERVAL_MS=1000`. Ver [contrato tipado, quotas, reconexão e limites de entrega](../../docs/api/phase-6b-socketio.md). REST mantém o OpenAPI anterior; eventos Socket.IO não são endpoints REST.
+O [guia local](../../docs/delivery/local-execution.md) apresenta o percurso recomendado com contas fictícias e uma base isolada, incluindo os três papéis. Nesse modo, a API usa `http://127.0.0.1:3011/api` e Swagger `http://127.0.0.1:3011/api-docs/`.
 
-Demonstração isolada: iniciar `npm run mongo:test:up --workspace @docampo/api` na raiz e executar `DOCAMPO_AUCTION_DEMO=1 npm run demo:auctions --workspace @docampo/api`. Apenas MongoDB de teste local, contas fictícias, servidor/clientes reais e remoção da própria base temporária no fim. Sem credenciais nos logs.
-
----
-
-# API — leilões e licitações da Fase 6A
-
-O runtime prepara `auctions`/`bids`, índices e recuperação temporal antes de abrir HTTP. Inicia manutenção periódica de um segundo e aguarda o seu encerramento antes de fechar a ligação MongoDB. Mantêm-se as variáveis existentes, JWT real e replica set; sem dependências adicionais.
-
-Endpoints: `GET/POST /api/auctions`, `GET/PUT /api/auctions/:id`, `POST /api/auctions/:id/cancel`, `GET/POST /api/auctions/:id/bids` e `GET /api/me/producer/auctions`. Só o primeiro GET é público. Criação e licitação exigem `Idempotency-Key`; PUT/cancelamento exigem `If-Match` do detalhe. A licitação é o preço total do lote em cêntimos; primeira oferta mínima = base + incremento.
-
-Ver [guia técnico e revisão isolada](../../docs/api/phase-6a-auctions.md) e [OpenAPI](../../docs/api/openapi.yaml). Não há conversão automática do resultado em encomenda, pagamento, sala Socket.IO ou nova interface React. Os registos anteriores abaixo preservam o âmbito de cada fase.
-
----
-
-# API — gestão de encomendas do produtor da Fase 5F
-
-Disponíveis com JWT, conta ativa e papel atual produtor: `GET /api/me/producer/orders`, `GET /api/me/producer/orders/:id` e `PATCH /api/me/producer/orders/:id/status`. A propriedade é a conta produtora guardada na encomenda, nunca um ID escolhido no cliente. Aprovação e condições comerciais atuais não reescrevem nem bloqueiam automaticamente encomendas históricas próprias; esta fase não concede novos poderes de vender/publicar.
-
-A listagem admite `pagina`, `porPagina`, `ordem` e `estado`, com indicadores globais próprios. O detalhe inclui apenas os snapshots operacionais necessários, histórico minimizado e ações possíveis. Os GET próprios do comprador continuam os existentes. Ver [contratos e permissões](../../docs/api/frontend-integration.md).
-
-O PATCH exige JSON estrito `{estado}`, `If-Match` forte do detalhe e transação snapshot/majority com guarda de capacidades e `save` completo validado, reutilizando `versao`/optimisticConcurrency de orders. 428 sem precondição, 400 inválida, 412 desatualizada, 409 para transição proibida. Só permite pendente → confirmada → em_preparacao → pronta; sem novos estados ou cancelamento/conclusão/pagamento genéricos. Não altera stock, recibo original ou snapshots. Falha de rede/503 exige releitura, sem repetição automática do comando. CORS passa a permitir PATCH/If-Match nas origens já autorizadas, sem alargar a lista de origens.
-
-Não são acrescentadas dependências, modelos ou índices. A revisão com contas fictícias e base temporária está no [README principal](../../README.md).
-
----
-
-## Registo da Fase 5E preservado
-
-# API — preparação e recuperação do checkout da Fase 5E
-
-À API da Fase 5D juntam-se três operações privadas de comprador: `POST /api/orders/prepare`, `POST /api/orders/attempts` e `GET /api/orders/attempts/:referencia`. O runtime prepara também o índice TTL da coleção técnica `checkout_attempts`. Esta conserva temporariamente o pedido da própria conta para recuperação após reload; não cria encomendas, não reserva stock e não substitui a idempotência global do checkout.
-
-Revisões, associações conta/perfil e ofertas vêm do MongoDB autenticado. A validação transacional final mantém-se no serviço existente. Listagem/detalhe de encomendas passam a incluir, quando disponível, a identificação pública atual do produtor; valores, linhas e receção permanecem snapshots. Sem alteração dos modelos de negócio, dependências ou autenticação.
-
-Ver [OpenAPI](../../docs/api/openapi.yaml), [contrato de integração e privacidade](../../docs/api/frontend-integration.md) e [revisão isolada pelo browser](../../README.md). O pedido temporário expira logicamente em 24 horas, com remoção TTL assíncrona. A recuperação exige a mesma conta ativa com capacidade comprador; a referência não é um token de acesso. O prazo não afeta encomendas já criadas.
-
----
-
-## Registo da Fase 5D preservado
-
-# API — checkout e encomendas próprias da Fase 5D
-
-Disponíveis localmente, além do catálogo/autenticação existentes: `POST /api/orders`, `GET /api/orders` e `GET /api/orders/:id`. Exigem JWT válido, conta ativa e capacidade atual `comprador`. O arranque prepara os índices existentes de orders antes de abrir HTTP; não há novo modelo ou migração.
-
-O POST exige `Content-Type: application/json` e `Idempotency-Key` opaco (ASCII visível, 1–128 caracteres). O corpo é o contrato transacional existente, sem comprador, papel ou totais arbitrários. A identidade vem exclusivamente do JWT confirmado. Respostas: 201 para compra nova; 200 para replay do recibo; 400 para pedido inválido; 401/403 para acesso recusado; 409 para conflito/reconfirmação; 413/415 para transporte inválido; 503 indeterminado com `repetirComMesmaChave:true`. Em falha de rede ou resultado indeterminado, conservar exatamente a chave e o pedido. Uma nova chave não é uma recuperação e pode criar outra compra. Erros 500 são genéricos e não permitem assumir sucesso: conservar a tentativa original para recuperação.
-
-GET lista apenas compras próprias, com `pagina` (1–1000), `porPagina` (12/24/36) e `ordem` (`recentes`/`antigas`). O detalhe próprio inclui snapshots e histórico minimizado; terceiros e inexistentes devolvem o mesmo 404. Não existem comandos de estados, cancelamento, pagamento ou leilão nesta etapa. Sem processamento bancário, reservas ou checkout visual.
-
-Ver exemplos completos no [OpenAPI](../../docs/api/openapi.yaml) e [compatibilidade com React](../../docs/api/frontend-integration.md). O seed público não fornece metadados privados suficientes para construir automaticamente um checkout; não adivinhar IDs/revisões nem reutilizar ETags como contadores.
-
----
-
-## Registos anteriores preservados
-
-> **Integração local da Fase 5B:** React consulta o catálogo público. O [README da raiz](../../README.md) descreve o arranque conjunto, a base dedicada `docampo_dev_catalog`, o seed manual protegido e a suite real separada. Não há alteração aos contratos ou autenticação desta API. Os registos de validação das fases anteriores abaixo conservam o seu contexto.
-
-# API — catálogo e gestão de produtos da Fase 5A
-
-Disponíveis localmente: GET `/api/products`, `/api/products/:id`, `/api/producers`, `/api/producers/:id`; GET próprios `/api/me/products` e `/api/me/products/:id`; POST/PUT/DELETE de produtos com JWT e propriedade. O DELETE arquiva. PUT é completo e PUT/DELETE exigem If-Match obtido na representação própria. Rascunhos não são públicos.
-
-Ver [contratos e adaptação React](../../docs/api/frontend-integration.md) e [OpenAPI](../../docs/api/openapi.yaml). O arranque continua a exigir JWT_SECRET/MongoDB conforme os comandos abaixo; prepara também os índices existentes de products/producers. Não há novo modelo, dependência, frontend modificado, checkout HTTP ou leilão.
-
----
-
-## Autenticação e configuração anteriores, preservadas
-
-# API — autenticação local da Fase 4
-
-Além do diagnóstico `GET /api/health`, estão implementados `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` e `POST /api/auth/logout`. Checkout continua interno e os endpoints comerciais não existem. Ver [segurança e limitações](../../docs/api/security.md) e [OpenAPI](../../docs/api/openapi.yaml).
-
-## Arranque com autenticação
-
-Copiar `.env.example` para `.env` local, manter a configuração MongoDB de desenvolvimento e preencher **JWT_SECRET** com pelo menos 32 bytes aleatórios codificados em base64url. Não versionar `.env` ou o segredo. Um comando local para gerar o valor é:
-
-```sh
-node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
-```
-
-Não usar o segredo gerado como exemplo público. `JWT_ISSUER=docampo-api`, `JWT_AUDIENCE=docampo-web` e `JWT_TTL_SECONDS=900` são os valores por omissão. `CORS_ORIGINS` contém origens exatas separadas por vírgulas; vazio bloqueia origens de browser. `TRUSTED_PROXY_IPS` vazio não confia em X-Forwarded-*; produção exige HTTPS através de proxy confiável explicitamente configurado e acesso de rede restrito.
+Para desenvolvimento persistente, copiar [.env.example](.env.example) para `.env` apenas se este ainda não existir e preencher um `JWT_SECRET` aleatório de pelo menos 32 bytes. Configurar `MONGODB_URI`, `MONGODB_DB_NAME`, `CORS_ORIGINS` e a pasta externa de fotografias. Nunca publicar segredos. O frontend em `http://127.0.0.1:5173` exige essa origem exata em `CORS_ORIGINS`.
 
 ```sh
 npm run mongo:dev:up --workspace @docampo/api
 npm run dev --workspace @docampo/api
 ```
 
-O arranque real falha sem segredo válido e prepara o índice único de email antes de abrir HTTP. Registo aceita apenas `{nome, email, password}`, com 202 genérico também para duplicados e sem token; não aceita papel/estado ou confirmação de password. Login aceita `{email, password}` e devolve Bearer/expiração/identidade própria. Usar `Authorization: Bearer ...` em me/logout. Logout devolve `revogado: false`: descartar o token no cliente **não o revoga no servidor**.
+Por omissão: API em `http://127.0.0.1:3001/api`, saúde em `/api/health` e Swagger em `/api-docs/`. O replica set de desenvolvimento usa a porta 27018; o de teste usa 27019. Transações exigem replica set. A suite de integração não lê `.env` nem deve usar bases de desenvolvimento ou produção.
 
-Hashes novos são Argon2id; bcrypt anterior continua verificável. A conta tem capacidades acumuláveis e um indicador ativo compatível com documentos antigos; não há criação de administrador, reset de password, refresh, UI real ou endpoint de alteração de permissões.
+## Contrato e organização
 
-## Validação atual
+- [OpenAPI](../../docs/api/openapi.yaml): contrato completo, incluindo propostas históricas identificadas como não implementadas; Swagger expõe apenas as operações efetivamente montadas.
+- [Índice da API](../../docs/api/README.md): decisões, segurança, mapeamento e especificações de cada fase.
+- [Compra de lotes vencedores](../../docs/api/phase-14.2-cart-auction-purchase.md): `GET` e `POST /api/auctions/:id/checkout`, exclusivos do vencedor autenticado. A confirmação transacional e idempotente cria uma encomenda de origem única e consome a reserva sem novo débito de stock; o encerramento do leilão não cria encomendas automaticamente.
+- `src/modules/`: modelos, regras e serviços por domínio; `src/http/`: composição HTTP; `src/config/`, `src/database/` e os restantes módulos de infraestrutura mantêm responsabilidades separadas.
+- `tests/unit/`, `tests/http/`, `tests/integration/` e fixtures: validação dos contratos, segurança e persistência real.
+- `scripts/`: geração da documentação compilada e ferramentas explícitas de demonstração/manutenção. A preparação Cloud está inativa e não é necessária para execução local.
+
+## Verificações e build
 
 ```sh
+npm run mongo:test:up --workspace @docampo/api
 npm run typecheck --workspace @docampo/api
 npm run lint --workspace @docampo/api
-npm run format:check --workspace @docampo/api -- --ignore-path ../../.prettierignore
+npm run format:check --workspace @docampo/api
 npm run build --workspace @docampo/api
-npm run mongo:test:up --workspace @docampo/api
 npm test --workspace @docampo/api
 ```
 
-Os testes não leem `.env`, usam MongoDB real isolado na porta 27019 e segredos aleatórios gerados apenas em memória. Dependências novas exatas: argon2 0.45.1, bcryptjs 3.0.3 e jose 6.2.13; body-parser transitivo corrigido para 2.4.0. Não se alteram dependências do frontend.
+Referência da Fase 14.2: **1 996 testes backend**. O comando de formatação usa explicitamente `../../.prettierignore`, abrangendo código e testes e excluindo `dist/`. O build gera JavaScript e documentação em `apps/api/dist/`; é obrigatório antes de `npm start --workspace @docampo/api`. Esse arranque compilado continua a exigir ambiente válido, MongoDB e configuração de segurança.
 
----
+## Segurança e limites
 
-## Fundação 3.1 — registo histórico
+Passwords novas usam Argon2id; hashes bcrypt anteriores continuam verificáveis. JWT HS256 depende de segredo de ambiente. Logout não revoga tokens antecipadamente. Contas inativas são bloqueadas e papéis/propriedade são verificados no backend. Não usar o seletor demonstrativo de papéis como autenticação.
 
-# API — fundação técnica, Fase 3.1
+Escritas HTTP na documentação interativa alteram a base atual: usar dados fictícios no ambiente isolado. Não há pagamentos bancários, recuperação real de palavra-passe por email ou armazenamento Cloud ativo. O adaptador de fotografias de desenvolvimento não é aceite em produção.
 
-Node.js 22.21.1, npm 10.9.4, Express 5 e TypeScript, com configuração própria independente do frontend. Implementação local, sem módulos comerciais, autenticação real, integração web, recursos Cloud ou publicação. Q01–Q16 e C03/C05 continuam pendentes.
-
-## Execução local
-
-As dependências estão declaradas no workspace `@docampo/api` e fixadas no lockfile da raiz. Num novo checkout, instalar pelo lockfile da raiz com `npm ci`. Não é necessário atualizar globalmente Node/npm.
-
-Da raiz do repositório:
-
-```sh
-npm run mongo:dev:up --workspace @docampo/api
-cp -n apps/api/.env.example apps/api/.env
-npm run dev --workspace @docampo/api
-```
-
-Copiar o exemplo apenas se ainda não existir `.env`; preservar qualquer configuração local existente. O exemplo não contém credenciais. O ficheiro privado é ignorado pelo Git. Não enviar URIs/segredos para variáveis `VITE_*`.
-
-Consultar `http://127.0.0.1:3001/api/health`. A resposta é `{"estado":"operacional","ambito":"processo-http"}` e confirma somente que o processo HTTP respondeu. Não é monitorização de MongoDB/Atlas/Blob/Socket.IO/Swagger. A ligação MongoDB é exigida antes de abrir HTTP; uma falha posterior da base não transforma este endpoint numa sonda de prontidão.
-
-O diagnóstico não aceita parâmetros de consulta. Não existem rotas de autenticação, CRUD, encomendas, administração ou acesso privado. Enviar papel demo, ID ou Bearer fictício não concede acesso. Rotas não implementadas devolvem 404; não se simula uma sessão real.
-
-Build e execução JavaScript sem tsx:
-
-```sh
-npm run build --workspace @docampo/api
-npm start --workspace @docampo/api
-```
-
-`start` e `dev` leem `.env` apenas se existir; variáveis já fornecidas ao processo têm precedência. Sem configuração MongoDB obrigatória, o arranque termina com código 1 antes de abrir a porta. SIGINT/SIGTERM param novas ligações HTTP, aguardam pedidos em curso e fecham MongoDB; há um prazo máximo de encerramento.
-
-## Estrutura
-
-| Caminho                                   | Responsabilidade                                                                                         |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| src/app.ts                                | Composição Express, JSON limitado, rotas e pipeline de erros; importar não abre portas nem liga MongoDB. |
-| src/server.ts                             | Entrada executável, ambiente, mensagens seguras e sinais.                                                |
-| src/runtime.ts                            | Ligação antes do listen, libertação após falha e encerramento idempotente/limitado.                      |
-| src/config/environment.ts                 | Zod para ambiente, valores técnicos e mensagens sem valores privados.                                    |
-| src/database/connection.ts                | Conexão Mongoose independente, buffering/índices automáticos desativados, falhas normalizadas.           |
-| src/http                                  | Erros estruturados e middleware reutilizável de validação.                                               |
-| src/routes/technical.ts                   | Única rota técnica.                                                                                      |
-| tests/unit, tests/http, tests/integration | Suites independentes de Playwright/frontend.                                                             |
-
-Os futuros módulos podem ser acrescentados em `src/modules/<modulo>` com rotas/serviço/validação/acesso a dados. Nenhum módulo ou schema comercial é criado nesta fase. A configuração `NodeNext` emite imports ESM executáveis; a compilação de produção exclui testes e configuração Vitest. Não herda DOM/Bundler/noEmit do frontend.
-
-## Variáveis
-
-| Variável                            | Regra                                                                                             |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------- |
-| NODE_ENV                            | development por omissão; aceita development/test/production. Em test exige nome `docampo_test_*`. |
-| API_HOST                            | 127.0.0.1 por omissão.                                                                            |
-| API_PORT                            | 3001 por omissão; inteiro de 1 a 65535.                                                           |
-| MONGODB_URI                         | Obrigatória, formato mongodb:// ou mongodb+srv://; nunca devolvida nos erros/logs.                |
-| MONGODB_DB_NAME                     | Obrigatória, letras/números/underscore/hífen; base explícita por ambiente.                        |
-| MONGODB_SERVER_SELECTION_TIMEOUT_MS | 5000 por omissão; entre 100 e 60000 ms.                                                           |
-| SHUTDOWN_TIMEOUT_MS                 | 10000 por omissão; entre 100 e 60000 ms.                                                          |
-
-Os valores são limites técnicos desta fundação, não decisões comerciais. URI `mongodb+srv://` permite configurar Atlas futuramente sem criar recursos ou escolher um plano agora.
-
-## MongoDB local
-
-Docker Compose usa `mongo:8.0.34` e dois **replica sets de membro único**: `mongo-dev` / `rs-dcm-dev` na porta local 27018, com volume persistente próprio; `mongo-test` / `rs-dcm-test` na porta 27019, com armazenamento efémero tmpfs. O healthcheck inicia apenas o replica set respetivo e aguarda um primário elegível. A API nativa usa `directConnection=true`, evitando descoberta de endereços internos do contentor.
-
-As portas estão publicadas apenas em 127.0.0.1. Esta infraestrutura local sem autenticação não é uma configuração de produção nem demonstra tolerância a falhas. Cada contentor tem base/armazenamento próprios. Não utilizar a base de desenvolvimento para testes transacionais. Não executar `down -v` para limpar indiscriminadamente dados de desenvolvimento.
-
-## Validações
-
-Da raiz:
-
-```sh
-npm run typecheck --workspace @docampo/api
-npm run lint
-npm run format:check --workspace @docampo/api -- --ignore-path ../../.prettierignore
-npm run build --workspace @docampo/api
-npm run mongo:test:up --workspace @docampo/api
-npm test --workspace @docampo/api
-npm run build
-npm run test:e2e -- --workers=4
-```
-
-Também existem `test:unit`, `test:http`, `test:integration` e `test:watch` no workspace API. Os testes HTTP usam Supertest e portas efémeras locais; algumas sandboxes exigem autorização para abrir sockets. `test` inclui sempre MongoDB real: um ambiente indisponível faz falhar a suite, sem fallback ou omissão silenciosa.
-
-A integração usa exclusivamente `127.0.0.1:27019`, replica set `rs-dcm-test`, nome aleatório `docampo_test_<uuid>` e não lê `.env`. Confirma versão/topologia antes dos ensaios. Só a base criada pela suite é eliminada no final. Coleções técnicas verificam commit de duas escritas, rollback após falha e preservação de dados anteriores; não existem schemas comerciais. A suite também verifica ligação indisponível, arranque, configuração inválida e encerramento por SIGTERM.
-
-Para parar apenas o MongoDB efémero de teste após validar:
-
-```sh
-docker compose -f apps/api/compose.yaml --profile test stop mongo-test
-```
-
-## Erros e limites
-
-Respostas usam `codigo`, `mensagem` e `campos` quando aplicável, com nomes/mensagens controlados e sem stack, driver, URI ou valores rejeitados. Códigos técnicos: ROTA_NAO_ENCONTRADA (404), PEDIDO_INVALIDO e JSON_INVALIDO (400), PEDIDO_DEMASIADO_GRANDE (413; limite JSON 100 KiB) e ERRO_INTERNO (500). A infraestrutura suporta erros controlados 401/403/409, sem implementar ainda autenticação/autorização ou conflitos comerciais. Não se escolheu política 403/404 para propriedade, duração de JWT, paginação, requestId ou precondições de edição.
-
-Ver [documentação complementar](../../docs/api/README.md), [registo de decisões](../../docs/api/decisions.md) e [entrega 3.1](../../docs/api/foundation-implementation.md). Os nove documentos originais da Fase 0 e o frontend aprovado permanecem preservados.
-
-## Fase 12 — Swagger e configuração de produção
-
-Abrir `/api-docs` para Swagger UI real, ou `/api-docs/openapi.json` para o contrato das operações montadas. Authorize mantém o JWT apenas na memória; atualizar elimina-o. Os pedidos alteram o ambiente real do servidor: usar dados de teste na revisão. O build copia o contrato e os assets para dist, sem depender da pasta docs no servidor publicado.
-
-GET `/api/ready` distingue prontidão MongoDB de liveness HTTP (`/api/health`). O PATCH `/api/orders/:id/estado` exige If-Match do detalhe correspondente ao papel e reutiliza preparação/receção existentes. O corpo `estado: entregue` exige `confirmarRececao: true` e comprador proprietário; apenas a resposta de compatibilidade usa entregue, preservando concluida em MongoDB.
-
-A [configuração de produção](.env.production.example) permite PORT do PaaS, escuta em 0.0.0.0, CORS HTTPS exato e proxies explícitos. A integração de armazenamento Cloud é uma porta injetável; nenhum serviço foi publicado. Consultar [o relatório técnico da Fase 12](../../docs/api/phase-12-production-readiness.md) para contratos, segurança, a decisão Argon2id/bcrypt e dependências da Fase 13.
+Os nove documentos da Fase 0 são históricos e permanecem intactos. As decisões e relatórios de fases anteriores continuam no [índice da API](../../docs/api/README.md), e as versões anteriores deste README permanecem no histórico Git. A [declaração de assistência de IA](../../README.md#bibliotecas-e-assistência-de-ia) aplica-se também à API.

@@ -96,6 +96,35 @@ export function auctionRoutes(
       res.json(result.body);
     },
   );
+  router.get(
+    '/auctions/:id/checkout',
+    authenticate,
+    buyer,
+    validate(orderParams, (req) => req.params),
+    validate(emptyOrderQuery, (req) => req.query),
+    async (req, res) => {
+      res.json(await service.checkoutMetadata(access!.principal(req), String(req.params.id)));
+    },
+  );
+  router.post(
+    '/auctions/:id/checkout',
+    authenticate,
+    buyer,
+    account,
+    validate(orderParams, (req) => req.params),
+    validate(emptyOrderQuery, (req) => req.query),
+    json,
+    async (req, res) => {
+      const result = await service.checkout(
+        access!.principal(req),
+        String(req.params.id),
+        req.body,
+        header(req, 'idempotency-key'),
+      );
+      res.setHeader('Location', '/api/orders/' + result.body.encomendas[0]!.orderId);
+      res.status(result.status).json(result.body);
+    },
+  );
   router.put(
     '/auctions/:id',
     authenticate,

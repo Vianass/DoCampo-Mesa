@@ -9,6 +9,7 @@ export interface AuctionEvent {
   ator?: Types.ObjectId;
 }
 export interface AuctionRecord {
+  compra?: { encomendaId: Types.ObjectId; chave: string; hash: string };
   _id: Types.ObjectId;
   produtor: Types.ObjectId;
   produto: Types.ObjectId;
@@ -29,7 +30,7 @@ export interface AuctionRecord {
   sequencia: number;
   versao: number;
   reserva: {
-    estado: 'reservada' | 'afeta_vencedor' | 'libertada' | 'libertacao_pendente';
+    estado: 'reservada' | 'afeta_vencedor' | 'consumida' | 'libertada' | 'libertacao_pendente';
     reposta: number;
     pendente: number;
   };

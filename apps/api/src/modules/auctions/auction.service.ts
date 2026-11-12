@@ -19,6 +19,7 @@ import { auctionCreate, auctionEditable, idempotencyKey, bidBody } from './aucti
 import type { AuctionCreate, AuctionEdit, AuctionQuery } from './auction.validation.js';
 import type { AuctionRecord } from './auction.types.js';
 import type { BidRecord } from './bid.types.js';
+import { createAuctionCheckoutService } from './auction-checkout.service.js';
 const unavailable = () =>
   new ApiError(404, 'LEILAO_NAO_ENCONTRADO', 'O leilão não está disponível.');
 const conflict = () =>
@@ -52,6 +53,7 @@ function parse<T>(
 }
 export function createAuctionService(connection: Connection, secret: Buffer | string) {
   const repo = createAuctionRepository(connection, secret);
+  const purchase = createAuctionCheckoutService(connection, repo);
   const listeners = new Set<(id: string) => void>();
   async function committed<T>(id: Types.ObjectId, work: (session: ClientSession) => Promise<T>) {
     const value = await repo.transaction(work);
@@ -202,7 +204,22 @@ export function createAuctionService(connection: Connection, secret: Buffer | st
   }
   let pendingCursor: Types.ObjectId | undefined;
   return {
-    prepare: repo.prepare,
+    async prepare() {
+      await repo.prepare();
+      await purchase.prepare();
+    },
+    checkoutMetadata: purchase.metadata,
+    async checkout(user: AuthPrincipal, id: string, body: unknown, header?: string) {
+      const result = await purchase.confirm(user, id, body, header);
+      for (const listener of listeners) {
+        try {
+          listener(id);
+        } catch {
+          /* REST reconcilia. */
+        }
+      }
+      return result;
+    },
     subscribeCommitted(listener: (id: string) => void) {
       listeners.add(listener);
       return () => {

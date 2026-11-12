@@ -41,6 +41,7 @@ export interface AuctionSummary {
   resultado?: AuctionResult;
 }
 export interface AuctionDetail extends AuctionSummary {
+  compra?: { estado: 'pendente' | 'confirmada'; encomendaId?: string };
   etag: string;
   lider: { referencia: string; proprio: boolean } | null;
   reserva?: { estado: string; reposta: number; pendente: number };
@@ -200,6 +201,14 @@ export function parseAuctionDetail(v: unknown, metadata: JsonResponseMetadata): 
       ? { referencia: reference(leader.referencia), proprio: leader.proprio as boolean }
       : null,
   };
+  if (a.compra !== undefined) {
+    const c = record(a.compra);
+    if (c.estado !== 'pendente' && c.estado !== 'confirmada') throw new InvalidResponse();
+    detail.compra = {
+      estado: c.estado,
+      ...(c.encomendaId !== undefined ? { encomendaId: id(c.encomendaId) } : {}),
+    };
+  }
   if (a.reserva !== undefined) {
     const r = record(a.reserva);
     detail.reserva = {

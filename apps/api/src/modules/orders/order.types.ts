@@ -236,6 +236,7 @@ export interface OrderIdempotency {
 }
 
 export interface OrderRecord {
+  readonly leilaoOrigem?: Types.ObjectId;
   readonly _id: Types.ObjectId;
   readonly operacaoCompraId: string;
   readonly comprador: Types.ObjectId;

@@ -8,6 +8,7 @@ import { Icon } from '../components/Icon';
 import { PriceDisplay } from '../components/PriceDisplay';
 import { CartLineItem } from '../features/cart/CartLineItem';
 import { useCart } from '../features/cart/useCart';
+import { GuestCartNotice } from '../features/cart/GuestCartNotice';
 import { demonstrationSite } from '../features/auth/demo-mode';
 
 export default function CartPage() {
@@ -59,6 +60,7 @@ export default function CartPage() {
             </span>
           </div>
         </header>
+        <GuestCartNotice />
         {remoteIssue && (
           <p role="alert" className="cart-recovery">
             {remoteIssue}

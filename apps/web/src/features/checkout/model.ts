@@ -20,9 +20,9 @@ export const pendingPurchaseKey = 'docampo.checkout.pending.v1';
 export function cartKey(items: readonly CartItem[]) {
   return JSON.stringify(items.map(cartSignature));
 }
-export function readPending(): PendingPurchase | undefined {
+export function readPending(owner?: string): PendingPurchase | undefined {
   try {
-    const raw = localStorage.getItem(pendingPurchaseKey);
+    const raw = localStorage.getItem(owner ? pendingPurchaseKey + '.' + owner : pendingPurchaseKey);
     if (!raw) return;
     const v = JSON.parse(raw);
     if (
@@ -66,10 +66,10 @@ export function readPending(): PendingPurchase | undefined {
     return;
   }
 }
-export function savePending(value: PendingPurchase): boolean {
+export function savePending(value: PendingPurchase, owner?: string): boolean {
   try {
     localStorage.setItem(
-      pendingPurchaseKey,
+      owner ? pendingPurchaseKey + '.' + owner : pendingPurchaseKey,
       JSON.stringify({
         referencia: value.referencia,
         submitted: value.submitted,
@@ -83,14 +83,15 @@ export function savePending(value: PendingPurchase): boolean {
         })),
       }),
     );
-    return readPending()?.referencia === value.referencia;
+    return readPending(owner)?.referencia === value.referencia;
   } catch {
     return false;
   }
 }
-export function clearPending(reference: string) {
+export function clearPending(reference: string, owner?: string) {
   try {
-    if (readPending()?.referencia === reference) localStorage.removeItem(pendingPurchaseKey);
+    if (readPending(owner)?.referencia === reference)
+      localStorage.removeItem(owner ? pendingPurchaseKey + '.' + owner : pendingPurchaseKey);
   } catch {
     /* Mantém a referência se o browser recusar a escrita. */
   }

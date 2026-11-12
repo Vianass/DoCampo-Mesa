@@ -240,7 +240,14 @@ describe('integridade, índices e documentos antigos', () => {
       }),
     ).toBe(0);
     const indexes = await Order.listIndexes();
-    expect(indexes).toHaveLength(11);
+    expect(indexes).toHaveLength(12);
+    expect(indexes).toContainEqual(
+      expect.objectContaining({
+        key: { leilaoOrigem: 1 },
+        unique: true,
+        partialFilterExpression: { leilaoOrigem: { $type: 'objectId' } },
+      }),
+    );
     expect(indexes).toContainEqual(
       expect.objectContaining({
         key: { 'idempotencia.chave': 1 },
